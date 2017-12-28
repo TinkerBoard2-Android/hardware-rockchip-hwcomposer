@@ -745,6 +745,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     {
         format = HAL_PIXEL_FORMAT_RGBA_8888;
     }
+
     if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
         is_yuv = true;
     else
@@ -1099,7 +1100,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                 }
             }
 #if 1
-            if(!strstr(layername,"Sprite"))
+            if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
             {
                 int src_xoffset = layer->sourceCropf.left * getPixelWidthByAndroidFormat(format);
                 if(!IS_ALIGN(src_xoffset,16))
