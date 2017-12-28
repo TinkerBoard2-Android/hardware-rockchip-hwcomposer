@@ -83,6 +83,8 @@ class DrmPlane {
   bool get_rotate();
   bool get_hdr2sdr();
   bool get_sdr2hdr();
+  bool get_afbc();
+  bool get_afbc_prop();
   bool get_yuv();
   void set_yuv(bool b_yuv);
   const DrmProperty &zpos_property() const;
@@ -131,6 +133,8 @@ class DrmPlane {
   bool b_rotate_;
   bool b_hdr2sdr_;
   bool b_sdr2hdr_;
+  bool b_afbdc_;
+  bool b_afbc_prop_;
 
   drmModePlanePtr plane_;
 };

@@ -1232,7 +1232,7 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
 {
     uint32_t combine_layer_count = 0;
     uint32_t layer_size = layer_vector.size();
-    bool b_yuv=false,b_scale=false,b_alpha=false,b_hdr2sdr=true;
+    bool b_yuv=false,b_scale=false,b_alpha=false,b_hdr2sdr=false,b_afbc=false;
     std::vector<PlaneGroup *> ::const_iterator iter;
     std::vector<PlaneGroup *>& plane_groups = drm->GetPlaneGroups();
     uint64_t rotation = 0;
@@ -1347,6 +1347,19 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                     ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
                                     ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support etof,layer eotf=%d,hdr2sdr=%d",
                                             (*iter_plane)->id(),(*iter_layer)->eotf,(*iter_plane)->get_hdr2sdr());
+                                    continue;
+                                }
+                                else
+                                    bNeed = true;
+                            }
+
+                            b_afbc = (*iter_plane)->get_afbc();
+                            if((*iter_layer)->is_afbc && (*iter_plane)->get_afbc_prop())
+                            {
+                                if(!b_afbc)
+                                {
+                                    ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
+                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support afbc,layer", (*iter_plane)->id());
                                     continue;
                                 }
                                 else

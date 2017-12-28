@@ -151,12 +151,11 @@ int DrmPlane::Init() {
     b_yuv_ = false;
 
 
-    uint64_t feature=0, rotate=0, hdr2sdr=0, sdr2hdr=0;
+    uint64_t scale=0, rotate=0, hdr2sdr=0, sdr2hdr=0, afbdc=0;
 
     feature_property_.set_feature("scale");
-    feature_property_.value(&feature);
-    b_scale_ = (feature ==1)?true:false;
-
+    feature_property_.value(&scale);
+    b_scale_ = (scale == 0x1)?true:false;
 
     rotation_property_.set_feature("rotate");
     rotation_property_.value(&rotate);
@@ -164,17 +163,21 @@ int DrmPlane::Init() {
 
     feature_property_.set_feature("hdr2sdr");
     feature_property_.value(&hdr2sdr);
-    b_hdr2sdr_ = hdr2sdr;
-	if(b_hdr2sdr_)
-		{
-		ALOGD("zxl b_hdr2sdr_ is support");
-	}
+    b_hdr2sdr_ = (hdr2sdr == 0x4)?true:false;
 
     feature_property_.set_feature("sdr2hdr");
     feature_property_.value(&sdr2hdr);
-    b_sdr2hdr_ = sdr2hdr;
+    b_sdr2hdr_ = (sdr2hdr == 0x8)?true:false;
 
-  return 0;
+    feature_property_.set_feature("afbdc");
+    feature_property_.value(&afbdc);
+    b_afbdc_ = (afbdc == 0x10)?true:false;
+    if(0xFF == afbdc)
+      b_afbc_prop_ = false;
+    else
+      b_afbc_prop_ = true;
+
+    return 0;
 }
 
 uint32_t DrmPlane::id() const {
@@ -259,6 +262,14 @@ bool DrmPlane::get_hdr2sdr(){
 
 bool DrmPlane::get_sdr2hdr(){
     return b_sdr2hdr_;
+}
+
+bool DrmPlane::get_afbc(){
+    return b_afbdc_;
+}
+
+bool DrmPlane::get_afbc_prop(){
+    return b_afbc_prop_;
 }
 
 bool DrmPlane::get_yuv(){
