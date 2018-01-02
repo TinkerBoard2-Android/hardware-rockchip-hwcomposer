@@ -122,7 +122,7 @@ int DrmPlane::Init() {
   if (ret)
     ALOGE("Could not get rotation property");
 
-  ret = drm_->GetPlaneProperty(*this, "alpha", &alpha_property_);
+  ret = drm_->GetPlaneProperty(*this, "GLOBAL_ALPHA", &alpha_property_);
   if (ret)
     ALOGI("Could not get alpha property");
 
