@@ -20,7 +20,7 @@ namespace android {
 #endif
 
 #if RK_VIDEO_SKIP_LINE
-#define SKIP_LINE_NUM_NV12_10		(4)
+#define SKIP_LINE_NUM_NV12_10		(2)
 #define SKIP_LINE_NUM_NV12		(2)
 #endif
 
