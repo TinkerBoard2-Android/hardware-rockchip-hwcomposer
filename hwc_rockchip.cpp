@@ -1353,6 +1353,7 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                     bNeed = true;
                             }
 
+#if USE_AFBC_LAYER
                             b_afbc = (*iter_plane)->get_afbc();
                             if((*iter_layer)->is_afbc && (*iter_plane)->get_afbc_prop())
                             {
@@ -1365,6 +1366,7 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                 else
                                     bNeed = true;
                             }
+#endif
 
 #ifdef TARGET_BOARD_PLATFORM_RK3288
                             int src_w,src_h;
