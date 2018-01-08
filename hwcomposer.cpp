@@ -773,8 +773,17 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     }
     else
     {
-        colorspace = V4L2_COLORSPACE_DEFAULT;
-        eotf = TRADITIONAL_GAMMA_SDR;
+        //If enter GLES in HDR video,fake the fb target layer to HDR.
+        if(hd->isHdr && bFbTarget_)
+        {
+            colorspace = V4L2_COLORSPACE_BT2020;
+            eotf = SMPTE_ST2084;
+        }
+        else
+        {
+            colorspace = V4L2_COLORSPACE_DEFAULT;
+            eotf = TRADITIONAL_GAMMA_SDR;
+        }
     }
 
 #if RK_VIDEO_SKIP_LINE

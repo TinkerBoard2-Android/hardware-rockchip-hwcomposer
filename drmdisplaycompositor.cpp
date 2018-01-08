@@ -1180,7 +1180,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     uint64_t rotation = 0;
     uint64_t alpha = 0xFF;
     uint16_t eotf = TRADITIONAL_GAMMA_SDR;
-    uint32_t colorspace = V4L2_COLORSPACE_SRGB;
+    uint32_t colorspace = V4L2_COLORSPACE_DEFAULT;
 #if RK_RGA
     bool is_rotate_by_rga = false;
 #endif
@@ -1252,11 +1252,9 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
       if (layer.blending == DrmHwcBlending::kPreMult)
         alpha = layer.alpha;
 
-      if(is_yuv)
-      {
+
         eotf = layer.eotf;
         colorspace = layer.colorspace;
-      }
 
 #if RK_DEBUG_CHECK_CRC
     void* cpu_addr;

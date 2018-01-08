@@ -1324,7 +1324,12 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                             if ((*iter_layer)->blending == DrmHwcBlending::kPreMult)
                                 alpha = (*iter_layer)->alpha;
 
+#ifdef TARGET_BOARD_PLATFORM_RK3328
+                            //disable global alpha feature for rk3328,since vop has bug on rk3328.
+                            b_alpha = false;
+#else
                             b_alpha = (*iter_plane)->alpha_property().id()?true:false;
+#endif
                             if(alpha != 0xFF)
                             {
                                 if(!b_alpha)
