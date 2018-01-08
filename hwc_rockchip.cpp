@@ -1996,7 +1996,7 @@ AllMatch:
             iUsePlane++;
     }
 
-    if(iUsePlane >= hd->iPlaneSize)
+    if(iUsePlane >= hd->iPlaneSize && !hd->isHdr)
     {
         float scale_factor = vop_band_width(hd, layers);
         float head_factor = 0.0, tail_factor = 0.0;
