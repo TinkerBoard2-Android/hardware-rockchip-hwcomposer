@@ -2198,6 +2198,275 @@ void hwc_sync_release(hwc_display_contents_1_t  *list)
 	}
 }
 
+const char* hwc_get_baseparameter_file(void)
+{
+    int i = 0;
+
+    while (device_template[i]) {
+        if (!access(device_template[i], R_OK | W_OK)){
+            return device_template[i];
+            }
+        i++;
+    }
+    return NULL;
+}
+static struct file_base_parameter base_parameter;
+#define BASE_OFFSET 8*1024
+
+
+int hwc_get_baseparameter_config(char *parameter,int display,int flag)
+{
+    unsigned int w=0,h=0,hsync_start=0,hsync_end=0,htotal=0;
+    unsigned int vsync_start=0,vsync_end=0,vtotal=0,flags=0,clock=0;
+    float vfresh=0;
+    unsigned short brightness = 0,contrast = 0,saturation = 0,hue = 0;
+    unsigned int  format = 0,depthc =0;
+    unsigned short leftscale;
+    unsigned short rightscale;
+    unsigned short topscale;
+    unsigned short bottomscale;
+    int res = 0;
+    switch(flag){
+        case BP_UPDATE:
+            {
+                memset(&base_parameter,0x00,sizeof(file_base_parameter));
+                int file;
+                const char *baseparameterfile = hwc_get_baseparameter_file();
+                if (!baseparameterfile) {
+                    ALOGE("BP:baseparamter file can not be find");
+                    return -1;
+                }
+                file = open(baseparameterfile, O_RDWR);
+                if (file < 0) {
+                    ALOGE("BP:base paramter file can not be opened,");
+                    return -1;
+                }
+                 // caculate file's size and read it
+                unsigned int length = lseek(file, 0L, SEEK_END);
+                lseek(file, 0L, SEEK_SET);
+                if(length < sizeof(base_parameter)) {
+                    ALOGE("BASEPARAME data's length is error\n");
+                    sync();
+                    close(file);
+                    return -1;
+                }
+                read(file, (void*)&(base_parameter.main), sizeof(base_parameter.main));
+                lseek(file, BASE_OFFSET, SEEK_SET);
+                read(file, (void*)&(base_parameter.aux), sizeof(base_parameter.aux));
+                close(file);
+                break;
+            }
+        case BP_RESOLUTION:
+            {
+                if(display == HWC_DISPLAY_PRIMARY){
+                    w = base_parameter.main.resolution.hdisplay;
+                    h = base_parameter.main.resolution.vdisplay;
+                    vsync_start = base_parameter.main.resolution.vsync_start;
+                    hsync_start = base_parameter.main.resolution.hsync_start;
+                    hsync_end = base_parameter.main.resolution.hsync_end;
+                    htotal = base_parameter.main.resolution.htotal;
+                    vsync_end = base_parameter.main.resolution.vsync_end;
+                    vtotal = base_parameter.main.resolution.vtotal;
+                    flags = base_parameter.main.resolution.flags;
+                    clock = base_parameter.main.resolution.clock;
+                    vfresh = (float)clock / (htotal*vtotal);
+                    if(vfresh < 1)
+                        vfresh = vfresh*1000;
+                    if(base_parameter.main.feature & RESOLUTION_AUTO ||
+                           w * h <= 0 || w * h > 4096 * 2160){
+                        strcpy(parameter,"Auto");
+                        ALOGD("BP: %s",parameter);
+                    }else{
+                         sprintf(parameter,"%dx%d@%f-%d-%d-%d-%d-%d-%d-%x", w, h, vfresh, hsync_start,hsync_end,\
+                             htotal,vsync_start,vsync_end,vtotal, flags);
+                         ALOGD("BP: %s \n",parameter);
+                     }
+                }else{
+                    w = base_parameter.aux.resolution.hdisplay;
+                    h = base_parameter.aux.resolution.vdisplay;
+                    vsync_start = base_parameter.aux.resolution.vsync_start;
+                    hsync_start = base_parameter.aux.resolution.hsync_start;
+                    hsync_end = base_parameter.aux.resolution.hsync_end;
+                    htotal = base_parameter.aux.resolution.htotal;
+                    vsync_end = base_parameter.aux.resolution.vsync_end;
+                    vtotal = base_parameter.aux.resolution.vtotal;
+                    flags = base_parameter.aux.resolution.flags;
+                    clock = base_parameter.aux.resolution.clock;
+                    vfresh = (float)clock / (htotal*vtotal);
+                    if(vfresh < 1)
+                        vfresh = vfresh*1000;
+                    if(base_parameter.aux.feature & RESOLUTION_AUTO ||
+                           w * h <= 0 || w * h > 4096 * 2160){
+                        strcpy(parameter,"Auto");
+                        ALOGD("BP: %s",parameter);
+                    }else{
+                         sprintf(parameter,"%dx%d@%f-%d-%d-%d-%d-%d-%d-%x", w, h, vfresh, hsync_start,hsync_end,\
+                             htotal,vsync_start,vsync_end,vtotal, flags);
+                         ALOGD("BP: %s \n",parameter);
+                     }
+                }
+                break;
+            }
+        case BP_FB_SIZE:
+            {
+                w = base_parameter.main.hwc_info.framebuffer_width;
+                h = base_parameter.main.hwc_info.framebuffer_height;
+                vfresh = base_parameter.main.hwc_info.fps;
+                if( w * h > 0 && w * h <= 4096 * 2160 && vfresh > 0 &&
+                        vfresh <= 120){
+                    sprintf(parameter,"%dx%d@%f", w, h, vfresh);
+                    ALOGD("BP: %s \n",parameter);
+                }else{
+#ifdef RK_BOX
+                    strcpy(parameter,"1920x1080@60");
+                    ALOGD("BP: default %s \n",parameter);
+#else
+                    ALOGD("BP: FB_SIZE=%dx%d@%d err !",w,h,vfresh);
+#endif
+
+                }
+                break;
+            }
+        case BP_DEVICE:
+            {
+                if( display == HWC_DISPLAY_PRIMARY ){
+                    strcpy(parameter,base_parameter.main.hwc_info.device);
+                    ALOGD("BP dev_primary = %s",parameter);
+                }else{
+                    strcpy(parameter,base_parameter.aux.hwc_info.device);
+                    ALOGD("BP dev_extend = %s",parameter);
+                }
+                break;
+            }
+        case BP_BRIGHTNESS:
+            if(display == HWC_DISPLAY_PRIMARY){
+                brightness = base_parameter.main.bcsh.brightness;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.brightness.main",
+                    brightness > 0 && brightness <= 100  ? brightness : 50));
+                return property_get_int32("persist.sys.brightness.main",
+                    brightness > 0 && brightness <= 100  ? brightness : 50);
+            }else{
+                brightness = base_parameter.aux.bcsh.brightness;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.brightness.aux",
+                    brightness > 0 && brightness <= 100  ? brightness : 50));
+                return property_get_int32("persist.sys.brightness.aux",
+                    brightness > 0 && brightness <= 100  ? brightness : 50);
+            }
+            break;
+        case BP_CONTRAST:
+            if(display == HWC_DISPLAY_PRIMARY){
+                contrast =  base_parameter.main.bcsh.contrast;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.contrast.main",
+                    contrast > 0 && contrast <=100  ? contrast : 50));
+                return property_get_int32("persist.sys.contrast.main",
+                    contrast > 0 && contrast <=100  ? contrast : 50);
+
+            }else{
+                contrast =  base_parameter.aux.bcsh.contrast;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.contrast.aux",
+                    contrast > 0 && contrast <= 100  ? contrast : 50));
+                return property_get_int32("persist.sys.contrast.aux",
+                    contrast > 0 && contrast <= 100  ? contrast : 50);
+            }
+            break;
+        case BP_SATURATION:
+            if(display == HWC_DISPLAY_PRIMARY){
+                saturation =  base_parameter.main.bcsh.saturation;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.saturation.main",
+                    saturation > 0 && saturation <= 100  ? saturation : 50));
+                return property_get_int32("persist.sys.saturation.main",
+                    saturation > 0 && saturation <= 100  ? saturation : 50);
+            }else{
+                saturation =  base_parameter.aux.bcsh.saturation;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.saturation.aux",
+                    saturation > 0 && saturation <= 100  ? saturation : 50));
+                return property_get_int32("persist.sys.saturation.aux",
+                    saturation > 0 && saturation <= 100  ? saturation : 50);
+            }
+            break;
+        case BP_HUE:
+            if(display == HWC_DISPLAY_PRIMARY){
+                hue =  base_parameter.main.bcsh.hue;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.hue.main",
+                    hue > 0 && hue <= 100  ? hue : 50));
+                return property_get_int32("persist.sys.hue.main",
+                    hue > 0 && hue <= 100  ? hue : 50);
+
+            }else{
+                hue =  base_parameter.aux.bcsh.hue;
+                ALOGD("BP: brightness %d",property_get_int32("persist.sys.hue.aux",
+                    hue > 0 && hue <= 100  ? hue : 50));
+                return property_get_int32("persist.sys.hue.aux",
+                    hue > 0 && hue <= 100  ? hue : 50);
+
+            }
+            break;
+         case BP_COLOR:
+            if(display == HWC_DISPLAY_PRIMARY){
+                format = base_parameter.main.format;
+                depthc = base_parameter.main.depthc;
+                if(base_parameter.main.feature & COLOR_AUTO){
+                    //Auto:output_ycbcr_high_subsampling - Automatic
+                    strcpy(parameter,"4-0");
+                }else{
+                    if(format >= output_rgb && format <= invalid_output && (depthc == Automatic ||
+                        depthc == depth_24bit || depthc == depth_30bit)){
+                        sprintf(parameter,"%u-%u",format,depthc);
+                    }else{
+                        strcpy(parameter,"4-0");
+                    }
+                }
+                ALOGD("BP: main %s",parameter);
+            }else{
+                format = base_parameter.aux.format;
+                depthc = base_parameter.aux.depthc;
+                if(base_parameter.aux.feature & COLOR_AUTO){
+                    //Auto:output_ycbcr_high_subsampling - Automatic
+                    strcpy(parameter,"4-0");
+                }else{
+                    if(format >= output_rgb && format <= invalid_output && (depthc == Automatic ||
+                        depthc == depth_24bit || depthc == depth_30bit)){
+                        sprintf(parameter,"%u-%u",format,depthc);
+                    }else{
+                        strcpy(parameter,"4-0");
+                    }
+                }
+                ALOGD("BP: aux %s",parameter);
+            }
+            break;
+         case BP_OVERSCAN:
+            if(display == HWC_DISPLAY_PRIMARY){
+                leftscale = base_parameter.main.scan.leftscale;
+                rightscale = base_parameter.main.scan.rightscale;
+                topscale = base_parameter.main.scan.topscale;
+                bottomscale = base_parameter.main.scan.bottomscale;
+                sprintf(parameter,"overscan %d,%d,%d,%d",
+                    leftscale > 0 && leftscale <= 100 ? leftscale : 100,
+                    rightscale > 0 && rightscale <= 100 ? rightscale : 100,
+                    topscale > 0 && topscale <= 100 ? topscale : 100,
+                    bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
+                property_set("persist.sys.overscan.main",parameter);
+                ALOGD("BP: main %s",parameter);
+            }else{
+                leftscale = base_parameter.aux.scan.leftscale;
+                rightscale = base_parameter.aux.scan.rightscale;
+                topscale = base_parameter.aux.scan.topscale;
+                bottomscale = base_parameter.aux.scan.bottomscale;
+                sprintf(parameter,"overscan %d,%d,%d,%d",
+                    leftscale > 0 && leftscale <= 100 ? leftscale : 100,
+                    rightscale > 0 && rightscale <= 100 ? rightscale : 100,
+                    topscale > 0 && topscale <= 100 ? topscale : 100,
+                    bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
+                property_set("persist.sys.overscan.aux",parameter);
+                ALOGD("BP: aux %s",parameter);
+            }
+            break;
+        default:
+            ALOGW("BP:The flag is error ,check it !");
+            return -1;
+        }
+    return 0;
+}
 
 
 }

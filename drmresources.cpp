@@ -40,6 +40,9 @@
 #include <sstream>
 #include <assert.h>
 
+#include "hwc_rockchip.h"
+
+
 //you can define it in external/libdrm/include/drm/drm.h
 #define DRM_CLIENT_CAP_SHARE_PLANES     4
 
@@ -150,6 +153,30 @@ void DrmResources::ConfigurePossibleDisplays()
 
   primary_length = property_get("sys.hwc.device.primary", primary_name, NULL);
   extend_length = property_get("sys.hwc.device.extend", extend_name, NULL);
+
+  /*
+   * if unset primary_name or extend_name,get them from baseparameter,by libin
+   */
+  if(!primary_length){
+      int res = 0;
+      res = hwc_get_baseparameter_config(primary_name,0,BP_DEVICE);
+      if(res){
+          ALOGE("BP: hwc get baseparameter err");
+      }else{
+          primary_length = strlen(primary_name);
+          //ALOGD("LB:DEBUG primary_length = %d",primary_length);
+      }
+  }
+  if(!extend_length){
+      int res = 0;
+      res = hwc_get_baseparameter_config(extend_name,1,BP_DEVICE);
+      if(res){
+          ALOGE("BP: hwc get baseparameter err");
+      }else{
+          extend_length = strlen(extend_name);
+          //ALOGD("LB:DEBUG extend_length = %d",extend_length);
+      }
+  }
 
   if (!primary_length)
     default_display_possible |= HWC_DISPLAY_PRIMARY_BIT;
@@ -634,23 +661,23 @@ int DrmResources::UpdatePropertys(void)
 
   if (primary) {
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->brightness_id_property().id(),
-                        property_get_int32("persist.sys.brightness.main", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_BRIGHTNESS))
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->contrast_id_property().id(),
-                        property_get_int32("persist.sys.contrast.main", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_CONTRAST))
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->saturation_id_property().id(),
-                        property_get_int32("persist.sys.saturation.main", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_SATURATION))
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->hue_id_property().id(),
-                        property_get_int32("persist.sys.hue.main", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_HUE))
   }
   if (extend) {
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->brightness_id_property().id(),
-                        property_get_int32("persist.sys.brightness.aux", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_BRIGHTNESS))
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->contrast_id_property().id(),
-                        property_get_int32("persist.sys.contrast.aux", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_CONTRAST))
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->saturation_id_property().id(),
-                        property_get_int32("persist.sys.saturation.aux", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_SATURATION))
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->hue_id_property().id(),
-                        property_get_int32("persist.sys.hue.aux", 50))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_HUE))
   }
 
   uint32_t flags = 0;

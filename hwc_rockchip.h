@@ -175,6 +175,128 @@ typedef struct hwc_drm_display {
   int hotplug_timeline;
 } hwc_drm_display_t;
 
+/*
+ * Base_parameter is used for 3328_8.0  , by libin start.
+ */
+
+#define RESOLUTION_AUTO			(1<<0)
+#define COLOR_AUTO				(1<<1)
+#define HDCP1X_EN				(1<<2)
+#define RESOLUTION_WHITE_EN		(1<<3)
+
+struct drm_display_mode {
+    /* Proposed mode values */
+    int clock;      /* in kHz */
+    int hdisplay;
+    int hsync_start;
+    int hsync_end;
+    int htotal;
+    int vdisplay;
+    int vsync_start;
+    int vsync_end;
+    int vtotal;
+    int vrefresh;
+    int vscan;
+    unsigned int flags;
+    int picture_aspect_ratio;
+};
+
+enum output_format {
+    output_rgb=0,
+    output_ycbcr444=1,
+    output_ycbcr422=2,
+    output_ycbcr420=3,
+    output_ycbcr_high_subsampling=4,  // (YCbCr444 > YCbCr422 > YCbCr420 > RGB)
+    output_ycbcr_low_subsampling=5  , // (RGB > YCbCr420 > YCbCr422 > YCbCr444)
+    invalid_output=6,
+};
+
+enum  output_depth{
+    Automatic=0,
+    depth_24bit=8,
+    depth_30bit=10,
+};
+
+struct overscan {
+    unsigned int maxvalue;
+    unsigned short leftscale;
+    unsigned short rightscale;
+    unsigned short topscale;
+    unsigned short bottomscale;
+};
+
+struct hwc_inital_info{
+    char device[128];
+    unsigned int framebuffer_width;
+    unsigned int framebuffer_height;
+    float fps;
+};
+
+struct bcsh_info {
+    unsigned short brightness;
+    unsigned short contrast;
+    unsigned short saturation;
+    unsigned short hue;
+};
+struct lut_data{
+    uint16_t size;
+    uint16_t lred[1024];
+    uint16_t lgreen[1024];
+    uint16_t lblue[1024];
+};
+struct disp_info{
+    struct drm_display_mode resolution;// 52 bytes
+    struct overscan scan;//12 bytes
+    enum output_format  format; // 4 bytes
+    enum output_depth depthc; // 4 bytes
+    unsigned int feature;//4 //4 bytes
+    struct hwc_inital_info hwc_info; //140 bytes
+    struct bcsh_info bcsh;
+    unsigned int reserve[128];
+    struct lut_data mlutdata;/*6k+4*/
+};
+
+struct file_base_parameter
+{
+    struct disp_info main;
+    struct disp_info aux;
+};
+
+static char const *const device_template[] =
+{
+    "/dev/block/platform/1021c000.rksdmmc/by-name/baseparameter",
+    "/dev/block/platform/30020000.rksdmmc/by-name/baseparameter",
+    "/dev/block/platform/ff0f0000.rksdmmc/by-name/baseparameter",
+    "/dev/block/platform/ff520000.rksdmmc/by-name/baseparameter",
+    "/dev/block/platform/fe330000.sdhci/by-name/baseparameter",
+    "/dev/block/platform/ff520000.dwmmc/by-name/baseparameter",
+    "/dev/block/rknand_baseparameter",
+    NULL
+};
+
+enum flagBaseParameter
+{
+    BP_UPDATE = 0,
+    BP_RESOLUTION,
+    BP_FB_SIZE,
+    BP_DEVICE,
+    BP_COLOR,
+    BP_BRIGHTNESS,
+    BP_CONTRAST,
+    BP_SATURATION,
+    BP_HUE,
+    BP_OVERSCAN,
+};
+
+const char* hwc_get_baseparameter_file(void);
+
+int hwc_get_baseparameter_config(char *parameter,int display,int flag);
+
+/*
+ * Base_parameter is used for 3328_8.0 , by libin end.
+ */
+
+
 int hwc_init_version();
 
 #if USE_AFBC_LAYER

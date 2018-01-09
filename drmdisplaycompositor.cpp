@@ -1088,10 +1088,15 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     }
     else
     {
-        if (display_ == 0)
-          property_get("persist.sys.overscan.main", overscan, "overscan 100,100,100,100");
-        else
-          property_get("persist.sys.overscan.aux", overscan, "overscan 100,100,100,100");
+        if (display_ == 0){
+          property_get("persist.sys.overscan.main", overscan, "default");
+          if(!strcmp(overscan,"default"))
+            hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN);
+        }else{
+          property_get("persist.sys.overscan.aux", overscan, "default");
+          if(!strcmp(overscan,"default"))
+            hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN);
+        }
 
         sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
                &right_margin, &bottom_margin);

@@ -30,6 +30,7 @@
 #include <map>
 #include <vector>
 #include <sstream>
+#include <stdio.h>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -361,13 +362,37 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   if (display == HWC_DISPLAY_PRIMARY)
   {
     /* if resolution is null,set to "Auto" */
-    property_get("persist.sys.resolution.main", resolution, "Auto");
+    property_get("persist.sys.resolution.main", resolution, "default");
     property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
+
+    /*
+     * if unset resolution ,get it from baseparameter ,by libin
+     */
+    if(!(strcmp(resolution,"default")))
+    {
+        int res = 0;
+        res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION);
+        if(res){
+            ALOGE("get native config fail, res = %d",res);
+        }
+    }
   }
   else
   {
-    property_get("persist.sys.resolution.aux", resolution, "Auto");
+    property_get("persist.sys.resolution.aux", resolution, "default");
     property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
+
+    /*
+     * if unset resolution ,get it from baseparameter ,by libin
+     */
+    if(!(strcmp(resolution,"default")))
+    {
+        int res = 0;
+        res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION);
+        if(res){
+            ALOGE("get native config fail, res = %d",res);
+        }
+    }
   }
 
   if(hd->is_3d && strcmp(resolution_3d,"0x0p0-0:0"))
@@ -1284,7 +1309,12 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     }
     ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
     if (ret == false) {
-        return false;
+        hwc_get_baseparameter_config(prop_format,display,BP_COLOR);
+        ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
+        if(ret != 2){
+            ALOGE("BP: get color fail!");
+            return false;
+        }
     }
 
     if(hd->color_format != color_format) {
@@ -2444,8 +2474,19 @@ static int hwc_get_display_configs(struct hwc_composer_device_1 *dev,
   connector->set_current_mode(mode);
 
   char framebuffer_size[PROPERTY_VALUE_MAX];
-  uint32_t width, height, vrefresh;
+  uint32_t width = 0, height = 0 , vrefresh = 0 ;
   property_get("persist.sys.framebuffer.main", framebuffer_size, "0x0@60");
+
+  /*
+   * if unset framebuffer_size, get it from baseparameter , by libin
+   */
+  if(!width && !height){
+    int res = 0;
+    res = hwc_get_baseparameter_config(framebuffer_size,display,BP_FB_SIZE);
+    if(res)
+        ALOGW("BP: hwc get baseparameter config err ,res = %d",res);
+  }
+
   sscanf(framebuffer_size, "%dx%d@%d", &width, &height, &vrefresh);
   if (width && height) {
     hd->framebuffer_width = width;
@@ -2849,6 +2890,7 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
     }
 
   hwc_init_version();
+  hwc_get_baseparameter_config(NULL,0,BP_UPDATE);
 
 
 #if RK_INVALID_REFRESH
