@@ -117,7 +117,10 @@ void DrmEventListener::UEventHandler() {
       if (strcmp(event, "DEVTYPE=drm_minor"))
         drm_event = true;
       else if (strcmp(event, "HOTPLUG=1"))
+      {
         hotplug_event = true;
+        ALOGD("hwc_uevent detect hotplug");
+      }
 
       i += strlen(event) + 1;
     }
