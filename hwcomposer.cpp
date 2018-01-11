@@ -1499,6 +1499,22 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       hwc_list_nodraw(display_contents[i]);
       continue;
     }
+
+#if 1
+    hd->stereo_mode = NON_3D;
+    int bk_is_3d = hd->is_3d;
+    hd->is_3d = detect_3d_mode(hd, display_contents[i], i);
+    if(bk_is_3d != hd->is_3d)
+    {
+        int timeline = 0;
+        char acTimelie[10];
+        timeline = property_get_int32("sys.display.timeline", -1);
+        timeline++;
+        snprintf(acTimelie,10,"%d",timeline);
+        property_set("sys.display.timeline", acTimelie);
+    }
+#endif
+
 	update_hdmi_output_format(ctx, connector, i, hd);
     update_display_bestmode(hd, i, connector);
     DrmMode mode = connector->best_mode();
@@ -1703,10 +1719,8 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
     }
 
-#if 1
-    hd->stereo_mode = NON_3D;
-    hd->is_3d = detect_3d_mode(hd, display_contents[i], i);
-#endif
+
+
 
     int iLastFps = num_layers-1;
     if(hd->stereo_mode == FPS_3D)
