@@ -149,17 +149,29 @@ int DrmConnector::UpdateModes() {
     bool exists = false;
     bool verify = false;
     for (const DrmMode &mode : modes_) {
-      if (mode == c->modes[i] && drm_->mode_verify(mode)) {
-        new_modes.push_back(mode);
-        exists = true;
-        break;
+      if (mode == c->modes[i]) {
+        if(type_ == DRM_MODE_CONNECTOR_HDMIA || type_ == DRM_MODE_CONNECTOR_DisplayPort)
+        {
+            if(drm_->mode_verify(mode))
+            {
+                new_modes.push_back(mode);
+                exists = true;
+                break;
+            }
+        }
+        else
+        {
+            new_modes.push_back(mode);
+            exists = true;
+            break;
+        }
       }
     }
     if (exists)
       continue;
 
     DrmMode m(&c->modes[i]);
-    if (!drm_->mode_verify(m))
+    if ((type_ == DRM_MODE_CONNECTOR_HDMIA || type_ == DRM_MODE_CONNECTOR_DisplayPort) && !drm_->mode_verify(m))
       continue;
 
     m.set_id(drm_->next_mode_id());
