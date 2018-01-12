@@ -1719,9 +1719,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
     }
 
-
-
-
     int iLastFps = num_layers-1;
     if(hd->stereo_mode == FPS_3D)
     {

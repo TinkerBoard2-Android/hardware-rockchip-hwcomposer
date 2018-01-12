@@ -1824,7 +1824,7 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
     }
 
     //OPT: Adjust skip_layer_indices.first and skip_layer_indices.second to limit in iPlaneSize.
-    if(bHasSkipLayer && ((int)layers.size() - skipCnt + 1) > iPlaneSize)
+    if(!hd->is_3d && bHasSkipLayer && ((int)layers.size() - skipCnt + 1) > iPlaneSize)
     {
         int tmp_index = -1;
         if(skip_layer_indices.first != 0)
@@ -1848,7 +1848,7 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
     }
 
     /*************************mix skip layer*************************/
-    if(bHasSkipLayer && ((int)layers.size() - skipCnt + 1) <= iPlaneSize)
+    if(!hd->is_3d && bHasSkipLayer && ((int)layers.size() - skipCnt + 1) <= iPlaneSize)
     {
         ALOGD_IF(log_level(DBG_DEBUG), "%s:has skip layer (%d,%d)",__FUNCTION__,skip_layer_indices.first, skip_layer_indices.second);
         if(hd->mixMode != HWC_MIX_CROSS)
