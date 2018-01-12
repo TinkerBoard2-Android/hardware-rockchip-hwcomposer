@@ -277,6 +277,10 @@ drmModeConnection DrmConnector::state() const {
   return state_;
 }
 
+drmModeConnection DrmConnector::raw_state() const {
+  return state_;
+}
+
 uint32_t DrmConnector::mm_width() const {
   return mm_width_;
 }

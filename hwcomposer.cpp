@@ -153,11 +153,15 @@ class DrmHotplugHandler : public DrmEventHandler {
     DrmConnector *primary = NULL;
 
     for (auto &conn : drm_->connectors()) {
-      drmModeConnection old_state = conn->state();
+      //In sleep mode,we need get raw connector state,otherwise,we will miss the chance
+      //to handle hotplug event.
+      //Pg: sleep (force_disconnect will be true)==> plug out HDMI ==> plug in HDMI ==> wake up (force_disconnect still be ture)
+      //Workround: use raw connector state.
+      drmModeConnection old_state = conn->raw_state();
 
       conn->UpdateModes();
 
-      drmModeConnection cur_state = conn->state();
+      drmModeConnection cur_state = conn->raw_state();
 
       if (cur_state == old_state)
         continue;
@@ -190,12 +194,12 @@ class DrmHotplugHandler : public DrmEventHandler {
 
     DrmConnector *old_primary = drm_->GetConnectorFromType(HWC_DISPLAY_PRIMARY);
     primary = primary ? primary : old_primary;
-    if (!primary || primary->state() != DRM_MODE_CONNECTED) {
+    if (!primary || primary->raw_state() != DRM_MODE_CONNECTED) {
       primary = NULL;
       for (auto &conn : drm_->connectors()) {
         if (!(conn->possible_displays() & HWC_DISPLAY_PRIMARY_BIT))
           continue;
-        if (conn->state() == DRM_MODE_CONNECTED) {
+        if (conn->raw_state() == DRM_MODE_CONNECTED) {
           primary = conn.get();
           ALOGD("hwc_hotplug: find the second connect primary type=%s",drm_->connector_type_str(conn->get_type()));
           break;
@@ -234,14 +238,14 @@ class DrmHotplugHandler : public DrmEventHandler {
 
     DrmConnector *old_extend = drm_->GetConnectorFromType(HWC_DISPLAY_EXTERNAL);
     extend = extend ? extend : old_extend;
-    if (!extend || extend->state() != DRM_MODE_CONNECTED) {
+    if (!extend || extend->raw_state() != DRM_MODE_CONNECTED) {
       extend = NULL;
       for (auto &conn : drm_->connectors()) {
         if (!(conn->possible_displays() & HWC_DISPLAY_EXTERNAL_BIT))
           continue;
         if (conn->id() == primary->id())
           continue;
-        if (conn->state() == DRM_MODE_CONNECTED) {
+        if (conn->raw_state() == DRM_MODE_CONNECTED) {
           extend = conn.get();
           ALOGD("hwc_hotplug: find the second connect external type=%s",drm_->connector_type_str(conn->get_type()));
           break;
@@ -2352,6 +2356,21 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
   if (!connector) {
     ALOGE("Failed to get connector for display %d line=%d", display,__LINE__);
     return -ENODEV;
+  }
+
+  //In tv mode, we still need update the hdmi force_disconnect.
+  //Pg: sleep(force_disconnect will be true) ==> plug out HDMI(switch to tv mode) ==> wake up ==> plug in HDMI(force_disconnect still be true)
+  //Workround:                                                                            ==> update HDMI's force_disconnect
+  if(connector->get_type() == DRM_MODE_CONNECTOR_TV)
+  {
+    for (auto &conn : ctx->drm.connectors())
+    {
+        if(conn->get_type() == DRM_MODE_CONNECTOR_HDMIA)
+        {
+            conn->force_disconnect(dpmsValue == DRM_MODE_DPMS_OFF);
+            break;
+        }
+    }
   }
 
   connector->force_disconnect(dpmsValue == DRM_MODE_DPMS_OFF);

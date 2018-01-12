@@ -79,6 +79,7 @@ class DrmConnector {
   void set_encoder(DrmEncoder *encoder);
 
   drmModeConnection state() const;
+  drmModeConnection raw_state() const;
   void force_disconnect(bool force);
 
   uint32_t get_type() { return type_; }
