@@ -70,6 +70,8 @@ namespace android {
 #define BOOT_COUNT       (2)
 #endif
 
+#define BOOT_GLES_COUNT  (5)
+
 typedef enum tagMode3D
 {
 	NON_3D = 0,
