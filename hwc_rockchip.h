@@ -292,6 +292,8 @@ const char* hwc_get_baseparameter_file(void);
 
 int hwc_get_baseparameter_config(char *parameter,int display,int flag);
 
+bool hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
+
 /*
  * Base_parameter is used for 3328_8.0 , by libin end.
  */

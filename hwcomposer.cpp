@@ -1313,11 +1313,11 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     if (display == HWC_DISPLAY_PRIMARY)
     {
     /* if resolution is null,set to "Auto" */
-        property_get("persist.sys.color.main", prop_format, "Auto");
+        property_get("persist.sys.color.main", prop_format, "default");
     }
     else
     {
-        property_get("persist.sys.color.aux", prop_format, "Auto");
+        property_get("persist.sys.color.aux", prop_format, "default");
     }
     ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
     if (ret == false) {
@@ -2508,12 +2508,12 @@ static int hwc_get_display_configs(struct hwc_composer_device_1 *dev,
 
   char framebuffer_size[PROPERTY_VALUE_MAX];
   uint32_t width = 0, height = 0 , vrefresh = 0 ;
-  property_get("persist.sys.framebuffer.main", framebuffer_size, "0x0@60");
+  property_get("persist.sys.framebuffer.main", framebuffer_size, "default");
 
   /*
    * if unset framebuffer_size, get it from baseparameter , by libin
    */
-  if(!width && !height){
+  if(!strcmp(framebuffer_size,"default")){
     int res = 0;
     res = hwc_get_baseparameter_config(framebuffer_size,display,BP_FB_SIZE);
     if(res)
@@ -2847,6 +2847,7 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
   }
 
   init_rk_debug();
+  hwc_get_baseparameter_config(NULL,0,BP_UPDATE);
 
   std::unique_ptr<hwc_context_t> ctx(new hwc_context_t());
   if (!ctx) {
@@ -2923,7 +2924,6 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
     }
 
   hwc_init_version();
-  hwc_get_baseparameter_config(NULL,0,BP_UPDATE);
 
 
 #if RK_INVALID_REFRESH
