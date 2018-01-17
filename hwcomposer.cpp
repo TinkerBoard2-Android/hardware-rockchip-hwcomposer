@@ -233,6 +233,8 @@ class DrmHotplugHandler : public DrmEventHandler {
       hd->rel_xres = mode.h_display();
       hd->rel_yres = mode.v_display();
       hd->v_total = mode.v_total();
+      //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
+      usleep(HOTPLUG_MSLEEP*1000);
       procs_->invalidate(procs_);
 
       drm_->SetPrimaryDisplay(primary);
@@ -257,6 +259,8 @@ class DrmHotplugHandler : public DrmEventHandler {
     drm_->SetExtendDisplay(extend);
     if (!extend) {
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
+      //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
+      usleep(HOTPLUG_MSLEEP*1000);
       procs_->invalidate(procs_);
       return;
     }
@@ -1538,6 +1542,8 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     hwc_drm_display_t *hd = &ctx->displays[connector->display()];
     DrmCrtc *crtc = ctx->drm.GetCrtcFromConnector(connector);
     if (connector->state() != DRM_MODE_CONNECTED || !crtc) {
+      ALOGD_IF(log_level(DBG_DEBUG),"%s: connector[%d] is disconnect type=%s",__FUNCTION__,
+                connector->display(),ctx->drm.connector_type_str(connector->get_type()));
       hwc_list_nodraw(display_contents[i]);
       continue;
     }
@@ -2032,7 +2038,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   int ret = 0;
 
- ALOGD_IF(log_level(DBG_VERBOSE),"----------------------------frame=%d end----------------------------",get_frame());
  inc_frame();
 
   std::vector<CheckedOutputFd> checked_output_fences;
@@ -2040,6 +2045,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   std::vector<DrmCompositionDisplayLayersMap> layers_map;
   std::vector<std::vector<size_t>> layers_indices;
   std::vector<uint32_t> fail_displays;
+  std::unique_ptr<DrmComposition> composition;
 
   // layers_map.reserve(num_displays);
   layers_indices.reserve(num_displays);
@@ -2071,6 +2077,10 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 
     DrmConnector *c = ctx->drm.GetConnectorFromType(i);
     if (!c || c->state() != DRM_MODE_CONNECTED) {
+
+    if(c)
+      ALOGD_IF(log_level(DBG_DEBUG),"hwc_set connector is disconnect,type=%s",ctx->drm.connector_type_str(c->get_type()));
+
       hwc_sync_release(sf_display_contents[i]);
       continue;
     }
@@ -2236,8 +2246,8 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       }
       if(!layer.sf_handle)
       {
-        ALOGE("sf_handle is null,maybe fb target is null");
-        return -EINVAL;
+        ALOGE("%s: sf_handle is null,maybe fb target is null",__FUNCTION__);
+        goto err;
       }
       if(!layer.bClone_)
         layer.ImportBuffer(ctx, layer.raw_sf_layer, ctx->importer.get());
@@ -2248,16 +2258,16 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   ctx->drm.UpdateDisplayRoute();
   ctx->drm.UpdatePropertys();
   ctx->drm.ClearDisplay();
-  std::unique_ptr<DrmComposition> composition(
-      ctx->drm.compositor()->CreateComposition(ctx->importer.get()));
+  composition = ctx->drm.compositor()->CreateComposition(ctx->importer.get());
   if (!composition) {
-    ALOGE("Drm composition init failed");
-    return -EINVAL;
+    ALOGE("%s: Drm composition init failed",__FUNCTION__);
+    goto err;
   }
 
   ret = composition->SetLayers(layers_map.size(), layers_map.data());
   if (ret) {
-    return -EINVAL;
+    ALOGD("%s: SetLayers fail",__FUNCTION__);
+    goto err;
   }
 
   for (size_t i = 0; i < num_displays; ++i) {
@@ -2277,7 +2287,8 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       {
           ret = composition->SetCompPlanes(ctx->comp_plane_group[i].display, ctx->comp_plane_group[i].composition_planes);
           if (ret) {
-            return -EINVAL;
+            ALOGE("%s: SetCompPlanes fail",__FUNCTION__);
+            goto err;
           }
       }
       else
@@ -2289,7 +2300,8 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 
   ret = ctx->drm.compositor()->QueueComposition(std::move(composition));
   if (ret) {
-    return -EINVAL;
+    ALOGE("%s: QueueComposition fail",__FUNCTION__);
+    goto err;
   }
 
   for (size_t i = 0; i < num_displays; ++i) {
@@ -2330,8 +2342,21 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 #if RK_INVALID_REFRESH
   hwc_static_screen_opt_set(ctx->isGLESComp);
 #endif
+  ALOGD_IF(log_level(DBG_VERBOSE),"----------------------------frame=%d end----------------------------",get_frame());
 
   return ret;
+
+err:
+    ALOGE("%s: not normal frame happen",__FUNCTION__);
+    for (size_t i = 0; i < num_displays; ++i) {
+        hwc_display_contents_1_t *dc = sf_display_contents[i];
+        if (!dc)
+          continue;
+
+        hwc_sync_release(dc);
+    }
+
+    return -EINVAL;
 }
 
 static int hwc_event_control(struct hwc_composer_device_1 *dev, int display,
