@@ -294,9 +294,24 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag);
 
 bool hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
 
+
 /*
  * Base_parameter is used for 3328_8.0 , by libin end.
  */
+enum
+{
+    VIDEO_SCALE_FULL_SCALE = 0,
+    VIDEO_SCALE_AUTO_SCALE,
+    VIDEO_SCALE_4_3_SCALE ,
+    VIDEO_SCALE_16_9_SCALE,
+    VIDEO_SCALE_ORIGINAL,
+    VIDEO_SCALE_OVERSCREEN,
+    VIDEO_SCALE_LR_BOX,
+    VIDEO_SCALE_TB_BOX,
+};
+
+bool hwc_video_to_area(DrmHwcRect<float> &source_yuv,DrmHwcRect<int> &display_yuv,int scaleMode);
+
 
 
 int hwc_init_version();

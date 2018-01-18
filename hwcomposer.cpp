@@ -753,19 +753,6 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     }
     mode = c->active_mode();
 
-
-   if((sf_layer->transform == HWC_TRANSFORM_ROT_90)
-       ||(sf_layer->transform == HWC_TRANSFORM_ROT_270)){
-	    h_scale_mul = (float) (source_crop.bottom - source_crop.top)
-                        / (display_frame.right - display_frame.left);
-	    v_scale_mul = (float) (source_crop.right - source_crop.left)
-	                    / (display_frame.bottom - display_frame.top);
-    } else {
-        h_scale_mul = (float) (source_crop.right - source_crop.left)
-	                    / (display_frame.right - display_frame.left);
-        v_scale_mul = (float) (source_crop.bottom - source_crop.top)
-	                    / (display_frame.bottom - display_frame.top);
-    }
     if(sf_handle)
     {
 #if RK_DRM_GRALLOC
@@ -824,6 +811,33 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
             eotf = TRADITIONAL_GAMMA_SDR;
         }
     }
+
+#if RK_BOX
+    if(is_yuv){
+      char value_yuv[PROPERTY_VALUE_MAX];
+      int scaleMode = 0;
+      property_get("persist.sys.video.cvrs",value_yuv, "0");
+      scaleMode = atoi(value_yuv);
+      if(scaleMode > 0){
+          ret = hwc_video_to_area(source_crop,display_frame,scaleMode);
+          if(ret == false)
+          ALOGE("hwc video to area fail !! reset to full screen");
+      }
+    }
+#endif
+
+    if((sf_layer->transform == HWC_TRANSFORM_ROT_90)
+        ||(sf_layer->transform == HWC_TRANSFORM_ROT_270)){
+         h_scale_mul = (float) (source_crop.bottom - source_crop.top)
+                         / (display_frame.right - display_frame.left);
+         v_scale_mul = (float) (source_crop.right - source_crop.left)
+                         / (display_frame.bottom - display_frame.top);
+     } else {
+         h_scale_mul = (float) (source_crop.right - source_crop.left)
+                         / (display_frame.right - display_frame.left);
+         v_scale_mul = (float) (source_crop.bottom - source_crop.top)
+                         / (display_frame.bottom - display_frame.top);
+     }
 
 #if RK_VIDEO_SKIP_LINE
     if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)

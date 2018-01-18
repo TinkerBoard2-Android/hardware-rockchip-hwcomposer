@@ -2244,7 +2244,7 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                 unsigned int length = lseek(file, 0L, SEEK_END);
                 lseek(file, 0L, SEEK_SET);
                 if(length < sizeof(base_parameter)) {
-                    ALOGE("BASEPARAME data's length is error\n");
+                    ALOGE("BP:BASEPARAME data's length is error\n");
                     sync();
                     close(file);
                     return -1;
@@ -2640,5 +2640,87 @@ bool hwc_parse_format_into_prop(int display,unsigned int format,unsigned int dep
         ALOGE("BP:baseparameter color is invalid.");
         return false;
 }
+
+bool hwc_video_to_area(DrmHwcRect<float> &source_yuv,DrmHwcRect<int> &display_yuv,int scaleMode){
+    float s_letf, s_top, s_right, s_bottom;
+    float s_width,s_height;
+    int d_letf, d_top, d_right, d_bottom;
+    int d_width,d_height;
+
+    s_letf = source_yuv.left;
+    s_top = source_yuv.top;
+    s_right = source_yuv.right;
+    s_bottom = source_yuv.bottom;
+    s_width = s_right - s_letf;
+    s_height = s_bottom - s_top;
+
+    d_letf = display_yuv.left;
+    d_top = display_yuv.top;
+    d_right = display_yuv.right;
+    d_bottom = display_yuv.bottom;
+    d_width = d_right - d_letf;
+    d_height = d_bottom - d_top;
+
+    switch (scaleMode){
+        case VIDEO_SCALE_AUTO_SCALE :
+            if(s_width * d_height > s_height * d_width){
+                d_top += ( d_height - s_height * d_width / s_width ) / 2;
+                d_bottom -= ( d_height - s_height * d_width / s_width ) / 2;
+            }else{
+                d_letf += ( d_width - s_width * d_height / s_height) / 2;
+                d_right -= ( d_width - s_width * d_height / s_height) / 2;
+            }
+            break;
+        case VIDEO_SCALE_4_3_SCALE :
+            if(4 * d_height  < 3 * d_width){
+                d_letf += (d_width - d_height * 4 / 3) / 2;
+                d_right -= (d_width - d_height * 4 / 3) / 2;
+            }else if(4 * d_height  > 3 * d_width){
+                d_top += (d_height - d_width * 3 / 4) / 2;
+                d_bottom -= (d_height - d_width * 3 / 4) / 2;
+            }
+            break;
+        case VIDEO_SCALE_16_9_SCALE :
+            if(16 * d_height  < 9 * d_width){
+                d_letf += (d_width - d_height * 16 / 9) / 2;
+                d_right -= (d_width - d_height * 16 / 9) / 2;
+            }else if(16 * d_height  > 9 * d_width){
+                d_top += (d_width - d_width * 9 / 16) / 2;
+                d_bottom -= (d_width - d_width * 9 / 16) / 2;
+            }
+            break;
+        case VIDEO_SCALE_ORIGINAL :
+            if(s_width > d_width){
+                d_letf = 0;
+                //d_right = d_right;
+            }else{
+                d_letf = (d_width - s_width) / 2;
+                d_right -= (d_width - s_width) / 2;
+            }
+            if(s_height > d_height){
+                d_top = 0;
+                //d_bottom = d_bottom;
+            }else{
+                d_top = (d_height - s_height) / 2;
+                d_bottom -= (d_height - s_height ) / 2;
+            }
+            break;
+        default :
+            ALOGE("ScaleMode[%d] is invalid ",scaleMode);
+            return false;
+    }
+    ALOGD_IF(log_level(DBG_VERBOSE),"Video area change [%d,%d,%d,%d]:[%d,%d,%d,%d] => [%d,%d,%d,%d]",
+    (int)source_yuv.left,(int)source_yuv.top,(int)source_yuv.right,(int)source_yuv.bottom,
+    display_yuv.left,display_yuv.top,display_yuv.right,display_yuv.bottom,
+    d_letf,d_top,d_right,d_bottom);
+
+    display_yuv.left = d_letf;
+    display_yuv.top = d_top;
+    display_yuv.right = d_right;
+    display_yuv.bottom = d_bottom;
+    return true;
+}
+
+
 }
 
