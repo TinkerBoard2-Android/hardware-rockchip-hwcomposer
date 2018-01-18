@@ -6,7 +6,7 @@
 #include "drmhwcomposer.h"
 #include "drmresources.h"
 #include "vsyncworker.h"
-
+#include <fcntl.h>
 
 namespace android {
 //G6110_SUPPORT_FBDC
