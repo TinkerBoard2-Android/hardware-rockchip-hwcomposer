@@ -386,9 +386,14 @@ static bool is_rec1_intersect_rec2(DrmHwcRect<int>* rec1,DrmHwcRect<int>* rec2)
 
 static bool is_layer_combine(DrmHwcLayer * layer_one,DrmHwcLayer * layer_two)
 {
-    //Don't care format.
-    if(/*layer_one->format != layer_two->format
-        ||*/ layer_one->alpha != layer_two->alpha
+#ifdef TARGET_BOARD_PLATFORM_RK3328
+        ALOGD_IF(log_level(DBG_SILENT),"rk3328 can't support multi region");
+        return false;
+#endif
+    //multi region only support RGBA888 RGBX8888 RGB888 565 BGRA888
+    if(layer_one->format >= HAL_PIXEL_FORMAT_YCrCb_NV12
+        || layer_two->format >= HAL_PIXEL_FORMAT_YCrCb_NV12
+        || layer_one->alpha != layer_two->alpha
         || layer_one->is_scale || layer_two->is_scale
         || is_rec1_intersect_rec2(&layer_one->display_frame,&layer_two->display_frame))
     {
