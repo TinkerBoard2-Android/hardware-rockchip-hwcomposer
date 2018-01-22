@@ -1243,10 +1243,17 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
     uint64_t rotation = 0;
     uint64_t alpha = 0xFF;
     uint16_t eotf = TRADITIONAL_GAMMA_SDR;
+    DrmHwcLayer* first_layer = layer_vector[0];
 
 #ifndef TARGET_BOARD_PLATFORM_RK3288
     UN_USED(fbSize);
 #endif
+
+    if(first_layer->alpha != 0xFF)
+    {
+      ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d  vop cann't support first layer with global alpha",__FUNCTION__,__LINE__);
+      return false;
+    }
 
     //loop plane groups.
     for (iter = plane_groups.begin();
@@ -2331,7 +2338,7 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                     ALOGD("BP: default %s \n",parameter);
                     property_set("persist.sys.framebuffer.main",parameter);
 #else
-                    ALOGD("BP: FB_SIZE=%dx%d@%d err !",w,h,vfresh);
+                    ALOGD("BP: FB_SIZE=%dx%d@%f err !",w,h,vfresh);
                     property_set("persist.sys.framebuffer.main","0x0@60");
 #endif
                 }
