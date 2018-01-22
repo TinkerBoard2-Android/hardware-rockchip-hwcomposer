@@ -292,7 +292,7 @@ const char* hwc_get_baseparameter_file(void);
 
 int hwc_get_baseparameter_config(char *parameter,int display,int flag);
 
-bool hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
+int hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
 
 
 /*

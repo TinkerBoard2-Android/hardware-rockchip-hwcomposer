@@ -2244,19 +2244,19 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                 int file;
                 const char *baseparameterfile = hwc_get_baseparameter_file();
                 if (!baseparameterfile) {
-                    ALOGE("BP:baseparamter file can not be find");
+                    ALOGE("BP: baseparamter file can not be find");
                     return -1;
                 }
                 file = open(baseparameterfile, O_RDWR);
                 if (file < 0) {
-                    ALOGE("BP:base paramter file can not be opened,");
+                    ALOGE("BP: baseparamter file can not be opened,");
                     return -1;
                 }
                  // caculate file's size and read it
                 unsigned int length = lseek(file, 0L, SEEK_END);
                 lseek(file, 0L, SEEK_SET);
                 if(length < sizeof(base_parameter)) {
-                    ALOGE("BP:BASEPARAME data's length is error\n");
+                    ALOGE("BP: baseparamter data's length is error\n");
                     sync();
                     close(file);
                     return -1;
@@ -2287,12 +2287,12 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                            w * h <= 0 || w * h > 4096 * 2160){
                         strcpy(parameter,"Auto");
                         property_set("persist.sys.resolution.main",parameter);
-                        ALOGD("BP: %s",parameter);
+                        ALOGD("BP: resolution main %s",parameter);
                     }else{
                          sprintf(parameter,"%dx%d@%f-%d-%d-%d-%d-%d-%d-%x", w, h, vfresh, hsync_start,hsync_end,\
                              htotal,vsync_start,vsync_end,vtotal, flags);
                          property_set("persist.sys.resolution.main",parameter);
-                         ALOGD("BP: %s \n",parameter);
+                         ALOGD("BP: resolution main %s \n",parameter);
                      }
                 }else{
                     w = base_parameter.aux.resolution.hdisplay;
@@ -2312,12 +2312,12 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                            w * h <= 0 || w * h > 4096 * 2160){
                         strcpy(parameter,"Auto");
                         property_set("persist.sys.resolution.aux",parameter);
-                        ALOGD("BP: %s",parameter);
+                        ALOGD("BP: resolution aux %s",parameter);
                     }else{
                          sprintf(parameter,"%dx%d@%f-%d-%d-%d-%d-%d-%d-%x", w, h, vfresh, hsync_start,hsync_end,\
                              htotal,vsync_start,vsync_end,vtotal, flags);
                          property_set("persist.sys.resolution.aux",parameter);
-                         ALOGD("BP: %s \n",parameter);
+                         ALOGD("BP: resolution aux %s \n",parameter);
                      }
                 }
                 break;
@@ -2335,10 +2335,10 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                 }else{
 #ifdef RK_BOX
                     strcpy(parameter,"1920x1080@60");
-                    ALOGD("BP: default %s \n",parameter);
+                    ALOGD("BP: fb_size default %s \n",parameter);
                     property_set("persist.sys.framebuffer.main",parameter);
 #else
-                    ALOGD("BP: FB_SIZE=%dx%d@%f err !",w,h,vfresh);
+                    ALOGD("BP: fb_size=%dx%d@%f err,set 0x0@60",w,h,vfresh);
                     property_set("persist.sys.framebuffer.main","0x0@60");
 #endif
                 }
@@ -2348,10 +2348,10 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
             {
                 if( display == HWC_DISPLAY_PRIMARY ){
                     strcpy(parameter,base_parameter.main.hwc_info.device);
-                    ALOGD("BP dev_primary = %s",parameter);
+                    ALOGD("BP: dev_primary = %s",parameter);
                 }else{
                     strcpy(parameter,base_parameter.aux.hwc_info.device);
-                    ALOGD("BP dev_extend = %s",parameter);
+                    ALOGD("BP: dev_extend = %s",parameter);
                 }
                 break;
             }
@@ -2470,39 +2470,27 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
             if(display == HWC_DISPLAY_PRIMARY){
                 format = base_parameter.main.format;
                 depthc = base_parameter.main.depthc;
-                if(base_parameter.main.feature & COLOR_AUTO){
+                res = hwc_parse_format_into_prop(display,format,depthc);
+                if( base_parameter.main.feature & COLOR_AUTO || res){
                     //Auto:output_ycbcr_high_subsampling - Automatic
                     hwc_parse_format_into_prop(display,4,0);
                     strcpy(parameter,"4-0");
                 }else{
-                    if(format >= output_rgb && format <= invalid_output && (depthc == Automatic ||
-                        depthc == depth_24bit || depthc == depth_30bit)){
-                        hwc_parse_format_into_prop(display,format,depthc);
                         sprintf(parameter,"%u-%u",format,depthc);
-                    }else{
-                        hwc_parse_format_into_prop(display,4,0);
-                        strcpy(parameter,"4-0");
-                    }
                 }
-                ALOGD("BP: main %s",parameter);
+                ALOGD("BP: main color %s",parameter);
             }else{
                 format = base_parameter.aux.format;
                 depthc = base_parameter.aux.depthc;
-                if(base_parameter.aux.feature & COLOR_AUTO){
+                res = hwc_parse_format_into_prop(display,format,depthc);
+                if(base_parameter.aux.feature & COLOR_AUTO || res){
                     //Auto:output_ycbcr_high_subsampling - Automatic
                     hwc_parse_format_into_prop(display,4,0);
                     strcpy(parameter,"4-0");
                 }else{
-                    if(format >= output_rgb && format <= invalid_output && (depthc == Automatic ||
-                        depthc == depth_24bit || depthc == depth_30bit)){
-                        hwc_parse_format_into_prop(display,format,depthc);
                         sprintf(parameter,"%u-%u",format,depthc);
-                    }else{
-                        hwc_parse_format_into_prop(display,4,0);
-                        strcpy(parameter,"4-0");
-                    }
                 }
-                ALOGD("BP: aux %s",parameter);
+                ALOGD("BP: aux color %s",parameter);
             }
             break;
          case BP_OVERSCAN:
@@ -2517,7 +2505,7 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                     topscale > 0 && topscale <= 100 ? topscale : 100,
                     bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
                 property_set("persist.sys.overscan.main",parameter);
-                ALOGD("BP: main %s",parameter);
+                ALOGD("BP: main overscan %s",parameter);
             }else{
                 leftscale = base_parameter.aux.scan.leftscale;
                 rightscale = base_parameter.aux.scan.rightscale;
@@ -2529,7 +2517,7 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                     topscale > 0 && topscale <= 100 ? topscale : 100,
                     bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
                 property_set("persist.sys.overscan.aux",parameter);
-                ALOGD("BP: aux %s",parameter);
+                ALOGD("BP: aux overscan %s",parameter);
             }
             break;
         default:
@@ -2538,119 +2526,119 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
         }
     return 0;
 }
-bool hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc) {
+int hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc) {
 
     if(display == HWC_DISPLAY_PRIMARY){
         if (format == DRM_HDMI_OUTPUT_YCBCR_HQ &&
                 depthc == ROCKCHIP_DEPTH_DEFAULT) {
             property_set("persist.sys.color.main","Auto");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_DEFAULT_RGB &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.main","RGB-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_DEFAULT_RGB &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.main","RGB-10bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR444 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.main","YCBCR444-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR444 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.main","YCBCR444-10bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR422 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.main","YCBCR422-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR422 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.main","YCBCR422-10bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR420 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.main","YCBCR420-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR420 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.main","YCBCR420-10bit");
-            return true;
+            return 0;
         }
     }else{
         if (format == DRM_HDMI_OUTPUT_YCBCR_HQ &&
                 depthc == ROCKCHIP_DEPTH_DEFAULT) {
             property_set("persist.sys.color.aux","Auto");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_DEFAULT_RGB &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.aux","RGB-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_DEFAULT_RGB &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.aux","RGB-10bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR444 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.aux","YCBCR444-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR444 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.aux","YCBCR444-10bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR422 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.aux","YCBCR422-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR422 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.aux","YCBCR422-10bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR420 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_8) {
             property_set("persist.sys.color.aux","YCBCR420-8bit");
-            return true;
+            return 0;
         }
 
         if (format == DRM_HDMI_OUTPUT_YCBCR420 &&
                 depthc == ROCKCHIP_HDMI_DEPTH_10) {
             property_set("persist.sys.color.aux","YCBCR420-10bit");
-            return true;
+            return 0;
         }
     }
-        ALOGE("BP:baseparameter color is invalid.");
-        return false;
+        ALOGE("BP: baseparameter color is invalid.");
+        return -1;
 }
 
 bool hwc_video_to_area(DrmHwcRect<float> &source_yuv,DrmHwcRect<int> &display_yuv,int scaleMode){
