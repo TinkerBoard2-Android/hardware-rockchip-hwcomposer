@@ -257,6 +257,13 @@ class DrmHotplugHandler : public DrmEventHandler {
       }
     }
     drm_->SetExtendDisplay(extend);
+    //When wake up from TV mode, it will bind crtc to TV connector.
+    //If we also plug in HDMI,and don't bind crtc to HDMI connector,
+    //the crtc of connected HDMI will be NULL. Which lead HDMI show nothing.
+    //Pg: Defect #149666
+    drm_->DisplayChanged();
+    drm_->UpdateDisplayRoute();
+    drm_->ClearDisplay();
     if (!extend) {
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
       //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
