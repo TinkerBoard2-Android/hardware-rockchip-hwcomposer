@@ -969,6 +969,8 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
             if(iFbdcSupport > 0)
                 is_afbc = true;
         }
+        else if(iFbdcSupport > 0)
+            is_afbc = true;
     }
 #endif
 
