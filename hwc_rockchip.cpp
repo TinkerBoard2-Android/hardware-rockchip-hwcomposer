@@ -2280,7 +2280,11 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                     vtotal = base_parameter.main.resolution.vtotal;
                     flags = base_parameter.main.resolution.flags;
                     clock = base_parameter.main.resolution.clock;
-                    vfresh = (float)clock / (htotal*vtotal);
+                    if(flags & DRM_MODE_FLAG_INTERLACE){
+                        vfresh = (float)clock / (htotal*vtotal) * 2;
+                    }else{
+                        vfresh = (float)clock / (htotal*vtotal);
+                    }
                     if(vfresh < 1)
                         vfresh = vfresh*1000;
                     if(base_parameter.main.feature & RESOLUTION_AUTO ||
@@ -2305,7 +2309,11 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                     vtotal = base_parameter.aux.resolution.vtotal;
                     flags = base_parameter.aux.resolution.flags;
                     clock = base_parameter.aux.resolution.clock;
-                    vfresh = (float)clock / (htotal*vtotal);
+                    if(flags & DRM_MODE_FLAG_INTERLACE){
+                        vfresh = (float)clock / (htotal*vtotal) * 2;
+                    }else{
+                        vfresh = (float)clock / (htotal*vtotal);
+                    }
                     if(vfresh < 1)
                         vfresh = vfresh*1000;
                     if(base_parameter.aux.feature & RESOLUTION_AUTO ||
