@@ -147,11 +147,11 @@ int DrmConnector::UpdateModes() {
   std::vector<DrmMode> new_modes;
   for (int i = 0; i < c->count_modes; ++i) {
     bool exists = false;
-    bool verify = false;
     for (const DrmMode &mode : modes_) {
       if (mode == c->modes[i]) {
         if(type_ == DRM_MODE_CONNECTOR_HDMIA || type_ == DRM_MODE_CONNECTOR_DisplayPort)
         {
+            //filter mode by /system/usr/share/resolution_white.xml.
             if(drm_->mode_verify(mode))
             {
                 new_modes.push_back(mode);
@@ -178,6 +178,27 @@ int DrmConnector::UpdateModes() {
     new_modes.push_back(m);
   }
   modes_.swap(new_modes);
+
+  //Get original mode from connector
+  std::vector<DrmMode> new_raw_modes;
+  for (int i = 0; i < c->count_modes; ++i) {
+    bool exists = false;
+    for (const DrmMode &mode : modes_) {
+      if (mode == c->modes[i]) {
+        new_raw_modes.push_back(mode);
+        exists = true;
+        break;
+      }
+    }
+    if (exists)
+      continue;
+
+    DrmMode m(&c->modes[i]);
+    m.set_id(drm_->next_mode_id());
+    new_raw_modes.push_back(m);
+  }
+  raw_modes_.swap(new_raw_modes);
+
   return 0;
 }
 

@@ -53,6 +53,10 @@ class DrmConnector {
   const std::vector<DrmMode> &modes() const {
     return modes_;
   }
+  const std::vector<DrmMode> &raw_modes() const {
+    return raw_modes_;
+  }
+
   const DrmMode &best_mode() const;
   const DrmMode &active_mode() const;
   const DrmMode &current_mode() const;
@@ -113,6 +117,7 @@ class DrmConnector {
   DrmMode current_mode_;
   DrmMode best_mode_;
   std::vector<DrmMode> modes_;
+  std::vector<DrmMode> raw_modes_;
 
   DrmProperty dpms_property_;
   DrmProperty crtc_id_property_;

@@ -419,7 +419,8 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
       interlaced_3d = false;
 
     if (width_3d != 0 && height_3d != 0) {
-      for (const DrmMode &conn_mode : c->modes()) {
+      //use raw mode,otherwise it may filter by resolution_white.xml
+      for (const DrmMode &conn_mode : c->raw_modes()) {
         if (conn_mode.equal(width_3d, height_3d, vrefresh_3d,  flag_3d, clk_3d, interlaced_3d)) {
           ALOGD_IF(log_level(DBG_DEBUG), "Match 3D parameters: w=%d,h=%d,val=%c,vrefresh_3d=%d,flag=%d,clk=%d",
                 width_3d,height_3d,val_3d,vrefresh_3d,flag_3d,clk_3d);
