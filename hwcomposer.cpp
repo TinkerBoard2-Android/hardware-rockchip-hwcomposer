@@ -1691,6 +1691,12 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                 if(usage & HDRUSAGE)
                 {
                     isHdr = true;
+                    //vop limit: hdr video must in the bottom.
+                    if(j != 0)
+                    {
+                        ALOGD_IF(log_level(DBG_DEBUG),"hdr video must in the bottom of layer list,go to GPU GLES at line=%d", __LINE__);
+                        use_framebuffer_target = true;
+                    }
                     if(hd->isHdr != isHdr && connector->is_hdmi_support_hdr())
                     {
                         uint32_t android_colorspace = hwc_get_layer_colorspace(layer);
