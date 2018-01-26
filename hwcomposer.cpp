@@ -1206,7 +1206,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 #endif
                 if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
                     transform_nv12++;
-                else
+                else if(layer->compositionType != HWC_NODRAW)
                     transform_normal++;
             }
 
@@ -1827,12 +1827,12 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
     }
 
-    if(!use_framebuffer_target)
-        use_framebuffer_target = is_use_gles_comp(ctx, connector, display_contents[i], connector->display());
-
 #if RK_VIDEO_UI_OPT
     video_ui_optimize(ctx->gralloc, display_contents[i], &ctx->displays[connector->display()]);
 #endif
+
+    if(!use_framebuffer_target)
+        use_framebuffer_target = is_use_gles_comp(ctx, connector, display_contents[i], connector->display());
 
     bool bHasFPS_3D_UI = false;
     int index = 0;
