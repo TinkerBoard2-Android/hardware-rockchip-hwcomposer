@@ -679,6 +679,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     unsigned int size;
 
     int ret = 0;
+    int src_w, src_h, dst_w, dst_h;
 
   UN_USED(importer);
 
@@ -835,17 +836,24 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     }
 #endif
 
+    src_w = (int)(source_crop.right - source_crop.left);
+    src_h = (int)(source_crop.bottom - source_crop.top);
+    dst_w = (int)(display_frame.right - display_frame.left);
+    dst_h = (int)(display_frame.bottom - display_frame.top);
+
     if((sf_layer->transform == HWC_TRANSFORM_ROT_90)
         ||(sf_layer->transform == HWC_TRANSFORM_ROT_270)){
-         h_scale_mul = (float) (source_crop.bottom - source_crop.top)
-                         / (display_frame.right - display_frame.left);
-         v_scale_mul = (float) (source_crop.right - source_crop.left)
-                         / (display_frame.bottom - display_frame.top);
+        if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+        {
+            //rga need this alignment.
+            src_h = ALIGN_DOWN(src_h, 8);
+            src_w = ALIGN_DOWN(src_w, 2);
+        }
+         h_scale_mul = (float) (src_h)/(dst_w);
+         v_scale_mul = (float) (src_w)/(dst_h);
      } else {
-         h_scale_mul = (float) (source_crop.right - source_crop.left)
-                         / (display_frame.right - display_frame.left);
-         v_scale_mul = (float) (source_crop.bottom - source_crop.top)
-                         / (display_frame.bottom - display_frame.top);
+         h_scale_mul = (float) (src_w)/(dst_w);
+         v_scale_mul = (float) (src_h)/(dst_h);
      }
 
 #if RK_VIDEO_SKIP_LINE
