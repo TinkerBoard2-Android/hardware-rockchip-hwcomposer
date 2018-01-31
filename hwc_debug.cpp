@@ -174,12 +174,18 @@ void dump_layer(const gralloc_module_t *gralloc, bool bDump, hwc_layer_1_t *laye
             format = hwc_get_handle_format(gralloc, layer->handle);
 #endif
 
+#if RK_PRINT_LAYER_NAME
 #ifdef USE_HWC2
                 hwc_get_handle_layername(gralloc, layer->handle, layername, 100);
                 out << "layer[" << index << "]=" << layername
 #else
                 out << "layer[" << index << "]=" << layer->LayerName
 #endif
+
+#else
+                out << "layer[" << index << "]"
+#endif
+
                 << "\n\tlayer=" << layer
                 << ",type=" << layer->compositionType
                 << ",hints=" << layer->compositionType
@@ -205,7 +211,17 @@ void dump_layer(const gralloc_module_t *gralloc, bool bDump, hwc_layer_1_t *laye
         }
         else
         {
-            out << "layer[" << index << "]=" << layer->LayerName
+#if RK_PRINT_LAYER_NAME
+#ifdef USE_HWC2
+                hwc_get_handle_layername(gralloc, layer->handle, layername, 100);
+                out << "layer[" << index << "]=" << layername
+#else
+                out << "layer[" << index << "]=" << layer->LayerName
+#endif
+
+#else
+                out << "layer[" << index << "]"
+#endif
                 << "\n\tlayer=" << layer
                 << ",type=" << layer->compositionType
                 << ",hints=" << layer->compositionType

@@ -1143,6 +1143,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     int win1_reserved = hwc_get_int_property("sys.hwc.win1.reserved", "0");
 #endif
 
+#if RK_3D_VIDEO
     if(display_comp->mode_3d() == FPS_3D)
     {
         for (DrmCompositionPlane &comp_plane : comp_planes) {
@@ -1169,6 +1170,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
             }
         }
     }
+#endif
 
   for (DrmCompositionPlane &comp_plane : comp_planes) {
     DrmPlane *plane = comp_plane.plane();
@@ -1232,7 +1234,11 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
         }
         layer.acquire_fence.Close();
       }
-      if (!layer.bClone_ && !layer.buffer) {
+      if (
+#if RK_3D_VIDEO
+      !layer.bClone_ &&
+#endif
+      !layer.buffer) {
         ALOGE("Expected a valid framebuffer for pset");
         break;
       }

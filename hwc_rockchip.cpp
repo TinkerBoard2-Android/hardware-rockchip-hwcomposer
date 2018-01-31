@@ -128,6 +128,7 @@ int hwc_static_screen_opt_set(bool isGLESComp)
 }
 #endif
 
+#if RK_3D_VIDEO
 #ifdef USE_HWC2
 int detect_3d_mode(hwc_drm_display_t *hd, hwc_display_contents_1_t *display_content, int display)
 {
@@ -264,6 +265,8 @@ int detect_3d_mode(hwc_drm_display_t *hd, hwc_display_contents_1_t *display_cont
 #endif
     return is_3d;
 }
+#endif
+
 #endif
 
 #if 0
@@ -2197,7 +2200,9 @@ void hwc_sync_release(hwc_display_contents_1_t  *list)
 			return ;
 		}
 		if (layer->acquireFenceFd>0){
+#if RK_PRINT_LAYER_NAME
 			ALOGV(">>>close acquireFenceFd:%d,layername=%s",layer->acquireFenceFd,layer->LayerName);
+#endif
 			close(layer->acquireFenceFd);
 			list->hwLayers[i].acquireFenceFd = -1;
 		}

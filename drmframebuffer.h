@@ -68,8 +68,11 @@ struct DrmRgaBuffer {
     }
     ALOGD_IF(log_level(DBG_DEBUG), "RGA Allocate buffer %d x %d", w, h);
     buffer_ = new GraphicBuffer(w, h, format,
-                                 GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_SW_WRITE_OFTEN,
-                                 "DRM_HWC_RgaBuffer");
+                                 GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_SW_WRITE_OFTEN
+#ifndef TARGET_BOARD_PLATFORM_RK322x
+                                 ,"DRM_HWC_RgaBuffer"
+#endif
+                                 );
     release_fence_fd_ = -1;
     return is_valid();
   }
@@ -154,7 +157,10 @@ struct DrmFramebuffer {
 #if USE_AFBC_LAYER
                                     | MAGIC_USAGE_FOR_AFBC_LAYER
 #endif
-				, "DRM_HWC_Framebuffer");
+#ifndef TARGET_BOARD_PLATFORM_RK322x
+				, "DRM_HWC_Framebuffer"
+#endif
+				);
     release_fence_fd_ = -1;
     return is_valid();
   }

@@ -683,7 +683,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
   UN_USED(importer);
 
   bClone_ = bClone;
-
+#if RK_3D_VIDEO
     int32_t alreadyStereo = 0;
 #ifdef USE_HWC2
     if(sf_layer->handle)
@@ -699,6 +699,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     alreadyStereo = sf_layer->alreadyStereo;
 #endif
   stereo = alreadyStereo;
+#endif
 
   if(sf_layer->compositionType == HWC_FRAMEBUFFER_TARGET)
    bFbTarget_ = true;
@@ -876,6 +877,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     is_large = (mode.h_display()*mode.v_display()*4*3/4 > size)? true:false;
 
     char layername[100];
+#if RK_PRINT_LAYER_NAME
 #ifdef USE_HWC2
     if(sf_handle)
     {
@@ -885,6 +887,8 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     strcpy(layername, sf_layer->LayerName);
 #endif
     name = layername;
+#endif
+
     mlayer = sf_layer;
 
     ALOGV("\t layerName=%s,sourceCropf(%f,%f,%f,%f)",layername,
@@ -912,10 +916,12 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
       transform |= DrmHwcTransform::kRotate0;
   }
 
+#if RK_PRINT_LAYER_NAME
 #if RK_RGA_TEST
   if((format==HAL_PIXEL_FORMAT_RGB_565) && strstr(sf_layer->LayerName,"SurfaceView"))
     transform |= DrmHwcTransform::kRotate90;
 
+#endif
 #endif
 
   switch (sf_layer->blending) {
@@ -1150,11 +1156,12 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
         if(layer->handle)
         {
             char layername[100];
-
+#if RK_PRINT_LAYER_NAME
 #ifdef USE_HWC2
             hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
 #else
             strcpy(layername, layer->LayerName);
+#endif
 #endif
             DumpLayer(layername,layer->handle);
 
@@ -1572,7 +1579,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       continue;
     }
 
-#if 1
+#if RK_3D_VIDEO
     hd->stereo_mode = NON_3D;
     int bk_is_3d = hd->is_3d;
     hd->is_3d = detect_3d_mode(hd, display_contents[i], i);
@@ -1734,12 +1741,13 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             format = hwc_get_handle_format(ctx->gralloc,layer->handle);
 #endif
 
+#if RK_PRINT_LAYER_NAME
             char layername[100];
-
 #ifdef USE_HWC2
             hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
 #else
             strcpy(layername, layer->LayerName);
+#endif
 #endif
             int src_l,src_t,src_w,src_h;
 
@@ -1752,11 +1760,13 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             {
                 force_not_invalid_refresh = true;
             }
+#if RK_PRINT_LAYER_NAME
             if(strstr(layername,"SurfaceView") && strstr(layername,"gallery"))
             {
                  ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d w=%d,h=%d,force_not_invalid_refresh=%d,format=0x%x",
                         __FUNCTION__,__LINE__,src_w,src_h,force_not_invalid_refresh,format);
             }
+#endif
          }
     }
 #if RK_INVALID_REFRESH
@@ -1797,6 +1807,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
     }
 
+#if RK_3D_VIDEO
     int iLastFps = num_layers-1;
     if(hd->stereo_mode == FPS_3D)
     {
@@ -1827,6 +1838,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             display_contents[i]->hwLayers[j].compositionType = HWC_NODRAW;
         }
     }
+#endif
 
 #if RK_VIDEO_UI_OPT
     video_ui_optimize(ctx->gralloc, display_contents[i], &ctx->displays[connector->display()]);
@@ -1844,6 +1856,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       if(sf_layer->compositionType == HWC_NODRAW)
         continue;
 
+#if RK_3D_VIDEO
         if(hd->stereo_mode == FPS_3D && iLastFps < num_layers-1)
         {
             int32_t alreadyStereo = 0, displayStereo = 0;
@@ -1870,7 +1883,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                 bHasFPS_3D_UI = true;
             }
         }
-
+#endif
       layer_content.layers.emplace_back();
       DrmHwcLayer &layer = layer_content.layers.back();
       ret = layer.InitFromHwcLayer(ctx, i, sf_layer, ctx->importer.get(), ctx->gralloc, false);
@@ -1886,6 +1899,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       ALOGD_IF(log_level(DBG_DEBUG),"%s",out.str().c_str());
     }
 
+#if RK_3D_VIDEO
     if(bHasFPS_3D_UI)
     {
       hwc_layer_1_t *sf_layer = &display_contents[i]->hwLayers[num_layers-1];
@@ -1906,6 +1920,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       layer.dump_drm_layer(index,&out);
       ALOGD_IF(log_level(DBG_DEBUG),"clone layer: %s",out.str().c_str());
     }
+#endif
 
     if(!use_framebuffer_target)
     {
@@ -2018,6 +2033,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         hwc_layer_1_t *layer = &display_contents[i]->hwLayers[j];
         char layername[100];
 
+#if RK_PRINT_LAYER_NAME
 #ifdef USE_HWC2
         if(layer->handle == NULL)
         {
@@ -2030,6 +2046,8 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 #else
         strcpy(layername, layer->LayerName);
 #endif
+#endif
+
         if(layer->compositionType==HWC_FRAMEBUFFER)
             ALOGD_IF(log_level(DBG_DEBUG),"%s: HWC_FRAMEBUFFER",layername);
         else if(layer->compositionType==HWC_OVERLAY)
@@ -2748,6 +2766,7 @@ static int hwc_initialize_display(struct hwc_context_t *ctx, int display) {
     hd->colorimetry = 0;
     hd->hotplug_timeline = 0;
     hd->display_timeline = 0;
+    hd->is_3d = false;
 
   return 0;
 }
