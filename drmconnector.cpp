@@ -140,6 +140,9 @@ int DrmConnector::UpdateModes() {
     return -ENODEV;
   }
 
+  //When Plug-in/Plug-out TV panel,some Property of the connector will need be updated.
+  bSupportSt2084_ = drm_->is_hdr_panel_support_st2084(this);
+
   state_ = c->connection;
   if (!c->count_modes)
     state_ = DRM_MODE_DISCONNECTED;
