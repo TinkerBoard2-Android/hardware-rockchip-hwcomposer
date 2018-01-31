@@ -2509,25 +2509,25 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
          case BP_OVERSCAN:
             if(display == HWC_DISPLAY_PRIMARY){
                 leftscale = base_parameter.main.scan.leftscale;
-                rightscale = base_parameter.main.scan.rightscale;
                 topscale = base_parameter.main.scan.topscale;
+                rightscale = base_parameter.main.scan.rightscale;
                 bottomscale = base_parameter.main.scan.bottomscale;
                 sprintf(parameter,"overscan %d,%d,%d,%d",
                     leftscale > 0 && leftscale <= 100 ? leftscale : 100,
-                    rightscale > 0 && rightscale <= 100 ? rightscale : 100,
                     topscale > 0 && topscale <= 100 ? topscale : 100,
+                    rightscale > 0 && rightscale <= 100 ? rightscale : 100,
                     bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
                 property_set("persist.sys.overscan.main",parameter);
                 ALOGD("BP: main overscan %s",parameter);
             }else{
                 leftscale = base_parameter.aux.scan.leftscale;
-                rightscale = base_parameter.aux.scan.rightscale;
                 topscale = base_parameter.aux.scan.topscale;
+                rightscale = base_parameter.aux.scan.rightscale;
                 bottomscale = base_parameter.aux.scan.bottomscale;
                 sprintf(parameter,"overscan %d,%d,%d,%d",
                     leftscale > 0 && leftscale <= 100 ? leftscale : 100,
-                    rightscale > 0 && rightscale <= 100 ? rightscale : 100,
                     topscale > 0 && topscale <= 100 ? topscale : 100,
+                    rightscale > 0 && rightscale <= 100 ? rightscale : 100,
                     bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
                 property_set("persist.sys.overscan.aux",parameter);
                 ALOGD("BP: aux overscan %s",parameter);

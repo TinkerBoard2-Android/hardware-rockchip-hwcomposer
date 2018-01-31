@@ -43,6 +43,8 @@
 #define RGA_MAX_WIDTH                   (4096)
 #define RGA_MAX_HEIGHT                  (2304)
 #define VOP_BW_PATH			"/sys/class/devfreq/dmc/vop_bandwidth"
+#define OVERSCAN_MIN_VALUE              (80)
+#define OVERSCAN_MAX_VALUE              (100)
 
 
 namespace android {
