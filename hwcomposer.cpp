@@ -677,7 +677,6 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     DrmConnector *c;
     DrmMode mode;
     unsigned int size;
-
     int ret = 0;
     int src_w, src_h, dst_w, dst_h;
 
@@ -755,6 +754,83 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
           hd->w_scale * sf_layer->displayFrame.right, hd->h_scale * sf_layer->displayFrame.bottom);
       }
   }
+
+  src_w = (int)(source_crop.right - source_crop.left);
+  src_h = (int)(source_crop.bottom - source_crop.top);
+  dst_w = (int)(display_frame.right - display_frame.left);
+  dst_h = (int)(display_frame.bottom - display_frame.top);
+
+    if(hd->is_interlaced)
+    {
+        //use vop plane scale instead of vop post scale.
+        char overscan[PROPERTY_VALUE_MAX];
+        int left_margin, right_margin, top_margin, bottom_margin;
+        float left_margin_f, right_margin_f, top_margin_f, bottom_margin_f;
+        float lscale = 0, tscale = 0, rscale = 0, bscale = 0;
+        int xres,yres;
+        int disp_old_l,disp_old_t,disp_old_r,disp_old_b;
+
+        if(hd->stereo_mode != NON_3D)
+        {
+            left_margin = 100;
+            top_margin = 100;
+            right_margin = 100;
+            bottom_margin = 100;
+        }
+        else
+        {
+            if (display == 0){
+                property_get("persist.sys.overscan.main", overscan, "default");
+                if(!strcmp(overscan,"default"))
+                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN);
+            }else{
+                property_get("persist.sys.overscan.aux", overscan, "default");
+                if(!strcmp(overscan,"default"))
+                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN);
+            }
+            sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
+                    &right_margin, &bottom_margin);
+        }
+
+        //limit overscan to (OVERSCAN_MIN_VALUE,OVERSCAN_MAX_VALUE)
+        if (left_margin < OVERSCAN_MIN_VALUE) left_margin = OVERSCAN_MIN_VALUE;
+        if (top_margin < OVERSCAN_MIN_VALUE) top_margin = OVERSCAN_MIN_VALUE;
+        if (right_margin < OVERSCAN_MIN_VALUE) right_margin = OVERSCAN_MIN_VALUE;
+        if (bottom_margin < OVERSCAN_MIN_VALUE) bottom_margin = OVERSCAN_MIN_VALUE;
+
+        if (left_margin > OVERSCAN_MAX_VALUE) left_margin = OVERSCAN_MAX_VALUE;
+        if (top_margin > OVERSCAN_MAX_VALUE) top_margin = OVERSCAN_MAX_VALUE;
+        if (right_margin > OVERSCAN_MAX_VALUE) right_margin = OVERSCAN_MAX_VALUE;
+        if (bottom_margin > OVERSCAN_MAX_VALUE) bottom_margin = OVERSCAN_MAX_VALUE;
+
+        left_margin_f = (float)(100 - left_margin) / 2;
+        top_margin_f = (float)(100 - top_margin) / 2;
+        right_margin_f = (float)(100 - right_margin) / 2;
+        bottom_margin_f = (float)(100 - bottom_margin) / 2;
+
+        lscale = ((float)left_margin_f / 100);
+        tscale = ((float)top_margin_f / 100);
+        rscale = ((float)right_margin_f / 100);
+        bscale = ((float)bottom_margin_f / 100);
+
+        disp_old_l = display_frame.left;
+        disp_old_t = display_frame.top;
+        disp_old_r = display_frame.right;
+        disp_old_b = display_frame.bottom;
+
+        display_frame.left = ((int)(display_frame.left * (1.0 - lscale - rscale)) + (int)(hd->rel_xres * lscale));
+        display_frame.top = ((int)(display_frame.top * (1.0 - tscale - bscale)) + (int)(hd->rel_yres * tscale));
+        dst_w -= ((int)(dst_w * lscale) + (int)(dst_w * rscale));
+        dst_h -= ((int)(dst_h * tscale) + (int)(dst_h * bscale));
+        display_frame.right = display_frame.left + dst_w;
+        display_frame.bottom = display_frame.top + dst_h;
+
+        ALOGD_IF(log_level(DBG_VERBOSE),"vop plane scale overscan, display margin(%f,%f,%f,%f) scale_factor(%f,%f,%f,%f) disp_area(%d,%d,%d,%d) ==> (%d,%d,%d,%d)",
+            left_margin_f,top_margin_f,right_margin_f,bottom_margin_f,
+            lscale,tscale,rscale,bscale,
+            disp_old_l,disp_old_t,disp_old_r,disp_old_b,
+            display_frame.left,display_frame.top,display_frame.right,display_frame.bottom);
+    }
 
     c = ctx->drm.GetConnectorFromType(HWC_DISPLAY_PRIMARY);
     if (!c) {
@@ -836,10 +912,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     }
 #endif
 
-    src_w = (int)(source_crop.right - source_crop.left);
-    src_h = (int)(source_crop.bottom - source_crop.top);
-    dst_w = (int)(display_frame.right - display_frame.left);
-    dst_h = (int)(display_frame.bottom - display_frame.top);
+
 
     if((sf_layer->transform == HWC_TRANSFORM_ROT_90)
         ||(sf_layer->transform == HWC_TRANSFORM_ROT_270)){

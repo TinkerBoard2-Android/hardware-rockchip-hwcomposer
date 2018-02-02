@@ -1077,9 +1077,11 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 
   if (crtc->can_overscan()) {
     char overscan[PROPERTY_VALUE_MAX];
-    int left_margin, right_margin, top_margin, bottom_margin;
+    int left_margin = 100, right_margin= 100, top_margin = 100, bottom_margin = 100;
 
-    if(display_comp->mode_3d() != NON_3D)
+    DrmConnector *conn = drm_->GetConnectorFromType(display_);
+    DrmMode mode = conn->current_mode();
+    if(display_comp->mode_3d() != NON_3D || (mode.interlaced() > 0))
     {
         left_margin = 100;
         top_margin = 100;
@@ -1100,6 +1102,9 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 
         sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
                &right_margin, &bottom_margin);
+
+        ALOGD_IF(log_level(DBG_VERBOSE),"vop post scale overscan(%d,%d,%d,%d)",
+                left_margin,top_margin,right_margin,bottom_margin);
     }
 
     if (left_margin < OVERSCAN_MIN_VALUE) left_margin = OVERSCAN_MIN_VALUE;
