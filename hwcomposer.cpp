@@ -1649,6 +1649,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     DrmConnector *connector = ctx->drm.GetConnectorFromType(i);
     if (!connector) {
       ALOGE("Failed to get connector for display %d line=%d", i,__LINE__);
+      hwc_list_nodraw(display_contents[i]);
       continue;
     }
     hwc_drm_display_t *hd = &ctx->displays[connector->display()];
