@@ -981,8 +981,8 @@ static int combine_layer(LayerMap& layer_map,std::vector<DrmHwcLayer>& layers,
     size_t i,j;
     uint32_t sort_cnt=0;
     bool is_combine = false;
-    int layers_size = (int)layers.size();
-    size_t min_size = (iPlaneSize < layers_size) ? iPlaneSize:layers_size;
+
+    UN_USED(iPlaneSize);
 
     layer_map.clear();
 
@@ -996,14 +996,7 @@ static int combine_layer(LayerMap& layer_map,std::vector<DrmHwcLayer>& layers,
             layer_map[zpos].push_back(&layers[0]);
         }
 
-        if(i == min_size)
-        {
-            //We can use pre-comp to optimise.
-            ALOGD_IF(log_level(DBG_DEBUG),"combine_layer fail: it remain layer i=%zu, min_size=%zu",i,min_size);
-            return -1;
-        }
-
-        for(j = i+1; j < min_size; j++) {
+        for(j = i+1; j < layers.size(); j++) {
             DrmHwcLayer &layer_one = layers[j];
             //layer_one.index = j;
             is_combine = false;
