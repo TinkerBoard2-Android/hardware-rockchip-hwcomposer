@@ -88,6 +88,7 @@ class DrmPlane {
   bool get_yuv();
   void set_yuv(bool b_yuv);
   const DrmProperty &zpos_property() const;
+  const DrmProperty &area_id_property() const;
   const DrmProperty &share_id_property() const;
   const DrmProperty &feature_property() const;
   bool is_reserved();
@@ -124,6 +125,7 @@ class DrmPlane {
   DrmProperty colorspace_property_;
 
   DrmProperty zpos_property_;
+  DrmProperty area_id_property_;
   DrmProperty share_id_property_;
   DrmProperty feature_property_;
   bool b_reserved_;

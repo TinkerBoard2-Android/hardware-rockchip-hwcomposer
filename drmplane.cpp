@@ -138,6 +138,10 @@ int DrmPlane::Init() {
   if (ret)
     ALOGE("Could not get ZPOS property");
 
+  ret = drm_->GetPlaneProperty(*this, "SHARE_FLAGS", &area_id_property_);
+  if (ret)
+    ALOGE("Could not get AREA_ID property");
+
   ret = drm_->GetPlaneProperty(*this, "SHARE_ID", &share_id_property_);
   if (ret)
     ALOGE("Could not get SHARE_ID property");
@@ -292,6 +296,10 @@ void DrmPlane::set_use(bool b_use)
 
 const DrmProperty &DrmPlane::zpos_property() const {
   return zpos_property_;
+}
+
+const DrmProperty &DrmPlane::area_id_property() const {
+  return area_id_property_;
 }
 
 const DrmProperty &DrmPlane::share_id_property() const {

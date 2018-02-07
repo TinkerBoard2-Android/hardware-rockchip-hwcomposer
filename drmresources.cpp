@@ -76,6 +76,17 @@ bool SortByZpos(const PlaneGroup* planeGroup1,const PlaneGroup* planeGroup2)
     return planeGroup1->zpos < planeGroup2->zpos;
 }
 
+bool PlaneSortByArea(const DrmPlane*  plane1,const DrmPlane* plane2)
+{
+    uint64_t area1=0,area2=0;
+    if(plane1->area_id_property().id() && plane2->area_id_property().id())
+    {
+        plane1->area_id_property().value(&area1);
+        plane2->area_id_property().value(&area2);
+    }
+    return area1 < area2;
+}
+
 void DrmResources::init_white_modes(void)
 {
   tinyxml2::XMLDocument doc;
@@ -555,10 +566,14 @@ int DrmResources::Init() {
     {
         ALOGD_IF(log_level(DBG_VERBOSE),"Plane groups: zpos=%d,share_id=%" PRIu64 ",plane size=%zu,possible_crtcs=0x%x",
             (*iter)->zpos,(*iter)->share_id,(*iter)->planes.size(),(*iter)->possible_crtcs);
+        std::sort((*iter)->planes.begin(),(*iter)->planes.end(), PlaneSortByArea);
         for(std::vector<DrmPlane*> ::const_iterator iter_plane = (*iter)->planes.begin();
            iter_plane != (*iter)->planes.end(); ++iter_plane)
         {
-            ALOGD_IF(log_level(DBG_VERBOSE),"\tPlane id=%d",(*iter_plane)->id());
+            uint64_t area=0;
+            if((*iter_plane)->area_id_property().id())
+                (*iter_plane)->area_id_property().value(&area);
+            ALOGD_IF(log_level(DBG_VERBOSE),"\tPlane id=%d,area id=%" PRIu64 "",(*iter_plane)->id(),area);
         }
     }
 
