@@ -1091,7 +1091,7 @@ static int combine_layer(LayerMap& layer_map,std::vector<DrmHwcLayer>& layers,
             i++;
     }
 
-#ifndef TARGET_BOARD_PLATFORM_RK3288
+#if RK_SORT_AREA_BY_XPOS
   //sort layer by xpos
   for (LayerMap::iterator iter = layer_map.begin();
        iter != layer_map.end(); ++iter) {
