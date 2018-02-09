@@ -30,6 +30,14 @@ int hwc_init_version()
     strcat(acVersion,"-rk3399");
 #endif
 
+#ifdef TARGET_BOARD_PLATFORM_RK3326
+    strcat(acVersion,"-rk3326");
+#endif
+
+#ifdef TARGET_BOARD_PLATFORM_RK3126C
+    strcat(acVersion,"-rk3126c");
+#endif
+
 #ifdef RK_MID
     strcat(acVersion,"-MID");
 #endif
@@ -948,7 +956,7 @@ static bool is_layer_combine(DrmHwcLayer * layer_one,DrmHwcLayer * layer_two)
         || layer_one->alpha!= layer_two->alpha
         || layer_one->is_scale || layer_two->is_scale
         || is_rec1_intersect_rec2(&layer_one->display_frame,&layer_two->display_frame)
- #ifdef TARGET_BOARD_PLATFORM_RK3288
+ #if RK_HOR_INTERSECT_LIMIT
         || is_x_intersect(&layer_one->display_frame,&layer_two->display_frame)
  #endif
         )
