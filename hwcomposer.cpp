@@ -863,39 +863,47 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     else
         is_yuv = false;
 
-    if(is_yuv)
+    if(hd->hasEotfPlane)
     {
-        uint32_t android_colorspace = hwc_get_layer_colorspace(sf_layer);
-        colorspace = colorspace_convert_to_linux(android_colorspace);
-        if(colorspace == 0)
+        if(is_yuv)
         {
-            colorspace = V4L2_COLORSPACE_DEFAULT;
-        }
+            uint32_t android_colorspace = hwc_get_layer_colorspace(sf_layer);
+            colorspace = colorspace_convert_to_linux(android_colorspace);
+            if(colorspace == 0)
+            {
+                colorspace = V4L2_COLORSPACE_DEFAULT;
+            }
 
-        if((android_colorspace & HAL_DATASPACE_TRANSFER_MASK) == HAL_DATASPACE_TRANSFER_ST2084)
-        {
-            ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d has st2084",__FUNCTION__,__LINE__);
-            eotf = SMPTE_ST2084;
+            if((android_colorspace & HAL_DATASPACE_TRANSFER_MASK) == HAL_DATASPACE_TRANSFER_ST2084)
+            {
+                ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d has st2084",__FUNCTION__,__LINE__);
+                eotf = SMPTE_ST2084;
+            }
+            else
+            {
+                //ALOGE("Unknow etof %d",eotf);
+                eotf = TRADITIONAL_GAMMA_SDR;
+            }
         }
         else
         {
-            //ALOGE("Unknow etof %d",eotf);
-            eotf = TRADITIONAL_GAMMA_SDR;
+            //If enter GLES in HDR video,fake the fb target layer to HDR.
+            if(hd->isHdr && bFbTarget_)
+            {
+                colorspace = V4L2_COLORSPACE_BT2020;
+                eotf = SMPTE_ST2084;
+            }
+            else
+            {
+                colorspace = V4L2_COLORSPACE_DEFAULT;
+                eotf = TRADITIONAL_GAMMA_SDR;
+            }
         }
     }
     else
     {
-        //If enter GLES in HDR video,fake the fb target layer to HDR.
-        if(hd->isHdr && bFbTarget_)
-        {
-            colorspace = V4L2_COLORSPACE_BT2020;
-            eotf = SMPTE_ST2084;
-        }
-        else
-        {
-            colorspace = V4L2_COLORSPACE_DEFAULT;
-            eotf = TRADITIONAL_GAMMA_SDR;
-        }
+        colorspace = V4L2_COLORSPACE_DEFAULT;
+        eotf = TRADITIONAL_GAMMA_SDR;
     }
 
 #if RK_BOX
@@ -1689,6 +1697,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     //get plane size for display
     std::vector<PlaneGroup *>& plane_groups = ctx->drm.GetPlaneGroups();
     hd->iPlaneSize = 0;
+    hd->hasEotfPlane = false;
     hd->is_interlaced = (mode.interlaced()>0) ? true:false;
     for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
         iter != plane_groups.end(); ++iter)
@@ -1708,18 +1717,31 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             if (reserved_win_debug)
                 ALOGE("reserved plane share_id = %d", (*iter)->share_id);
             reserved_win_debug = false;
-            continue;
+           // continue;
         }
 #endif
         if(hd->is_interlaced && (*iter)->planes.size() > 2)
         {
             (*iter)->b_reserved = true;
-            continue;
+           // continue;
         }
-        if(GetCrtcSupported(*crtc, (*iter)->possible_crtcs))
+        else if(GetCrtcSupported(*crtc, (*iter)->possible_crtcs))
         {
             (*iter)->b_reserved = false;
             hd->iPlaneSize++;
+
+            if(!hd->hasEotfPlane)
+            {
+                for(std::vector<DrmPlane*> ::const_iterator iter_plane = (*iter)->planes.begin();
+                    iter_plane != (*iter)->planes.end(); ++iter_plane)
+                {
+                    if((*iter_plane)->get_hdr2sdr())
+                    {
+                        hd->hasEotfPlane = true;
+                        break;
+                    }
+                }
+            }
         }
     }
 
@@ -2849,8 +2871,9 @@ static int hwc_initialize_display(struct hwc_context_t *ctx, int display) {
     hd->hotplug_timeline = 0;
     hd->display_timeline = 0;
     hd->is_3d = false;
+    hd->hasEotfPlane = false;
 
-  return 0;
+    return 0;
 }
 
 static int hwc_enumerate_displays(struct hwc_context_t *ctx) {

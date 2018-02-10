@@ -153,6 +153,7 @@ typedef struct hwc_drm_display {
   MixMode mixMode;
   bool isVideo;
   bool isHdr;
+  bool hasEotfPlane;
   struct hdr_static_metadata last_hdr_metadata;
   int colorimetry;
   int color_format;
