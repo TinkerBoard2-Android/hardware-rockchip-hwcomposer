@@ -643,7 +643,7 @@ static const char *TransformToString(uint32_t transform) {
   }
 }
 
-static const char *BlendingToString(DrmHwcBlending blending) {
+const char *BlendingToString(DrmHwcBlending blending) {
   switch (blending) {
     case DrmHwcBlending::kNone:
       return "NONE";

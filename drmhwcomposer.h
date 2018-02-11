@@ -49,6 +49,7 @@ int hwc_import_bo_create(int fd, struct hwc_import_context *ctx,
 bool hwc_import_bo_release(int fd, struct hwc_import_context *ctx,
                            struct hwc_drm_bo *bo);
 
+
 namespace android {
 
 #define UN_USED(arg)     (arg=arg)
@@ -180,6 +181,8 @@ enum class DrmHwcBlending : int32_t {
   kPreMult = HWC_BLENDING_PREMULT,
   kCoverage = HWC_BLENDING_COVERAGE,
 };
+
+const char *BlendingToString(DrmHwcBlending blending);
 
 struct DrmHwcLayer {
   buffer_handle_t sf_handle = NULL;

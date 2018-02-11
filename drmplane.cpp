@@ -130,6 +130,10 @@ int DrmPlane::Init() {
   if (ret)
     ALOGI("Could not get eotf property");
 
+  ret = drm_->GetPlaneProperty(*this, "BLEND_MODE", &blend_mode_property_);
+  if (ret)
+    ALOGI("Could not get blend mode property");
+
   ret = drm_->GetPlaneProperty(*this, "COLOR_SPACE", &colorspace_property_);
   if (ret)
     ALOGI("Could not get colorspace property");
@@ -242,6 +246,10 @@ const DrmProperty &DrmPlane::rotation_property() const {
 
 const DrmProperty &DrmPlane::eotf_property() const {
   return eotf_property_;
+}
+
+const DrmProperty &DrmPlane::blend_mode_property() const {
+  return blend_mode_property_;
 }
 
 const DrmProperty &DrmPlane::colorspace_property() const {

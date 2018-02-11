@@ -788,19 +788,6 @@ static void DumpTransform(uint32_t transform, std::ostringstream *out) {
   *out << "]";
 }
 
-static const char *BlendingToString(DrmHwcBlending blending) {
-  switch (blending) {
-    case DrmHwcBlending::kNone:
-      return "NONE";
-    case DrmHwcBlending::kPreMult:
-      return "PREMULT";
-    case DrmHwcBlending::kCoverage:
-      return "COVERAGE";
-    default:
-      return "<invalid>";
-  }
-}
-
 static void DumpRegion(const DrmCompositionRegion &region,
                        std::ostringstream *out) {
   *out << "frame";

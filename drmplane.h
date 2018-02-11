@@ -75,6 +75,7 @@ class DrmPlane {
   const DrmProperty &src_h_property() const;
   const DrmProperty &rotation_property() const;
   const DrmProperty &eotf_property() const;
+  const DrmProperty &blend_mode_property() const;
   const DrmProperty &colorspace_property() const;
   const DrmProperty &alpha_property() const;
   bool is_use();
@@ -122,6 +123,7 @@ class DrmPlane {
   DrmProperty rotation_property_;
   DrmProperty alpha_property_;
   DrmProperty eotf_property_;
+  DrmProperty blend_mode_property_;
   DrmProperty colorspace_property_;
 
   DrmProperty zpos_property_;

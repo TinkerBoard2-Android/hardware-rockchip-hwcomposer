@@ -1203,6 +1203,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     uint64_t rotation = 0;
     uint64_t alpha = 0xFF;
     uint16_t eotf = TRADITIONAL_GAMMA_SDR;
+    DrmHwcBlending blending = DrmHwcBlending::kNone;
     uint32_t colorspace = V4L2_COLORSPACE_DEFAULT;
 #if RK_RGA
     bool is_rotate_by_rga = false;
@@ -1282,6 +1283,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 
         eotf = layer.eotf;
         colorspace = layer.colorspace;
+        blending = layer.blending;
 
 #if RK_DEBUG_CHECK_CRC
     void* cpu_addr;
@@ -1503,7 +1505,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
       out_log << " alpha=" << std::hex <<  alpha;
     }
 
-    if(plane->get_hdr2sdr()) {
+    if(plane->get_hdr2sdr() && plane->eotf_property().id()) {
       ret = drmModeAtomicAddProperty(pset, plane->id(),
                                      plane->eotf_property().id(),
                                      eotf) < 0;
@@ -1513,6 +1515,19 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
         break;
       }
       out_log << " eotf=" << std::hex <<  eotf;
+    }
+
+    if(plane->blend_mode_property().id()) {
+      int pre_mult = (blending == DrmHwcBlending::kPreMult) ? 1:0;
+      ret = drmModeAtomicAddProperty(pset, plane->id(),
+                                     plane->blend_mode_property().id(),
+                                     pre_mult) < 0;
+      if (ret) {
+        ALOGE("Failed to add blend mode property %d to plane %d",
+              plane->blend_mode_property().id(), plane->id());
+        break;
+      }
+      out_log << " blend mode =" << BlendingToString(blending) <<  eotf;
     }
 
     if(plane->colorspace_property().id()) {

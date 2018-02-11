@@ -44,6 +44,7 @@ DrmConnector::DrmConnector(DrmResources *drm, drmModeConnectorPtr c,
 }
 
 int DrmConnector::Init() {
+  ALOGW("DrmConnector init id=%d,type=%s",id_,drm_->connector_type_str(type_));
   int ret = drm_->GetConnectorProperty(*this, "DPMS", &dpms_property_);
   if (ret) {
     ALOGE("Could not get DPMS property\n");
@@ -73,11 +74,11 @@ int DrmConnector::Init() {
 
   ret = drm_->GetConnectorProperty(*this, "HDR_SOURCE_METADATA", &hdr_metadata_property_);
   if (ret)
-    ALOGW("Could not get hdr metadata property\n");
+    ALOGW("Could not get hdr source metadata property\n");
 
   ret = drm_->GetConnectorProperty(*this, "HDR_PANEL_METADATA", &hdr_panel_property_);
   if (ret)
-    ALOGW("Could not get hdr metadata property\n");
+    ALOGW("Could not get hdr panel metadata property\n");
 
   ret = drm_->GetConnectorProperty(*this, "hdmi_output_colorimetry", &hdmi_output_colorimetry_);
   if (ret)

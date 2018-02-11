@@ -38,6 +38,10 @@ int hwc_init_version()
     strcat(acVersion,"-rk3126c");
 #endif
 
+#ifdef TARGET_BOARD_PLATFORM_RK3328
+    strcat(acVersion,"-rk3328");
+#endif
+
 #ifdef RK_MID
     strcat(acVersion,"-MID");
 #endif
