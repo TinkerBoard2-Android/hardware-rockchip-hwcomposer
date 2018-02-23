@@ -736,7 +736,7 @@ int DrmResources::UpdateDisplayRoute(void)
 
   DrmConnector *primary = GetConnectorFromType(HWC_DISPLAY_PRIMARY);
   if (!primary) {
-    ALOGE("Failed to find primary display\n");
+    ALOGE("%s:line=%d Failed to find primary display\n", __FUNCTION__, __LINE__);
     return -EINVAL;
   }
   DrmConnector *extend = GetConnectorFromType(HWC_DISPLAY_EXTERNAL);
@@ -750,7 +750,8 @@ int DrmResources::UpdateDisplayRoute(void)
           if (crtc->get_afbc()) {
             enc->set_crtc(crtc);
             primary->set_encoder(enc);
-            ALOGD_IF(log_level(DBG_VERBOSE), "set primary with conn[%d] crtc=%d\n",primary->id(), crtc->id());
+            ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d set primary with conn[%d] crtc=%d\n",
+                    __FUNCTION__, __LINE__, primary->id(), crtc->id());
           }
         }
       }
@@ -762,7 +763,8 @@ int DrmResources::UpdateDisplayRoute(void)
           for (DrmCrtc *crtc : enc->possible_crtcs()) {
               enc->set_crtc(crtc);
               primary->set_encoder(enc);
-              ALOGD_IF(log_level(DBG_VERBOSE), "set primary with conn[%d] crtc=%d\n",primary->id(), crtc->id());
+              ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d set primary with conn[%d] crtc=%d\n",
+                        __FUNCTION__, __LINE__, primary->id(), crtc->id());
           }
         }
       }
@@ -774,7 +776,8 @@ int DrmResources::UpdateDisplayRoute(void)
             if (crtc == primary->encoder()->crtc())
               continue;
           }
-          ALOGD_IF(log_level(DBG_VERBOSE), "set extend[%d] with crtc=%d\n", extend->id(), crtc->id());
+          ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d set extend[%d] with crtc=%d\n",
+                    __FUNCTION__, __LINE__, extend->id(), crtc->id());
           enc->set_crtc(crtc);
           extend->set_encoder(enc);
         }
@@ -784,7 +787,8 @@ int DrmResources::UpdateDisplayRoute(void)
           for (DrmCrtc *crtc : enc->possible_crtcs()) {
             enc->set_crtc(crtc);
             extend->set_encoder(enc);
-            ALOGD_IF(log_level(DBG_VERBOSE), "set extend[%d] with crtc=%d\n", extend->id(), crtc->id());
+            ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d set extend[%d] with crtc=%d\n",
+                    __FUNCTION__, __LINE__, extend->id(), crtc->id());
             if (primary && primary->encoder() && primary->encoder()->crtc()) {
               if (crtc == primary->encoder()->crtc()) {
                 primary->encoder()->set_crtc(NULL);
@@ -798,7 +802,8 @@ int DrmResources::UpdateDisplayRoute(void)
 
                     primary_enc->set_crtc(primary_crtc);
                     primary->set_encoder(primary_enc);
-                    ALOGD_IF(log_level(DBG_VERBOSE), "set primary with conn[%d] crtc=%d\n",primary->id(), primary_crtc->id());
+                    ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d set primary with conn[%d] crtc=%d\n",
+                            __FUNCTION__, __LINE__, primary->id(), primary_crtc->id());
                   }
                 }
               }
@@ -820,7 +825,7 @@ int DrmResources::UpdateDisplayRoute(void)
 
   drmModeAtomicReqPtr pset = drmModeAtomicAlloc();
   if (!pset) {
-    ALOGE("Failed to allocate property set");
+    ALOGE("%s:line=%d Failed to allocate property set",__FUNCTION__, __LINE__);
     return -ENOMEM;
   }
 
@@ -923,7 +928,7 @@ int DrmResources::UpdateDisplayRoute(void)
   uint32_t flags = DRM_MODE_ATOMIC_ALLOW_MODESET;
   ret = drmModeAtomicCommit(fd_.get(), pset, flags, this);
   if (ret < 0) {
-    ALOGE("Failed to commit pset ret=%d\n", ret);
+    ALOGE("%s:line=%d Failed to commit pset ret=%d\n", __FUNCTION__, __LINE__, ret);
     drmModeAtomicFree(pset);
     return ret;
   }

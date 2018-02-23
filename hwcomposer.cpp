@@ -231,6 +231,7 @@ class DrmHotplugHandler : public DrmEventHandler {
       hwc_drm_display_t *old_hd = &(*displays_)[old_primary->display()];
       update_display_bestmode(hd, HWC_DISPLAY_PRIMARY, primary);
       DrmMode mode = primary->best_mode();
+      primary->set_current_mode(mode);
 
       hd->framebuffer_width = old_hd->framebuffer_width;
       hd->framebuffer_height = old_hd->framebuffer_height;
@@ -261,13 +262,19 @@ class DrmHotplugHandler : public DrmEventHandler {
       }
     }
     drm_->SetExtendDisplay(extend);
-    //When wake up from TV mode, it will bind crtc to TV connector.
-    //If we also plug in HDMI,and don't bind crtc to HDMI connector,
-    //the crtc of connected HDMI will be NULL. Which lead HDMI show nothing.
-    //Pg: Defect #149666
-    drm_->DisplayChanged();
-    drm_->UpdateDisplayRoute();
+
     if (!extend) {
+      //When wake up from TV mode, it will bind crtc to TV connector.
+      //If we also plug in HDMI,and don't bind crtc to HDMI connector,
+      //the crtc of connected HDMI will be NULL. Which lead HDMI show nothing.
+      //Pg: Defect #149666
+      /**************************************************************************/
+      //2. We should get current mode before UpdateDisplayRoute.
+      //otherwise, it will lead crtc is disabled when current mode is 0
+      //when boot system sometimes.
+      drm_->DisplayChanged();
+      drm_->UpdateDisplayRoute();
+
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
       //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
       usleep(HOTPLUG_MSLEEP*1000);
@@ -278,6 +285,17 @@ class DrmHotplugHandler : public DrmEventHandler {
     hwc_drm_display_t *hd = &(*displays_)[extend->display()];
     update_display_bestmode(hd, HWC_DISPLAY_EXTERNAL, extend);
     DrmMode mode = extend->best_mode();
+    extend->set_current_mode(mode);
+    //1. When wake up from TV mode, it will bind crtc to TV connector.
+    //If we also plug in HDMI,and don't bind crtc to HDMI connector,
+    //the crtc of connected HDMI will be NULL. Which lead HDMI show nothing.
+    //Pg: Defect #149666
+    /**************************************************************************/
+    //2. We should get current mode before UpdateDisplayRoute.
+    //otherwise, it will lead crtc is disabled when current mode is 0
+    //when boot system sometimes.
+    drm_->DisplayChanged();
+    drm_->UpdateDisplayRoute();
 
     if (mode.h_display() > mode.v_display() && mode.v_display() >= 2160) {
       hd->framebuffer_width = mode.h_display() * (1080.0 / mode.v_display());
