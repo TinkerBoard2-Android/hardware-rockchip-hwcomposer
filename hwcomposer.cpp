@@ -222,6 +222,10 @@ class DrmHotplugHandler : public DrmEventHandler {
       ALOGE("hwc_hotplug: %s %d Failed to find primary display\n", __FUNCTION__, __LINE__);
       return;
     }
+
+    //ClearDisplay show be called before display update(SetPrimaryDisplay/SetExtendDisplay).
+    //It will singal the original disconnect display.
+    drm_->ClearDisplay();
     if (primary != old_primary) {
       hwc_drm_display_t *hd = &(*displays_)[primary->display()];
       hwc_drm_display_t *old_hd = &(*displays_)[old_primary->display()];
@@ -263,7 +267,6 @@ class DrmHotplugHandler : public DrmEventHandler {
     //Pg: Defect #149666
     drm_->DisplayChanged();
     drm_->UpdateDisplayRoute();
-    drm_->ClearDisplay();
     if (!extend) {
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
       //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
@@ -2288,7 +2291,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
         continue;
       }
 
-#if 0
+#if FORCE_WAIT_ACQUIRE_FENCE
         // rk: wait acquireFenceFd at hwc_set.
         if(sf_layer->acquireFenceFd > 0)
         {

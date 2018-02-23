@@ -335,6 +335,7 @@ int DrmDisplayComposition::CreateAndAssignReleaseFences() {
   }
   timeline_pre_comp_done_ = timeline_;
 
+#if ENABLE_RELEASE_FENCE
   char acBuf[50];
   for (DrmHwcLayer *layer : comp_layers) {
     if (!layer->release_fence)
@@ -361,6 +362,7 @@ int DrmDisplayComposition::CreateAndAssignReleaseFences() {
         }
     }
   }
+#endif
 
   return 0;
 }

@@ -97,6 +97,7 @@ class DrmResources {
   int UpdateDisplayRoute(void);
   int UpdatePropertys(void);
   void ClearDisplay(void);
+  void ClearAllDisplay(void);
   int timeline(void);
 
   int CreatePropertyBlob(void *data, size_t length, uint32_t *blob_id);

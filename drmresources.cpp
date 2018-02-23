@@ -647,10 +647,18 @@ void DrmResources::ClearDisplay(void)
 {
     for (int i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
       DrmConnector *conn = GetConnectorFromType(i);
-      if (conn && conn->state() == DRM_MODE_CONNECTED &&
+      if (conn && conn->raw_state() == DRM_MODE_CONNECTED &&
           conn->current_mode().id() && conn->encoder() &&
           conn->encoder()->crtc())
         continue;
+      compositor_.ClearDisplay(i);
+    }
+}
+
+void DrmResources::ClearAllDisplay(void)
+{
+    for (int i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
+      DrmConnector *conn = GetConnectorFromType(i);
       compositor_.ClearDisplay(i);
     }
 }
