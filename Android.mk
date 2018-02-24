@@ -103,8 +103,6 @@ endif
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk322x)
 LOCAL_CPPFLAGS += -DTARGET_BOARD_PLATFORM_RK322x  -DRK_DRM_GRALLOC=1 \
                -DMALI_AFBC_GRALLOC=1
-RK_3D_VIDEO = 0
-RK_PRINT_LAYER_NAME = 0
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_PRODUCT)),tablet)
 LOCAL_CPPFLAGS += -DRK322x_MID
 endif
@@ -117,6 +115,12 @@ endif
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_PRODUCT)),vr)
 LOCAL_CPPFLAGS += -DRK322x_VR
 endif
+endif
+
+ifeq ($(strip $(TARGET_PRODUCT)),iot_rk3229_evb)
+RK_3D_VIDEO = 0
+RK_PRINT_LAYER_NAME = 0
+LOCAL_CPPFLAGS += -DTARGET_PRODUCT_IOT_RK3229_EVB
 endif
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk312x)
@@ -317,7 +321,7 @@ MAJOR_VERSION := "RK_GRAPHICS_VER=commit-id:$(shell cd $(LOCAL_PATH) && git log 
 LOCAL_CPPFLAGS += -DRK_GRAPHICS_VER=\"$(MAJOR_VERSION)\"
 endif
 
-ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk322x)
+ifeq ($(strip $(TARGET_PRODUCT)),iot_rk3229_evb)
 LOCAL_MODULE := hwcomposer.rk3229
 else
 LOCAL_MODULE := hwcomposer.$(TARGET_BOARD_HARDWARE)
