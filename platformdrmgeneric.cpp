@@ -16,6 +16,9 @@
 
 #define LOG_TAG "hwc-platform-drm-generic"
 
+// #define ENABLE_DEBUG_LOG
+#include <log/custom_log.h>
+
 #include "drmresources.h"
 #include "platform.h"
 #include "platformdrmgeneric.h"
@@ -170,7 +173,10 @@ int DrmGenericImporter::ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo
   gralloc_->perform(gralloc_, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                          handle, &internal_format);
   if (isAfbcInternalFormat(internal_format))
+  {
+      D("KP : to set DRM_FORMAT_MOD_ARM_AFBC.");
     modifier[0] = DRM_FORMAT_MOD_ARM_AFBC;
+  }
 
   ret = drmModeAddFB2_ext(drm_->fd(), bo->width, bo->height, bo->format,
                       bo->gem_handles, bo->pitches, bo->offsets, modifier,

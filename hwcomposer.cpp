@@ -17,6 +17,9 @@
 #define ATRACE_TAG ATRACE_TAG_GRAPHICS
 #define LOG_TAG "hwcomposer-drm"
 
+// #define ENABLE_DEBUG_LOG
+#include <log/custom_log.h>
+
 #include "drmhwcomposer.h"
 #include "drmeventlistener.h"
 #include "drmresources.h"
@@ -1059,10 +1062,13 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     return ret;
 #endif
 
+    D("to check AFBC.");
 
 #if USE_AFBC_LAYER
-    if(sf_handle)
+    // if(sf_handle)
+    if ( sf_handle && bFbTarget_ )
     {
+        D("we got buffer handle for fb_target_layer, to get internal_format.");
         ret = gralloc->perform(gralloc, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                              sf_handle, &internal_format);
         if (ret) {
@@ -1071,23 +1077,42 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         }
 
         if(isAfbcInternalFormat(internal_format))
+        {
+            D("to set 'is_afbc'.");
             is_afbc = true;
+        }
+        else
+        {
+            D("not a afbc_buffer.");
+        }
     }
 
     if(bFbTarget_ && !sf_handle)
     {
-        static int iFbdcSupport = -1;
+        D("we could not got buffer handle, and current buffer is for fb_target_layer, to check AFBC in a trick way.");
 
-        if(iFbdcSupport == -1)
+        static int iFbdcSupport = -1;
+        D_DEC(iFbdcSupport);
+
+        // if(iFbdcSupport == -1)
+        if(iFbdcSupport <= 0)
         {
             char fbdc_value[PROPERTY_VALUE_MAX];
-            property_get("sys.gmali.fbdc_target", fbdc_value, "0");
+            int ret = property_get("sys.gmali.fbdc_target", fbdc_value, "0");
+            D_DEC(ret);
+
             iFbdcSupport = atoi(fbdc_value);
             if(iFbdcSupport > 0)
+            {
+                D("to set 'is_afbc'.");
                 is_afbc = true;
+            }
         }
         else if(iFbdcSupport > 0)
+        {
+            D("to set 'is_afbc'.");
             is_afbc = true;
+        }
     }
 #endif
 
@@ -1157,7 +1182,9 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     */
     int iMode = hwc_get_int_property("sys.hwc.compose_policy","0");
     if( iMode <= 0 || (iMode == 1 && display_id == 2) || (iMode == 2 && display_id == 1) )
+    {
         return true;
+    }
 
     iMode = hwc_get_int_property("sys.hwc","1");
     if( iMode <= 0 )

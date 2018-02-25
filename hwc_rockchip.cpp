@@ -1,5 +1,8 @@
 #define LOG_TAG "hwc_rk"
 
+// #define ENABLE_DEBUG_LOG
+#include <log/custom_log.h>
+
 #include <inttypes.h>
 #ifdef TARGET_BOARD_PLATFORM_RK3368
 #include <hardware/img_gralloc_public.h>
@@ -28,6 +31,9 @@ int hwc_init_version()
 #endif
 #ifdef TARGET_BOARD_PLATFORM_RK3399
     strcat(acVersion,"-rk3399");
+#endif
+#ifdef TARGET_BOARD_PLATFORM_RK3326
+    strcat(acVersion,"-rk3326");
 #endif
 
 #ifdef TARGET_BOARD_PLATFORM_RK3326
@@ -84,8 +90,11 @@ bool isAfbcInternalFormat(uint64_t internal_format)
 {
 #ifdef TARGET_BOARD_PLATFORM_RK3368
     return (HALPixelFormatGetCompression(internal_format)==HAL_FB_COMPRESSION_NONE)?false:true;
-#else
-    return (internal_format & GRALLOC_ARM_INTFMT_AFBC);
+#elif defined(TARGET_BOARD_PLATFORM_RK3399)
+    return (internal_format & GRALLOC_ARM_INTFMT_AFBC);             // for Midgard gralloc r14
+#elif defined(TARGET_BOARD_PLATFORM_RK3326)
+    D("internal_format : %llx, MALI_GRALLOC_INTFMT_AFBC_BASIC : %llx", internal_format, MALI_GRALLOC_INTFMT_AFBC_BASIC);
+    return (internal_format & MALI_GRALLOC_INTFMT_AFBC_BASIC);      // for Bifrost gralloc r8
 #endif
 }
 #endif
