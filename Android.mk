@@ -91,7 +91,10 @@ LOCAL_CPPFLAGS += -DMALI_PRODUCT_ID_T72X=1
 endif
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)), mali-t760)
+# rk3288 vop cann't support AFBC.
+ifneq ($(strip $(TARGET_BOARD_PLATFORM)),rk3288)
 USE_AFBC_LAYER = 1
+endif
 LOCAL_CPPFLAGS += -DMALI_PRODUCT_ID_T76X=1
 endif
 

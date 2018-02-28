@@ -95,6 +95,9 @@ bool isAfbcInternalFormat(uint64_t internal_format)
 #elif defined(TARGET_BOARD_PLATFORM_RK3326)
     D("internal_format : %llx, MALI_GRALLOC_INTFMT_AFBC_BASIC : %llx", internal_format, MALI_GRALLOC_INTFMT_AFBC_BASIC);
     return (internal_format & MALI_GRALLOC_INTFMT_AFBC_BASIC);      // for Bifrost gralloc r8
+#else
+    UN_USED(internal_format);
+    return false;
 #endif
 }
 #endif
@@ -823,12 +826,12 @@ uint32_t hwc_get_layer_colorspace(hwc_layer_1_t *layer)
 }
 
 /*
-    颜色空间	            Linux标准定义	        Android标准定义
-    SRGB full range	    V4L2_COLORSPACE_SRGB	    HAL_DATASPACE_TRANSFER_SRGB
-    Bt601 full range	V4L2_COLORSPACE_JPEG	    HAL_DATASPACE_V0_JFIF
-    Bt601 limit range	V4L2_COLORSPACE_SMPTE170M	HAL_DATASPACE_V0_BT601_525/HAL_DATASPACE_V0_BT601_625
-    Bt709 limit range	V4L2_COLORSPACE_REC709	    HAL_DATASPACE_V0_BT709
-    Bt2020 limit range	V4L2_COLORSPACE_BT2020	    HAL_DATASPACE_STANDARD_BT2020
+    ColorSpace:         Linux standard definitions:	Android standard definitions:
+    SRGB full range	V4L2_COLORSPACE_SRGB	    	HAL_DATASPACE_TRANSFER_SRGB
+    Bt601 full range	V4L2_COLORSPACE_JPEG	    	HAL_DATASPACE_V0_JFIF
+    Bt601 limit range	V4L2_COLORSPACE_SMPTE170M   	HAL_DATASPACE_V0_BT601_525/HAL_DATASPACE_V0_BT601_625
+    Bt709 limit range	V4L2_COLORSPACE_REC709	    	HAL_DATASPACE_V0_BT709
+    Bt2020 limit range	V4L2_COLORSPACE_BT2020	    	HAL_DATASPACE_STANDARD_BT2020
 */
 #define CONTAIN_VALUE(value,mask) ((colorspace & mask) == value)
 uint32_t colorspace_convert_to_linux(uint32_t colorspace)
