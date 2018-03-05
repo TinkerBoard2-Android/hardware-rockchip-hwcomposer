@@ -1177,6 +1177,24 @@ static bool rkHasPlanesWithSize(DrmCrtc *crtc, int layer_size) {
   return false;
 }
 
+static std::vector<DrmPlane *> rkGetNoAfbcUsablePlanes(DrmCrtc *crtc) {
+    DrmResources* drm = crtc->getDrmReoources();
+    std::vector<PlaneGroup *>& plane_groups = drm->GetPlaneGroups();
+    std::vector<DrmPlane *> usable_planes;
+    //loop plane groups.
+    for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
+       iter != plane_groups.end(); ++iter) {
+            if(!(*iter)->bUse)
+                //only count the first plane in plane group.
+                std::copy_if((*iter)->planes.begin(), (*iter)->planes.begin()+1,
+                       std::back_inserter(usable_planes),
+                       [=](DrmPlane *plane) {
+                       return !plane->is_use() && plane->GetCrtcSupported(*crtc) && !plane->get_afbc(); }
+                       );
+  }
+  return usable_planes;
+}
+
 static std::vector<DrmPlane *> rkGetNoYuvUsablePlanes(DrmCrtc *crtc) {
     DrmResources* drm = crtc->getDrmReoources();
     std::vector<PlaneGroup *>& plane_groups = drm->GetPlaneGroups();
@@ -1436,8 +1454,19 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                 ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) need by big area,src_size=%f,fbSize=%d",(*iter_plane)->id(),src_size,fbSize);
                             }
 #endif
+                            //Reserve some plane with no need for specific features in current layer.
                             if(!bNeed && !bMulArea && !is_interlaced)
                             {
+                                if(!(*iter_layer)->is_afbc && b_afbc)
+                                {
+                                    std::vector<DrmPlane *> no_afbc_planes = rkGetNoAfbcUsablePlanes(crtc);
+                                    if(no_afbc_planes.size() > 0)
+                                    {
+                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) don't need use afbc feature",(*iter_plane)->id());
+                                        continue;
+                                    }
+                                }
+
                                 if(!(*iter_layer)->is_yuv && b_yuv)
                                 {
                                     std::vector<DrmPlane *> no_yuv_planes = rkGetNoYuvUsablePlanes(crtc);
