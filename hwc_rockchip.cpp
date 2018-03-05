@@ -1006,8 +1006,6 @@ static int combine_layer(LayerMap& layer_map,std::vector<DrmHwcLayer>& layers,
     uint32_t sort_cnt=0;
     bool is_combine = false;
 
-    UN_USED(iPlaneSize);
-
     layer_map.clear();
 
     for (i = 0; i < layers.size(); ) {
@@ -1156,6 +1154,12 @@ static int combine_layer(LayerMap& layer_map,std::vector<DrmHwcLayer>& layers,
              ALOGD_IF(log_level(DBG_DEBUG),"\tlayer name=%s",(*iter_layer)->name.c_str());
         }
   }
+
+    if((int)layer_map.size() > iPlaneSize)
+    {
+        ALOGD_IF(log_level(DBG_DEBUG),"map size=%zu should not bigger than plane size=%d", layer_map.size(), iPlaneSize);
+        return -1;
+    }
 
     return 0;
 }
