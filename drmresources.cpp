@@ -170,7 +170,7 @@ void DrmResources::ConfigurePossibleDisplays()
    */
   if(!primary_length){
       int res = 0;
-      res = hwc_get_baseparameter_config(primary_name,0,BP_DEVICE);
+      res = hwc_get_baseparameter_config(primary_name,0,BP_DEVICE,0);
       if(res){
           ALOGE("BP: hwc get baseparameter err");
       }else{
@@ -180,7 +180,7 @@ void DrmResources::ConfigurePossibleDisplays()
   }
   if(!extend_length){
       int res = 0;
-      res = hwc_get_baseparameter_config(extend_name,1,BP_DEVICE);
+      res = hwc_get_baseparameter_config(extend_name,1,BP_DEVICE,0);
       if(res){
           ALOGE("BP: hwc get baseparameter err");
       }else{
@@ -684,23 +684,23 @@ int DrmResources::UpdatePropertys(void)
 
   if (primary) {
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->brightness_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_BRIGHTNESS))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_BRIGHTNESS,0))
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->contrast_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_CONTRAST))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_CONTRAST,0))
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->saturation_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_SATURATION))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_SATURATION,0))
     DRM_ATOMIC_ADD_PROP(primary->id(), primary->hue_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_HUE))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_PRIMARY,BP_HUE,0))
   }
   if (extend) {
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->brightness_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_BRIGHTNESS))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_BRIGHTNESS,0))
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->contrast_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_CONTRAST))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_CONTRAST,0))
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->saturation_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_SATURATION))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_SATURATION,0))
     DRM_ATOMIC_ADD_PROP(extend->id(), extend->hue_id_property().id(),
-                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_HUE))
+                        hwc_get_baseparameter_config(NULL,HWC_DISPLAY_EXTERNAL,BP_HUE,0))
   }
 
   uint32_t flags = 0;

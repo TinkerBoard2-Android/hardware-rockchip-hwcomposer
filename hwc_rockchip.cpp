@@ -2285,7 +2285,7 @@ static struct file_base_parameter base_parameter;
 #define BASE_OFFSET 8*1024
 
 
-int hwc_get_baseparameter_config(char *parameter,int display,int flag)
+int hwc_get_baseparameter_config(char *parameter, int display, int flag, int type)
 {
     unsigned int w=0,h=0,hsync_start=0,hsync_end=0,htotal=0;
     unsigned int vsync_start=0,vsync_end=0,vtotal=0,flags=0,clock=0;
@@ -2296,6 +2296,7 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
     static int bcsh_flag = 0x0;
     float vfresh=0;
     char value_new[128] = {0};
+
     switch(flag){
         case BP_UPDATE:
             {
@@ -2329,25 +2330,45 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
         case BP_RESOLUTION:
             {
                 if(display == HWC_DISPLAY_PRIMARY){
-                    w = base_parameter.main.resolution.hdisplay;
-                    h = base_parameter.main.resolution.vdisplay;
-                    vsync_start = base_parameter.main.resolution.vsync_start;
-                    hsync_start = base_parameter.main.resolution.hsync_start;
-                    hsync_end = base_parameter.main.resolution.hsync_end;
-                    htotal = base_parameter.main.resolution.htotal;
-                    vsync_end = base_parameter.main.resolution.vsync_end;
-                    vtotal = base_parameter.main.resolution.vtotal;
-                    flags = base_parameter.main.resolution.flags;
-                    clock = base_parameter.main.resolution.clock;
+                    int i = 0;
+                    bool type_found = false;
+
+                    for( i = 0 ; i < SCREEN_LIST_MAX ; i++)
+                    {
+                        if(type == base_parameter.main.screen_list[i].type)
+                        {
+                            type_found = true;
+                            break;
+                        }
+                    }
+
+                    if(type_found){
+                        ALOGD("BP: Main screen type %d found",type);
+                        w = base_parameter.main.screen_list[i].resolution.hdisplay;
+                        h = base_parameter.main.screen_list[i].resolution.vdisplay;
+                        vsync_start = base_parameter.main.screen_list[i].resolution.vsync_start;
+                        hsync_start = base_parameter.main.screen_list[i].resolution.hsync_start;
+                        hsync_end = base_parameter.main.screen_list[i].resolution.hsync_end;
+                        htotal = base_parameter.main.screen_list[i].resolution.htotal;
+                        vsync_end = base_parameter.main.screen_list[i].resolution.vsync_end;
+                        vtotal = base_parameter.main.screen_list[i].resolution.vtotal;
+                        flags = base_parameter.main.screen_list[i].resolution.flags;
+                        clock = base_parameter.main.screen_list[i].resolution.clock;
+                    }else{
+                        ALOGD("BP: Main screen type %d not found,to use Auto",type);
+                    }
+
                     if(flags & DRM_MODE_FLAG_INTERLACE){
                         vfresh = (float)clock / (htotal*vtotal) * 2;
                     }else{
                         vfresh = (float)clock / (htotal*vtotal);
                     }
+
                     if(vfresh < 1)
-                        vfresh = vfresh*1000;
-                    if(base_parameter.main.feature & RESOLUTION_AUTO ||
-                           w * h <= 0 || w * h > 4096 * 2160){
+                        vfresh = vfresh * 1000;
+
+                    if( !type_found || base_parameter.main.screen_list[i].feature & RESOLUTION_AUTO ||
+                           w * h <= 0 || w * h > 4096 * 2160 ){
                         strcpy(parameter,"Auto");
                         property_set("persist.sys.resolution.main",parameter);
                         ALOGD("BP: resolution main %s",parameter);
@@ -2358,25 +2379,45 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                          ALOGD("BP: resolution main %s \n",parameter);
                      }
                 }else{
-                    w = base_parameter.aux.resolution.hdisplay;
-                    h = base_parameter.aux.resolution.vdisplay;
-                    vsync_start = base_parameter.aux.resolution.vsync_start;
-                    hsync_start = base_parameter.aux.resolution.hsync_start;
-                    hsync_end = base_parameter.aux.resolution.hsync_end;
-                    htotal = base_parameter.aux.resolution.htotal;
-                    vsync_end = base_parameter.aux.resolution.vsync_end;
-                    vtotal = base_parameter.aux.resolution.vtotal;
-                    flags = base_parameter.aux.resolution.flags;
-                    clock = base_parameter.aux.resolution.clock;
+                    int i = 0;
+                    bool type_found = false;
+
+                    for( i = 0 ; i < 5 ; i++)
+                    {
+                        if(type == base_parameter.main.screen_list[i].type)
+                        {
+                            type_found = true;
+                            break;
+                        }
+                    }
+
+                    if(type_found){
+                        ALOGD("BP: Aux screen type %d found",type);
+                        w = base_parameter.aux.screen_list[i].resolution.hdisplay;
+                        h = base_parameter.aux.screen_list[i].resolution.vdisplay;
+                        vsync_start = base_parameter.aux.screen_list[i].resolution.vsync_start;
+                        hsync_start = base_parameter.aux.screen_list[i].resolution.hsync_start;
+                        hsync_end = base_parameter.aux.screen_list[i].resolution.hsync_end;
+                        htotal = base_parameter.aux.screen_list[i].resolution.htotal;
+                        vsync_end = base_parameter.aux.screen_list[i].resolution.vsync_end;
+                        vtotal = base_parameter.aux.screen_list[i].resolution.vtotal;
+                        flags = base_parameter.aux.screen_list[i].resolution.flags;
+                        clock = base_parameter.aux.screen_list[i].resolution.clock;
+                    }else{
+                        ALOGD("BP: Aux screen type %d not found,to use Auto",type);
+                    }
+
                     if(flags & DRM_MODE_FLAG_INTERLACE){
                         vfresh = (float)clock / (htotal*vtotal) * 2;
                     }else{
                         vfresh = (float)clock / (htotal*vtotal);
                     }
+
                     if(vfresh < 1)
                         vfresh = vfresh*1000;
-                    if(base_parameter.aux.feature & RESOLUTION_AUTO ||
-                           w * h <= 0 || w * h > 4096 * 2160){
+
+                    if( !type_found || base_parameter.aux.screen_list[i].feature & RESOLUTION_AUTO ||
+                           w * h <= 0 || w * h > 4096 * 2160 ){
                         strcpy(parameter,"Auto");
                         property_set("persist.sys.resolution.aux",parameter);
                         ALOGD("BP: resolution aux %s",parameter);
@@ -2394,6 +2435,7 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                 w = base_parameter.main.hwc_info.framebuffer_width;
                 h = base_parameter.main.hwc_info.framebuffer_height;
                 vfresh = base_parameter.main.hwc_info.fps;
+
                 if( w * h > 0 && w * h <= 4096 * 2160 && vfresh > 0 &&
                         vfresh <= 120){
                     sprintf(parameter,"%dx%d@%f", w, h, vfresh);
@@ -2535,10 +2577,28 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
             break;
          case BP_COLOR:
             if(display == HWC_DISPLAY_PRIMARY){
-                format = base_parameter.main.format;
-                depthc = base_parameter.main.depthc;
+                int i = 0;
+                bool type_found = false;
+
+                for( i = 0 ; i < SCREEN_LIST_MAX ; i++ )
+                {
+                    if(type == base_parameter.main.screen_list[i].type)
+                    {
+                        type_found = true;
+                        break;
+                    }
+                }
+                if(type_found)
+                {
+                    ALOGD("BP: Main screen type %d found",type);
+                    format = base_parameter.main.screen_list[i].format;
+                    depthc = base_parameter.main.screen_list[i].depthc;
+                }else{
+                    ALOGD("BP: Main screen type %d not found,to use default color",type);
+                }
+
                 res = hwc_parse_format_into_prop(display,format,depthc);
-                if( base_parameter.main.feature & COLOR_AUTO || res){
+                if( !type_found || base_parameter.main.screen_list[i].feature & COLOR_AUTO || res){
                     //Auto:output_ycbcr_high_subsampling - Automatic
                     hwc_parse_format_into_prop(display,4,0);
                     strcpy(parameter,"4-0");
@@ -2547,10 +2607,28 @@ int hwc_get_baseparameter_config(char *parameter,int display,int flag)
                 }
                 ALOGD("BP: main color %s",parameter);
             }else{
-                format = base_parameter.aux.format;
-                depthc = base_parameter.aux.depthc;
+                int i = 0;
+                bool type_found = false;
+
+                for( i = 0 ; i < SCREEN_LIST_MAX ; i++ )
+                {
+                    if(type == base_parameter.main.screen_list[i].type)
+                    {
+                        type_found = true;
+                        break;
+                    }
+                }
+                if(type_found)
+                {
+                    ALOGD("BP: Aux screen type %d found",type);
+                    format = base_parameter.aux.screen_list[i].format;
+                    depthc = base_parameter.aux.screen_list[i].depthc;
+                }else{
+                    ALOGD("BP: Aux screen type %d not found,to use default color",type);
+                }
+
                 res = hwc_parse_format_into_prop(display,format,depthc);
-                if(base_parameter.aux.feature & COLOR_AUTO || res){
+                if(!type_found || base_parameter.aux.screen_list[i].feature & COLOR_AUTO || res ){
                     //Auto:output_ycbcr_high_subsampling - Automatic
                     hwc_parse_format_into_prop(display,4,0);
                     strcpy(parameter,"4-0");

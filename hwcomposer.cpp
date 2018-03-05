@@ -192,6 +192,16 @@ class DrmHotplugHandler : public DrmEventHandler {
         }
       }
     }
+
+    /*
+     * If Connector changed ,update baseparameter , resolution , color.
+     */
+    hwc_get_baseparameter_config(NULL,0,BP_UPDATE,0);
+    property_set("persist.sys.resolution.main","use_baseparameter");
+    property_set("persist.sys.resolution.aux","use_baseparameter");
+    property_set("persist.sys.color.main","use_baseparameter");
+    property_set("persist.sys.color.aux","use_baseparameter");
+
     /*
      * status changed?
      */
@@ -398,16 +408,16 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   if (display == HWC_DISPLAY_PRIMARY)
   {
     /* if resolution is null,set to "Auto" */
-    property_get("persist.sys.resolution.main", resolution, "default");
+    property_get("persist.sys.resolution.main", resolution, "use_baseparameter");
     property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
 
     /*
      * if unset resolution ,get it from baseparameter ,by libin
      */
-    if(!(strcmp(resolution,"default")))
+    if(!(strcmp(resolution,"use_baseparameter")))
     {
         int res = 0;
-        res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION);
+        res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION,c->get_type());
         if(res){
             ALOGE("get native config fail, res = %d",res);
         }
@@ -415,16 +425,16 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   }
   else
   {
-    property_get("persist.sys.resolution.aux", resolution, "default");
+    property_get("persist.sys.resolution.aux", resolution, "use_baseparameter");
     property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
 
     /*
      * if unset resolution ,get it from baseparameter ,by libin
      */
-    if(!(strcmp(resolution,"default")))
+    if(!(strcmp(resolution,"use_baseparameter")))
     {
         int res = 0;
-        res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION);
+        res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION,c->get_type());
         if(res){
             ALOGE("get native config fail, res = %d",res);
         }
@@ -804,13 +814,13 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         else
         {
             if (display == 0){
-                property_get("persist.sys.overscan.main", overscan, "default");
-                if(!strcmp(overscan,"default"))
-                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN);
+                property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
+                if(!strcmp(overscan,"use_baseparameter"))
+                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }else{
-                property_get("persist.sys.overscan.aux", overscan, "default");
-                if(!strcmp(overscan,"default"))
-                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN);
+                property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
+                if(!strcmp(overscan,"use_baseparameter"))
+                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }
             sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
                     &right_margin, &bottom_margin);
@@ -1481,15 +1491,15 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     if (display == HWC_DISPLAY_PRIMARY)
     {
     /* if resolution is null,set to "Auto" */
-        property_get("persist.sys.color.main", prop_format, "default");
+        property_get("persist.sys.color.main", prop_format, "use_baseparameter");
     }
     else
     {
-        property_get("persist.sys.color.aux", prop_format, "default");
+        property_get("persist.sys.color.aux", prop_format, "use_baseparameter");
     }
     ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
     if (ret == false) {
-        hwc_get_baseparameter_config(prop_format,display,BP_COLOR);
+        hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){
             ALOGE("BP: get color fail!");
@@ -2726,14 +2736,14 @@ static int hwc_get_display_configs(struct hwc_composer_device_1 *dev,
 
   char framebuffer_size[PROPERTY_VALUE_MAX];
   uint32_t width = 0, height = 0 , vrefresh = 0 ;
-  property_get("persist.sys.framebuffer.main", framebuffer_size, "default");
+  property_get("persist.sys.framebuffer.main", framebuffer_size, "use_baseparameter");
 
   /*
    * if unset framebuffer_size, get it from baseparameter , by libin
    */
-  if(!strcmp(framebuffer_size,"default")){
+  if(!strcmp(framebuffer_size,"use_baseparameter")){
     int res = 0;
-    res = hwc_get_baseparameter_config(framebuffer_size,display,BP_FB_SIZE);
+    res = hwc_get_baseparameter_config(framebuffer_size,display,BP_FB_SIZE,0);
     if(res)
         ALOGW("BP: hwc get baseparameter config err ,res = %d",res);
   }
@@ -3067,7 +3077,7 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
   }
 
   init_rk_debug();
-  hwc_get_baseparameter_config(NULL,0,BP_UPDATE);
+  hwc_get_baseparameter_config(NULL,0,BP_UPDATE,0);
 
   std::unique_ptr<hwc_context_t> ctx(new hwc_context_t());
   if (!ctx) {

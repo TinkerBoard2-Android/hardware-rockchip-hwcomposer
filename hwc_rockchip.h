@@ -184,6 +184,8 @@ typedef struct hwc_drm_display {
 #define COLOR_AUTO				(1<<1)
 #define HDCP1X_EN				(1<<2)
 #define RESOLUTION_WHITE_EN		(1<<3)
+#define SCREEN_LIST_MAX 5
+
 
 struct drm_display_mode {
     /* Proposed mode values */
@@ -245,17 +247,24 @@ struct lut_data{
     uint16_t lgreen[1024];
     uint16_t lblue[1024];
 };
-struct disp_info{
+struct screen_info {
+	int type;
     struct drm_display_mode resolution;// 52 bytes
-    struct overscan scan;//12 bytes
     enum output_format  format; // 4 bytes
     enum output_depth depthc; // 4 bytes
     unsigned int feature;//4 //4 bytes
-    struct hwc_inital_info hwc_info; //140 bytes
-    struct bcsh_info bcsh;
+};
+
+
+struct disp_info {
+	struct screen_info screen_list[SCREEN_LIST_MAX];
+    struct overscan scan;//12 bytes
+	struct hwc_inital_info hwc_info; //140 bytes
+	struct bcsh_info bcsh;
     unsigned int reserve[128];
     struct lut_data mlutdata;/*6k+4*/
 };
+
 
 struct file_base_parameter
 {
@@ -290,7 +299,7 @@ enum flagBaseParameter
 
 const char* hwc_get_baseparameter_file(void);
 
-int hwc_get_baseparameter_config(char *parameter,int display,int flag);
+int hwc_get_baseparameter_config(char *parameter, int display, int flag, int type);
 
 int hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
 
