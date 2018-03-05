@@ -1005,12 +1005,12 @@ static int combine_layer(LayerMap& layer_map,std::vector<DrmHwcLayer>& layers,
     size_t i,j;
     uint32_t sort_cnt=0;
     bool is_combine = false;
-    size_t layers_size = layers.size();
-    size_t min_size = ((size_t)iPlaneSize < layers_size) ? (size_t)iPlaneSize:layers_size;
+
+    UN_USED(iPlaneSize);
 
     layer_map.clear();
 
-    for (i = 0; i < layers_size; ) {
+    for (i = 0; i < layers.size(); ) {
         if(!layers[i].bUse)
             continue;
 
@@ -1020,8 +1020,7 @@ static int combine_layer(LayerMap& layer_map,std::vector<DrmHwcLayer>& layers,
             layer_map[zpos].push_back(&layers[0]);
         }
 
-        //use min_size to limit layer group size in plane size.
-        for(j = i+1; j < min_size; j++) {
+        for(j = i+1; j < layers.size(); j++) {
             DrmHwcLayer &layer_one = layers[j];
             //layer_one.index = j;
             is_combine = false;
