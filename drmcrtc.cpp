@@ -85,11 +85,27 @@ int DrmCrtc::Init() {
     can_overscan_ = false;
   }
 
+  uint64_t alpha_scale = 0;
+  can_alpha_scale_ = true;
+  ret = drm_->GetCrtcProperty(*this, "ALPHA_SCALE", &alpha_scale_property_);
+  if (ret) {
+    ALOGE("Failed to get alpha_scale_property property");
+  }
+  alpha_scale_property_.value(&alpha_scale);
+  if(alpha_scale == 0)
+  {
+    can_alpha_scale_ = false;
+  }
+
   return 0;
 }
 
 bool DrmCrtc::get_afbc() const {
     return b_afbc_;
+}
+
+bool DrmCrtc::get_alpha_scale() const {
+    return can_alpha_scale_;
 }
 
 uint32_t DrmCrtc::id() const {
@@ -126,6 +142,10 @@ const DrmProperty &DrmCrtc::top_margin_property() const {
 
 const DrmProperty &DrmCrtc::bottom_margin_property() const {
   return bottom_margin_property_;
+}
+
+const DrmProperty &DrmCrtc::alpha_scale_property() const {
+  return alpha_scale_property_;
 }
 
 void DrmCrtc::dump_crtc(std::ostringstream *out) const

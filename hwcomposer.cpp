@@ -2074,6 +2074,24 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     }
 #endif
 
+    //vop limit: If vop cann't support alpha scale,it should go into gles.
+    if(!crtc->get_alpha_scale())
+    {
+        for (size_t j = 0; j < layer_content.layers.size(); j++) {
+            DrmHwcLayer& layer = layer_content.layers[j];
+            if(layer.format == HAL_PIXEL_FORMAT_RGBA_8888 || layer.format == HAL_PIXEL_FORMAT_BGRA_8888)
+            {
+                if(layer.h_scale_mul != 1.0 || layer.v_scale_mul != 1.0)
+                {
+                    use_framebuffer_target = true;
+                    ALOGD_IF(log_level(DBG_DEBUG),"alpha scale is not support,format=0x%x,h_scale=%f,v_scale=%f,go to GPU GLES at line=%d",
+                            layer.format, layer.h_scale_mul, layer.v_scale_mul, __LINE__);
+                    break;
+                }
+            }
+        }
+    }
+
     if(!use_framebuffer_target)
     {
         int iRgaCnt = 0;
