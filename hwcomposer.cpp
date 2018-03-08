@@ -1922,6 +1922,19 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             {
                 force_not_invalid_refresh = true;
             }
+
+            /*
+             *  VOP can't display layer size < 16 pixel , so set layer HWC_NODRAW in 1080P
+             */
+            if( hd->rel_xres * hd->rel_yres > 2073600 && (src_w * src_h < 16 ))
+            {
+               layer->compositionType = HWC_NODRAW;
+               //layer->flags |= HWC_SKIP_LAYER;
+               ALOGD_IF(log_level(DBG_DEBUG),
+                       "%s:line=%d layer size[%d,%d] too small ,set HWC_NODRAW, LayerName = %s, ",
+                       __FUNCTION__,__LINE__,src_w,src_h,layername);
+            }
+
 #if RK_PRINT_LAYER_NAME
             if(strstr(layername,"SurfaceView") && strstr(layername,"gallery"))
             {
