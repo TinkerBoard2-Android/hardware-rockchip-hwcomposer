@@ -1177,6 +1177,7 @@ static bool rkHasPlanesWithSize(DrmCrtc *crtc, int layer_size) {
   return false;
 }
 
+#if USE_AFBC_LAYER
 static std::vector<DrmPlane *> rkGetNoAfbcUsablePlanes(DrmCrtc *crtc) {
     DrmResources* drm = crtc->getDrmReoources();
     std::vector<PlaneGroup *>& plane_groups = drm->GetPlaneGroups();
@@ -1194,6 +1195,7 @@ static std::vector<DrmPlane *> rkGetNoAfbcUsablePlanes(DrmCrtc *crtc) {
   }
   return usable_planes;
 }
+#endif
 
 static std::vector<DrmPlane *> rkGetNoYuvUsablePlanes(DrmCrtc *crtc) {
     DrmResources* drm = crtc->getDrmReoources();
@@ -1457,6 +1459,7 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                             //Reserve some plane with no need for specific features in current layer.
                             if(!bNeed && !bMulArea && !is_interlaced)
                             {
+#if USE_AFBC_LAYER
                                 if(!(*iter_layer)->is_afbc && b_afbc)
                                 {
                                     std::vector<DrmPlane *> no_afbc_planes = rkGetNoAfbcUsablePlanes(crtc);
@@ -1466,6 +1469,7 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                         continue;
                                     }
                                 }
+#endif
 
                                 if(!(*iter_layer)->is_yuv && b_yuv)
                                 {
