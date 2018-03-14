@@ -1713,14 +1713,14 @@ int DrmDisplayCompositor::Composite() {
         // squash the frame into one layer and use the squashed composition
         ret = CommitFrame(composition.get(), true);
         if (ret)
-          ALOGI("Commit test failed, squashing frame for display %d", display_);
+          ALOGI("Commit test failed, squashing frame for display %d(skip squashing by libin)", display_);
         use_hw_overlays_ = !ret;
       }
 
       // If use_hw_overlays_ is false, we can't use hardware to composite the
       // frame. So squash all layers into a single composition and queue that
       // instead.
-      if (!use_hw_overlays_) {
+      if ( 0 && !use_hw_overlays_) {
         std::unique_ptr<DrmDisplayComposition> squashed = CreateComposition();
         ret = SquashFrame(composition.get(), squashed.get());
         if (!ret) {
