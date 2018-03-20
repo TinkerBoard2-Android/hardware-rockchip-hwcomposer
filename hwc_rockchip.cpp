@@ -1270,6 +1270,7 @@ static std::vector<DrmPlane *> rkGetNoEotfUsablePlanes(DrmCrtc *crtc) {
 }
 
 //According to zpos and combine layer count,find the suitable plane.
+// bReserve [IN]: True if want to reserve feature plane.
 static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                uint64_t* zpos,
                                DrmCrtc *crtc,
@@ -1277,7 +1278,8 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                std::vector<DrmCompositionPlane>& composition_planes,
                                bool bMulArea,
                                bool is_interlaced,
-                               int fbSize)
+                               int fbSize,
+                               bool bReserve)
 {
     uint32_t combine_layer_count = 0;
     uint32_t layer_size = layer_vector.size();
@@ -1341,121 +1343,123 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                 (*iter_plane)->id(),(*iter_plane)->is_use(),(*iter_plane)->get_possible_crtc_mask());
                         if(!(*iter_plane)->is_use() && (*iter_plane)->GetCrtcSupported(*crtc))
                         {
-
                             bool bNeed = false;
-                            b_yuv  = (*iter_plane)->get_yuv();
-                            if((*iter_layer)->is_yuv)
+                            if(bReserve)
                             {
-                                if(!b_yuv)
+                                b_yuv  = (*iter_plane)->get_yuv();
+                                if((*iter_layer)->is_yuv)
                                 {
-                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support yuv",(*iter_plane)->id());
-                                    continue;
-                                }
-                                else
-                                    bNeed = true;
-                            }
-
-                            b_scale = (*iter_plane)->get_scale();
-                            if((*iter_layer)->is_scale)
-                            {
-                                if(!b_scale)
-                                {
-                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale",(*iter_plane)->id());
-                                    continue;
-                                }
-                                else
-                                {
-                                    if((*iter_layer)->h_scale_mul >= 8.0 || (*iter_layer)->v_scale_mul >= 8.0 ||
-                                        (*iter_layer)->h_scale_mul <= 0.125 || (*iter_layer)->v_scale_mul <= 0.125)
+                                    if(!b_yuv)
                                     {
-                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale factor(%f,%f)",
-                                                (*iter_plane)->id(), (*iter_layer)->h_scale_mul, (*iter_layer)->v_scale_mul);
+                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support yuv",(*iter_plane)->id());
                                         continue;
                                     }
                                     else
                                         bNeed = true;
                                 }
-                            }
 
-                            if ((*iter_layer)->blending == DrmHwcBlending::kPreMult)
-                                alpha = (*iter_layer)->alpha;
+                                b_scale = (*iter_plane)->get_scale();
+                                if((*iter_layer)->is_scale)
+                                {
+                                    if(!b_scale)
+                                    {
+                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale",(*iter_plane)->id());
+                                        continue;
+                                    }
+                                    else
+                                    {
+                                        if((*iter_layer)->h_scale_mul >= 8.0 || (*iter_layer)->v_scale_mul >= 8.0 ||
+                                            (*iter_layer)->h_scale_mul <= 0.125 || (*iter_layer)->v_scale_mul <= 0.125)
+                                        {
+                                            ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale factor(%f,%f)",
+                                                    (*iter_plane)->id(), (*iter_layer)->h_scale_mul, (*iter_layer)->v_scale_mul);
+                                            continue;
+                                        }
+                                        else
+                                            bNeed = true;
+                                    }
+                                }
+
+                                if ((*iter_layer)->blending == DrmHwcBlending::kPreMult)
+                                    alpha = (*iter_layer)->alpha;
 
 #ifdef TARGET_BOARD_PLATFORM_RK3328
-                            //disable global alpha feature for rk3328,since vop has bug on rk3328.
-                            b_alpha = false;
+                                //disable global alpha feature for rk3328,since vop has bug on rk3328.
+                                b_alpha = false;
 #else
-                            b_alpha = (*iter_plane)->alpha_property().id()?true:false;
+                                b_alpha = (*iter_plane)->alpha_property().id()?true:false;
 #endif
-                            if(alpha != 0xFF)
-                            {
-                                if(!b_alpha)
+                                if(alpha != 0xFF)
                                 {
-                                    ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
-                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support alpha,layer alpha=0x%x,alpha id=%d",
-                                            (*iter_plane)->id(),(*iter_layer)->alpha,(*iter_plane)->alpha_property().id());
-                                    continue;
+                                    if(!b_alpha)
+                                    {
+                                        ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
+                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support alpha,layer alpha=0x%x,alpha id=%d",
+                                                (*iter_plane)->id(),(*iter_layer)->alpha,(*iter_plane)->alpha_property().id());
+                                        continue;
+                                    }
+                                    else
+                                        bNeed = true;
                                 }
-                                else
-                                    bNeed = true;
-                            }
 
-                            eotf = (*iter_layer)->eotf;
-                            b_hdr2sdr = (*iter_plane)->get_hdr2sdr();
-                            if(eotf != TRADITIONAL_GAMMA_SDR)
-                            {
-                                if(!b_hdr2sdr)
+                                eotf = (*iter_layer)->eotf;
+                                b_hdr2sdr = (*iter_plane)->get_hdr2sdr();
+                                if(eotf != TRADITIONAL_GAMMA_SDR)
                                 {
-                                    ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
-                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support etof,layer eotf=%d,hdr2sdr=%d",
-                                            (*iter_plane)->id(),(*iter_layer)->eotf,(*iter_plane)->get_hdr2sdr());
-                                    continue;
+                                    if(!b_hdr2sdr)
+                                    {
+                                        ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
+                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support etof,layer eotf=%d,hdr2sdr=%d",
+                                                (*iter_plane)->id(),(*iter_layer)->eotf,(*iter_plane)->get_hdr2sdr());
+                                        continue;
+                                    }
+                                    else
+                                        bNeed = true;
                                 }
-                                else
-                                    bNeed = true;
-                            }
 
 #if USE_AFBC_LAYER
-                            b_afbc = (*iter_plane)->get_afbc();
-                            if((*iter_layer)->is_afbc && (*iter_plane)->get_afbc_prop())
-                            {
-                                if(!b_afbc)
+                                b_afbc = (*iter_plane)->get_afbc();
+                                if((*iter_layer)->is_afbc && (*iter_plane)->get_afbc_prop())
                                 {
-                                    ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
-                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support afbc,layer", (*iter_plane)->id());
-                                    continue;
+                                    if(!b_afbc)
+                                    {
+                                        ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
+                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support afbc,layer", (*iter_plane)->id());
+                                        continue;
+                                    }
+                                    else
+                                        bNeed = true;
                                 }
-                                else
-                                    bNeed = true;
-                            }
 #endif
 
 #ifdef TARGET_BOARD_PLATFORM_RK3288
-                            int src_w,src_h;
+                                int src_w,src_h;
 
-                            src_w = (int)((*iter_layer)->source_crop.right - (*iter_layer)->source_crop.left);
+                                src_w = (int)((*iter_layer)->source_crop.right - (*iter_layer)->source_crop.left);
 #if RK_VIDEO_SKIP_LINE
-                            if((*iter_layer)->bSkipLine)
-                            {
-                                if((*iter_layer)->format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+                                if((*iter_layer)->bSkipLine)
                                 {
-                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12_10;
+                                    if((*iter_layer)->format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+                                    {
+                                        src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12_10;
+                                    }
+                                    else
+                                    {
+                                        src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12;
+                                    }
                                 }
                                 else
-                                {
-                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12;
-                                }
-                            }
-                            else
 #endif
-                                src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top);
+                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top);
 
-                            float src_size = (float)src_w * src_h;
-                            if(src_size/fbSize > 0.75)
-                            {
-                                bNeed = true;
-                                ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) need by big area,src_size=%f,fbSize=%d",(*iter_plane)->id(),src_size,fbSize);
-                            }
+                                float src_size = (float)src_w * src_h;
+                                if(src_size/fbSize > 0.75)
+                                {
+                                    bNeed = true;
+                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) need by big area,src_size=%f,fbSize=%d",(*iter_plane)->id(),src_size,fbSize);
+                                }
 #endif
+                            }
                             //Reserve some plane with no need for specific features in current layer.
                             if(!bNeed && !bMulArea && !is_interlaced)
                             {
@@ -1600,11 +1604,16 @@ bool MatchPlanes(
 
     for (LayerMap::iterator iter = layer_map.begin();
         iter != layer_map.end(); ++iter) {
-        bMatch = MatchPlane(iter->second, &last_zpos, crtc, drm, composition_planes, bMulArea, is_interlaced, fbSize);
+        bMatch = MatchPlane(iter->second, &last_zpos, crtc, drm, composition_planes, bMulArea, is_interlaced, fbSize, true);
         if(!bMatch)
         {
-            ALOGD_IF(log_level(DBG_DEBUG),"hwc_prepare: Cann't find the match plane for layer group %d",iter->first);
-            return false;
+            ALOGD_IF(log_level(DBG_DEBUG),"hwc_prepare: first Cann't find the match plane for layer group %d",iter->first);
+            bMatch = MatchPlane(iter->second, &last_zpos, crtc, drm, composition_planes, bMulArea, is_interlaced, fbSize, false);
+            if(!bMatch)
+            {
+                ALOGD_IF(log_level(DBG_DEBUG),"hwc_prepare: second Cann't find the match plane for layer group %d",iter->first);
+                return false;
+            }
         }
     }
 
