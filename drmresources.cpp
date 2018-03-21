@@ -716,11 +716,15 @@ int DrmResources::UpdatePropertys(void)
   return 0;
 }
 
+
+static pthread_mutex_t diplay_route_mutex = PTHREAD_MUTEX_INITIALIZER;
+
 int DrmResources::UpdateDisplayRoute(void)
 {
   bool mode_changed = false;
   int i;
 
+  pthread_mutex_lock(&diplay_route_mutex);
   for (i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
     DrmConnector *conn = GetConnectorFromType(i);
 
@@ -732,11 +736,15 @@ int DrmResources::UpdateDisplayRoute(void)
   }
 
   if (!enable_changed_ && !mode_changed)
+  {
+    pthread_mutex_unlock(&diplay_route_mutex);
     return 0;
+  }
 
   DrmConnector *primary = GetConnectorFromType(HWC_DISPLAY_PRIMARY);
   if (!primary) {
     ALOGE("%s:line=%d Failed to find primary display\n", __FUNCTION__, __LINE__);
+    pthread_mutex_unlock(&diplay_route_mutex);
     return -EINVAL;
   }
   DrmConnector *extend = GetConnectorFromType(HWC_DISPLAY_EXTERNAL);
@@ -826,6 +834,7 @@ int DrmResources::UpdateDisplayRoute(void)
   drmModeAtomicReqPtr pset = drmModeAtomicAlloc();
   if (!pset) {
     ALOGE("%s:line=%d Failed to allocate property set",__FUNCTION__, __LINE__);
+    pthread_mutex_unlock(&diplay_route_mutex);
     return -ENOMEM;
   }
 
@@ -930,6 +939,7 @@ int DrmResources::UpdateDisplayRoute(void)
   if (ret < 0) {
     ALOGE("%s:line=%d Failed to commit pset ret=%d\n", __FUNCTION__, __LINE__, ret);
     drmModeAtomicFree(pset);
+    pthread_mutex_unlock(&diplay_route_mutex);
     return ret;
   }
 
@@ -952,6 +962,8 @@ int DrmResources::UpdateDisplayRoute(void)
   drmModeAtomicFree(pset);
 
   hotplug_timeline++;
+
+  pthread_mutex_unlock(&diplay_route_mutex);
 
   return 0;
 }
