@@ -197,10 +197,6 @@ class DrmHotplugHandler : public DrmEventHandler {
      * If Connector changed ,update baseparameter , resolution , color.
      */
     hwc_get_baseparameter_config(NULL,0,BP_UPDATE,0);
-    property_set("persist.sys.resolution.main","use_baseparameter");
-    property_set("persist.sys.resolution.aux","use_baseparameter");
-    property_set("persist.sys.color.main","use_baseparameter");
-    property_set("persist.sys.color.aux","use_baseparameter");
 
     /*
      * status changed?
@@ -392,6 +388,7 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   float vrefresh;
   char val,val_3d;
   int timeline;
+  static uint32_t last_mainType,last_auxType;
   uint32_t MaxResolution = 0,temp;
   uint32_t flags_temp;
 
@@ -407,6 +404,12 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
 
   if (display == HWC_DISPLAY_PRIMARY)
   {
+    if(c->get_type() != last_mainType)
+    {
+        property_set("persist.sys.resolution.main","use_baseparameter");
+        ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main resolution",last_mainType,c->get_type());
+        last_mainType = c->get_type();
+    }
     /* if resolution is null,set to "Auto" */
     property_get("persist.sys.resolution.main", resolution, "use_baseparameter");
     property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
@@ -425,6 +428,12 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   }
   else
   {
+    if(c->get_type() != last_auxType)
+    {
+        property_set("persist.sys.resolution.aux","use_baseparameter");
+        ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux resolution",last_auxType,c->get_type());
+        last_auxType = c->get_type();
+    }
     property_get("persist.sys.resolution.aux", resolution, "use_baseparameter");
     property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
 
@@ -1477,6 +1486,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     int need_change_format = 0;
     int need_change_depth = 0;
     char prop_format[PROPERTY_VALUE_MAX];
+    static uint32_t last_mainType,last_auxType;
     timeline = property_get_int32("sys.display.timeline", -1);
     drmModeAtomicReqPtr pset = NULL;
     /*
@@ -1490,11 +1500,23 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     memset(prop_format, 0, sizeof(prop_format));
     if (display == HWC_DISPLAY_PRIMARY)
     {
-    /* if resolution is null,set to "Auto" */
+        if(connector->get_type() != last_mainType)
+        {
+            property_set("persist.sys.color.main","use_baseparameter");
+            ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main color",last_mainType,connector->get_type());
+            last_mainType = connector->get_type();
+        }
+        /* if resolution is null,set to "Auto" */
         property_get("persist.sys.color.main", prop_format, "use_baseparameter");
     }
     else
     {
+        if(connector->get_type() != last_auxType)
+        {
+            property_set("persist.sys.color.aux","use_baseparameter");
+            ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux color",last_auxType,connector->get_type());
+            last_auxType = connector->get_type();
+        }
         property_get("persist.sys.color.aux", prop_format, "use_baseparameter");
     }
     ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);

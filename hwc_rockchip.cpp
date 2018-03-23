@@ -2352,7 +2352,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     }
 
                     if(type_found){
-                        ALOGD("BP: Main screen type %d found",type);
+                        ALOGD("BP: Main screen type %d be found",type);
                         w = base_parameter.main.screen_list[i].resolution.hdisplay;
                         h = base_parameter.main.screen_list[i].resolution.vdisplay;
                         vsync_start = base_parameter.main.screen_list[i].resolution.vsync_start;
