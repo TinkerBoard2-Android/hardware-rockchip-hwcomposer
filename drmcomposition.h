@@ -38,8 +38,7 @@ struct DrmCompositionDisplayLayersMap {
   std::vector<DrmHwcLayer> layers;
 
   DrmCompositionDisplayLayersMap() = default;
-  DrmCompositionDisplayLayersMap(DrmCompositionDisplayLayersMap &&rhs) =
-      default;
+
 };
 
 struct DrmCompositionDisplayPlane {

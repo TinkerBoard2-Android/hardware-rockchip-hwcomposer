@@ -317,7 +317,6 @@ class DrmHotplugHandler : public DrmEventHandler {
     procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
     hd->active = true;
     procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
-
     /**********************long-running operations should move back of hotplug**************************/
     /*
      * If Connector changed ,update baseparameter , resolution , color.
@@ -2531,7 +2530,10 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       if(!layer.sf_handle)
       {
         ALOGE("%s: sf_handle is null,maybe fb target is null",__FUNCTION__);
-        goto err;
+        hwc_sync_release(dc);
+        std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
+        layers_map.erase(iter);
+        break;
       }
       if(!layer.bClone_)
         layer.ImportBuffer(ctx, layer.raw_sf_layer, ctx->importer.get());
@@ -2639,7 +2641,7 @@ err:
 
         hwc_sync_release(dc);
     }
-
+    ctx->drm.ClearAllDisplay();
     return -EINVAL;
 }
 
