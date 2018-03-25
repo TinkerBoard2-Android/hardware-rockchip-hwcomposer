@@ -194,11 +194,6 @@ class DrmHotplugHandler : public DrmEventHandler {
     }
 
     /*
-     * If Connector changed ,update baseparameter , resolution , color.
-     */
-    hwc_get_baseparameter_config(NULL,0,BP_UPDATE,0);
-
-    /*
      * status changed?
      */
     drm_->DisplayChanged();
@@ -273,6 +268,14 @@ class DrmHotplugHandler : public DrmEventHandler {
     drm_->SetExtendDisplay(extend);
 
     if (!extend) {
+      procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
+
+      /**********************long-running operations should move back of hotplug**************************/
+      /*
+       * If Connector changed ,update baseparameter , resolution , color.
+       */
+      hwc_get_baseparameter_config(NULL,0,BP_UPDATE,0);
+
       //When wake up from TV mode, it will bind crtc to TV connector.
       //If we also plug in HDMI,and don't bind crtc to HDMI connector,
       //the crtc of connected HDMI will be NULL. Which lead HDMI show nothing.
@@ -281,10 +284,8 @@ class DrmHotplugHandler : public DrmEventHandler {
       //2. We should get current mode before UpdateDisplayRoute.
       //otherwise, it will lead crtc is disabled when current mode is 0
       //when boot system sometimes.
-      drm_->DisplayChanged();
       drm_->UpdateDisplayRoute();
 
-      procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
       //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
       usleep(HOTPLUG_MSLEEP*1000);
       procs_->invalidate(procs_);
@@ -295,16 +296,7 @@ class DrmHotplugHandler : public DrmEventHandler {
     update_display_bestmode(hd, HWC_DISPLAY_EXTERNAL, extend);
     DrmMode mode = extend->best_mode();
     extend->set_current_mode(mode);
-    //1. When wake up from TV mode, it will bind crtc to TV connector.
-    //If we also plug in HDMI,and don't bind crtc to HDMI connector,
-    //the crtc of connected HDMI will be NULL. Which lead HDMI show nothing.
-    //Pg: Defect #149666
-    /**************************************************************************/
-    //2. We should get current mode before UpdateDisplayRoute.
-    //otherwise, it will lead crtc is disabled when current mode is 0
-    //when boot system sometimes.
-    drm_->DisplayChanged();
-    drm_->UpdateDisplayRoute();
+
 
     if (mode.h_display() > mode.v_display() && mode.v_display() >= 2160) {
       hd->framebuffer_width = mode.h_display() * (1080.0 / mode.v_display());
@@ -320,6 +312,23 @@ class DrmHotplugHandler : public DrmEventHandler {
     procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
     hd->active = true;
     procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
+
+    /**********************long-running operations should move back of hotplug**************************/
+    /*
+     * If Connector changed ,update baseparameter , resolution , color.
+     */
+    hwc_get_baseparameter_config(NULL,0,BP_UPDATE,0);
+
+    //1. When wake up from TV mode, it will bind crtc to TV connector.
+    //If we also plug in HDMI,and don't bind crtc to HDMI connector,
+    //the crtc of connected HDMI will be NULL. Which lead HDMI show nothing.
+    //Pg: Defect #149666
+    /**************************************************************************/
+    //2. We should get current mode before UpdateDisplayRoute.
+    //otherwise, it will lead crtc is disabled when current mode is 0
+    //when boot system sometimes.
+    drm_->UpdateDisplayRoute();
+
     //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
     usleep(HOTPLUG_MSLEEP*1000);
     procs_->invalidate(procs_);
