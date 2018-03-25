@@ -72,6 +72,9 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
 static unsigned int g_boot_cnt = 0;
 #endif
 static unsigned int g_boot_gles_cnt = 0;
+static unsigned int g_extern_gles_cnt = 0;
+static bool g_bSkipExtern = false;
+
 //#if RK_INVALID_REFRESH
 hwc_context_t* g_ctx = NULL;
 //#endif
@@ -309,6 +312,8 @@ class DrmHotplugHandler : public DrmEventHandler {
     hd->rel_yres = mode.v_display();
     hd->v_total = mode.v_total();
     hd->active = false;
+    g_bSkipExtern = true;
+    g_extern_gles_cnt = 0;
     procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
     hd->active = true;
     procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
@@ -1229,6 +1234,13 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
         ALOGD_IF(log_level(DBG_DEBUG),"g_boot_gles_cnt=%d,go to GPU GLES at line=%d", g_boot_gles_cnt, __LINE__);
         g_boot_gles_cnt++;
         return true;
+    }
+
+    if(g_bSkipExtern && (g_extern_gles_cnt < BOOT_GLES_COUNT))
+    {
+       ALOGD_IF(log_level(DBG_DEBUG),"g_extern_gles_cnt=%d,go to GPU GLES at line=%d", g_extern_gles_cnt, __LINE__);
+       g_extern_gles_cnt++;
+       return true;
     }
 
 #if RK_INVALID_REFRESH
