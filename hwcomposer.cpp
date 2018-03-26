@@ -75,6 +75,10 @@ static unsigned int g_boot_gles_cnt = 0;
 static unsigned int g_extern_gles_cnt = 0;
 static bool g_bSkipExtern = false;
 
+#ifdef USE_HWC2
+static bool g_hasHotplug = false;
+#endif
+
 //#if RK_INVALID_REFRESH
 hwc_context_t* g_ctx = NULL;
 //#endif
@@ -159,6 +163,11 @@ class DrmHotplugHandler : public DrmEventHandler {
     int ret;
     DrmConnector *extend = NULL;
     DrmConnector *primary = NULL;
+
+#ifdef USE_HWC2
+    if(!g_hasHotplug)
+       g_hasHotplug = true;
+#endif
 
     for (auto &conn : drm_->connectors()) {
       //In sleep mode,we need get raw connector state,otherwise,we will miss the chance
@@ -1134,13 +1143,13 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
             D_DEC(ret);
 
             iFbdcSupport = atoi(fbdc_value);
-            if(iFbdcSupport > 0)
+            if(iFbdcSupport > 0 && display == 0)
             {
                 D("to set 'is_afbc'.");
                 is_afbc = true;
             }
         }
-        else if(iFbdcSupport > 0)
+        else if(iFbdcSupport > 0 && display == 0)
         {
             D("to set 'is_afbc'.");
             is_afbc = true;
@@ -1710,6 +1719,15 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
   int win1_reserved = hwc_get_int_property("sys.hwc.win1.reserved", "0");
 #endif
 
+#ifdef USE_HWC2
+  DrmConnector *extend = ctx->drm.GetConnectorFromType(HWC_DISPLAY_EXTERNAL);
+
+    //Fake handle event if the hotplug happen earlyer than hwc thread.
+    if(get_frame() == 1 && !g_hasHotplug  && extend && (extend->raw_state() == DRM_MODE_CONNECTED))
+    {
+      ctx->hotplug_handler.HandleEvent(0);
+    }
+#endif
     init_log_level();
     hwc_dump_fps();
     ALOGD_IF(log_level(DBG_VERBOSE),"----------------------------frame=%d start ----------------------------",get_frame());

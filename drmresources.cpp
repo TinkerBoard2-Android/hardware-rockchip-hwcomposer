@@ -405,6 +405,7 @@ int DrmResources::Init() {
   }
 
   ConfigurePossibleDisplays();
+  SetPrimaryDisplay(NULL);
   for (auto &conn : connectors_) {
     if (!(conn->possible_displays() & HWC_DISPLAY_PRIMARY_BIT))
       continue;
@@ -450,6 +451,7 @@ int DrmResources::Init() {
     return -ENODEV;
   }
 
+  SetExtendDisplay(NULL);
   for (auto &conn : connectors_) {
       if (GetConnectorFromType(HWC_DISPLAY_PRIMARY) == conn.get())
         continue;
