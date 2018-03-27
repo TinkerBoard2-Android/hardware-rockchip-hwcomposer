@@ -1531,13 +1531,13 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                     continue;
                             }
 
-                            ALOGD_IF(log_level(DBG_DEBUG),"MatchPlane: match layer=%s,plane=%d,(*iter_layer)->index=%zu",(*iter_layer)->name.c_str(),
-                                (*iter_plane)->id(),(*iter_layer)->index);
+                            ALOGD_IF(log_level(DBG_DEBUG),"MatchPlane: match layer=%s,plane=%d,(*iter_layer)->index=%zu ,zops = %" PRIu64 "",(*iter_layer)->name.c_str(),
+                                (*iter_plane)->id(),(*iter_layer)->index,*zpos);
                             //Find the match plane for layer,it will be commit.
                             composition_planes.emplace_back(DrmCompositionPlane::Type::kLayer, (*iter_plane), crtc, (*iter_layer)->zpos);
                             (*iter_layer)->is_match = true;
                             (*iter_plane)->set_use(true);
-                            composition_planes.back().set_zpos((*iter_layer)->zpos);
+                            composition_planes.back().set_zpos(*zpos);
                             combine_layer_count++;
                             break;
 
