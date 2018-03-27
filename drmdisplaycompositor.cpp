@@ -1080,6 +1080,11 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     int left_margin = 100, right_margin= 100, top_margin = 100, bottom_margin = 100;
 
     DrmConnector *conn = drm_->GetConnectorFromType(display_);
+    if(conn == NULL)
+    {
+      ALOGE("%s: line=%d display %d connector is NULL", __FUNCTION__, __LINE__, display_);
+      return -ENODEV;
+    }
     DrmMode mode = conn->current_mode();
     if(display_comp->mode_3d() != NON_3D || (mode.interlaced() > 0))
     {

@@ -1909,6 +1909,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     if (!display_contents[i])
       continue;
 
+    ALOGD_IF(log_level(DBG_VERBOSE), "************** display=%d **************", i);
     int num_layers = display_contents[i]->numHwLayers;
     for (int j = 0; j < num_layers; j++) {
       hwc_layer_1_t *layer = &display_contents[i]->hwLayers[j];
@@ -2696,7 +2697,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       }
       if(!layer.sf_handle)
       {
-        ALOGE("%s: sf_handle is null,maybe fb target is null",__FUNCTION__);
+        ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
         hwc_sync_release(dc);
         std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
         layers_map.erase(iter);
@@ -2706,6 +2707,12 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
         layer.ImportBuffer(ctx, layer.raw_sf_layer, ctx->importer.get());
       map.layers.emplace_back(std::move(layer));
     }
+  }
+
+  if(layers_map.size() == 0)
+  {
+    ALOGD("%s: layers_map size is 0",__FUNCTION__);
+    goto err;
   }
 
   ctx->drm.UpdateDisplayRoute();
