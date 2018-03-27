@@ -1280,28 +1280,182 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 
     for (int j = 0; j < num_layers-1; j++) {
         hwc_layer_1_t *layer = &display_content->hwLayers[j];
-        int src_l,src_t,src_w,src_h;
-        src_l = (int)layer->sourceCropf.left;
-        src_t = (int)layer->sourceCropf.top;
-        src_w = (int)(layer->sourceCropf.right - layer->sourceCropf.left);
-        src_h = (int)(layer->sourceCropf.bottom - layer->sourceCropf.top);
 
-	if((layer->transform == HWC_TRANSFORM_ROT_90) || (layer->transform == HWC_TRANSFORM_ROT_270))
-	{
-		src_h = ALIGN_DOWN(src_h, 8);
-		src_w = ALIGN_DOWN(src_w, 2);
-	}
-	else
-	{
-		src_w = ALIGN_DOWN(src_w, 8);
-		src_h = ALIGN_DOWN(src_h, 2);
-	}
-
-        if(hd->isVideo && (layer->transform != 0)  && (src_w <= 0 || src_h <= 0))
+        if(layer->handle)
         {
-            ALOGD_IF(log_level(DBG_DEBUG),"layer src sourceCropf(%f,%f,%f,%f) is invalid,go to GPU GLES at line=%d",
-                    layer->sourceCropf.left,layer->sourceCropf.top,layer->sourceCropf.right,layer->sourceCropf.bottom, __LINE__);
-            return true;
+#if RK_DRM_GRALLOC
+            format = hwc_get_handle_attibute(ctx->gralloc,layer->handle,ATT_FORMAT);
+#else
+            format = hwc_get_handle_format(ctx->gralloc,layer->handle);
+#endif
+        }
+
+        if(hd->isVideo && (layer->transform != 0))
+        {
+            int src_l,src_t,src_r,src_b,src_w,src_h;
+            int dst_l,dst_t,dst_r,dst_b,dst_w,dst_h;
+            hwc_region_t * visible_region = &layer->visibleRegionScreen;
+            hwc_rect_t const * visible_rects = visible_region->rects;
+            hwc_rect_t  rect_merge;
+            int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
+            float rga_h_scale=1.0, rga_v_scale=1.0;
+
+            src_l = (int)layer->sourceCropf.left;
+            src_t = (int)layer->sourceCropf.top;
+            src_r = (int)layer->sourceCropf.right;
+            src_b = (int)layer->sourceCropf.bottom;
+            src_w = (int)(layer->sourceCropf.right - layer->sourceCropf.left);
+            src_h = (int)(layer->sourceCropf.bottom - layer->sourceCropf.top);
+
+            src_l = ALIGN_DOWN(src_l, 2);
+            dst_l = 0;
+            dst_t = 0;
+
+#ifdef TARGET_BOARD_PLATFORM_RK3368
+            if((layer->transform == HWC_TRANSFORM_ROT_90) || (layer->transform == HWC_TRANSFORM_ROT_270))
+            {
+                dst_r = (int)(src_b - src_t);
+                dst_b = (int)(src_r - src_l);
+                src_h = ALIGN_DOWN(src_h, 8);
+                src_w = ALIGN_DOWN(src_w, 2);
+            }
+            else
+            {
+                dst_r = (int)(src_r - src_l);
+                dst_b = (int)(src_b - src_t);
+                src_w = ALIGN_DOWN(src_w, 8);
+                src_h = ALIGN_DOWN(src_h, 2);
+            }
+            dst_w = dst_r - dst_l;
+            dst_h = dst_b - dst_t;
+            int dst_raw_w = dst_w;
+            int dst_raw_h = dst_h;
+            dst_w = ALIGN_DOWN(dst_w, 8);
+            dst_h = ALIGN_DOWN(dst_h, 2);
+#else
+            rect_merge.left = layer->displayFrame.left;
+            rect_merge.top = layer->displayFrame.top;
+            rect_merge.right = layer->displayFrame.right;
+            rect_merge.bottom = layer->displayFrame.bottom;
+
+            if(visible_rects){
+                left_min = visible_rects[0].left;
+                top_min = visible_rects[0].top;
+                right_max = visible_rects[0].right;
+                bottom_max = visible_rects[0].bottom;
+
+                for (int r = 0; r < (int) visible_region->numRects; r++) {
+                    int r_left;
+                    int r_top;
+                    int r_right;
+                    int r_bottom;
+
+                    r_left = hwcMAX(layer->displayFrame.left, visible_rects[r].left);
+                    left_min = hwcMIN(r_left, left_min);
+                    r_top = hwcMAX(layer->displayFrame.top, visible_rects[r].top);
+                    top_min = hwcMIN(r_top, top_min);
+                    r_right = hwcMIN(layer->displayFrame.right, visible_rects[r].right);
+                    right_max = hwcMAX(r_right, right_max);
+                    r_bottom = hwcMIN(layer->displayFrame.bottom, visible_rects[r].bottom);
+                    bottom_max  = hwcMAX(r_bottom, bottom_max);
+                }
+
+               if(format == HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO
+                    || format == HAL_PIXEL_FORMAT_YCrCb_NV12){
+                rect_merge.left = layer->displayFrame.left;
+                rect_merge.top = layer->displayFrame.top;
+                rect_merge.right =  layer->displayFrame.right;
+                rect_merge.bottom = layer->displayFrame.bottom;
+               }
+               else
+               {
+                rect_merge.left = hwcMAX(layer->displayFrame.left, left_min);
+                rect_merge.top = hwcMAX(layer->displayFrame.top, top_min);
+                rect_merge.right =  hwcMIN(layer->displayFrame.right, right_max);
+                rect_merge.bottom = hwcMIN(layer->displayFrame.bottom, bottom_max);
+               }
+            }
+
+            src_w = ALIGN_DOWN(src_w, 2);
+            src_h = ALIGN_DOWN(src_h, 2);
+
+            dst_w = rect_merge.right - rect_merge.left;
+            dst_h = rect_merge.bottom - rect_merge.top;
+
+            dst_w = ALIGN(dst_w, 8);
+            dst_h = ALIGN(dst_h, 2);
+#endif
+
+            if(src_w <= 0 || src_h <= 0)
+            {
+                ALOGD_IF(log_level(DBG_DEBUG),"layer src sourceCropf(%f,%f,%f,%f) is invalid,go to GPU GLES at line=%d",
+                        layer->sourceCropf.left,layer->sourceCropf.top,layer->sourceCropf.right,layer->sourceCropf.bottom, __LINE__);
+                return true;
+            }
+
+            if((layer->transform == HWC_TRANSFORM_ROT_90) || (layer->transform == HWC_TRANSFORM_ROT_270))
+            {
+                rga_h_scale = (float)dst_h / src_w;
+                rga_v_scale = (float)dst_w / src_h;
+            }
+            else
+            {
+                rga_h_scale = (float)dst_w / src_w;
+                rga_v_scale = (float)dst_h / src_h;
+            }
+
+#if (RGA_VER == 0 || RGA_VER == 1)
+            /* Arbitrary non-integer scaling ratio, from 1/2 to 8
+               RGA1:
+                RK3066
+                RK3188
+                Beetles
+                Beetlesplus
+               RGA1_plus:
+                Audi -> 3128
+                Granite -> soifa 3gr
+             */
+            if(rga_h_scale < 0.5 || rga_v_scale < 0.5 ||
+                rga_h_scale > 8.0 || rga_v_scale > 8.0)
+            {
+                ALOGD_IF(log_level(DBG_DEBUG),"rga scale(%f,%f) out of range,go to GPU GLES at line=%d",
+                        rga_h_scale,rga_v_scale,__LINE__);
+                return true;
+            }
+#elif (RGA_VER == 2)
+            /* Arbitrary non-integer scaling ratio, from 1/8 to 8
+               RGA2-Lite:
+                Maybach -> 3368
+                BMW -> 3366
+                Benz   -> 3228
+                infiniti ->3228H
+                rk3328
+                rk3326
+            */
+            if(rga_h_scale < 0.125 || rga_v_scale < 0.125 ||
+                rga_h_scale > 8.0 || rga_v_scale > 8.0)
+            {
+                ALOGD_IF(log_level(DBG_DEBUG),"rga scale(%f,%f) out of range,go to GPU GLES at line=%d",
+                        rga_h_scale,rga_v_scale,__LINE__);
+                return true;
+            }
+#else
+            /* Arbitrary non-integer scaling ratio, from 1/16 to 16
+               RGA2:
+                Lincoln -> 3288/3288w
+                Capricorn -> 3190
+               RGA2-Enhance
+                mclaren -> 3399
+                mercury -> 1108
+             */
+            if(rga_h_scale < 0.0625 || rga_v_scale < 0.0625 ||
+                rga_h_scale > 16.0 || rga_v_scale > 16.0)
+            {
+                ALOGD_IF(log_level(DBG_DEBUG),"rga scale(%f,%f) out of range,go to GPU GLES at line=%d",
+                        rga_h_scale,rga_v_scale,__LINE__);
+                return true;
+            }
+#endif
         }
 
 #if 0
@@ -1350,11 +1504,6 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 #endif
             DumpLayer(layername,layer->handle);
 
-#if RK_DRM_GRALLOC
-            format = hwc_get_handle_attibute(ctx->gralloc,layer->handle,ATT_FORMAT);
-#else
-            format = hwc_get_handle_format(ctx->gralloc,layer->handle);
-#endif
             if(!vop_support_format(format))
             {
                 ALOGD_IF(log_level(DBG_DEBUG),"layer's format=0x%x is not support,go to GPU GLES at line=%d", format, __LINE__);
