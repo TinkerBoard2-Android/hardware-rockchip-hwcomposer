@@ -1908,12 +1908,14 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
         if(skip_layer_indices.first != 0)
         {
             tmp_index = skip_layer_indices.first;
+            //try decrease first skip index to 0.
             skip_layer_indices.first = 0;
             skipCnt = skip_layer_indices.second - skip_layer_indices.first + 1;
             if(((int)layers.size() - skipCnt + 1) > iPlaneSize && skip_layer_indices.second != (int)layers.size()-1)
             {
                 skip_layer_indices.first = tmp_index;
                 tmp_index = skip_layer_indices.second;
+                //try increase second skip index to last index.
                 skip_layer_indices.second = layers.size()-1;
                 skipCnt = skip_layer_indices.second - skip_layer_indices.first + 1;
                 if(((int)layers.size() - skipCnt + 1) > iPlaneSize)
@@ -1923,12 +1925,32 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
                 }
             }
         }
+        else
+        {
+            if(skip_layer_indices.second != (int)layers.size()-1)
+            {
+                //try increase second skip index to last index-1.
+                skip_layer_indices.second = layers.size()-2;
+                skipCnt = skip_layer_indices.second + 1;
+                if(((int)layers.size() - skipCnt + 1) > iPlaneSize)
+                {
+                    ALOGD_IF(log_level(DBG_DEBUG), "%s:line=%d fail match (%d,%d)",__FUNCTION__,__LINE__,skip_layer_indices.first, tmp_index);
+                    goto FailMatch;
+                }
+            }
+            else
+            {
+                ALOGD_IF(log_level(DBG_DEBUG), "%s:line=%d fail match (%d,%d)",__FUNCTION__,__LINE__,skip_layer_indices.first, tmp_index);
+                goto FailMatch;
+            }
+        }
     }
 
     /*************************mix skip layer*************************/
     if(!hd->is_3d && bHasSkipLayer && ((int)layers.size() - skipCnt + 1) <= iPlaneSize)
     {
         ALOGD_IF(log_level(DBG_DEBUG), "%s:has skip layer (%d,%d)",__FUNCTION__,skip_layer_indices.first, skip_layer_indices.second);
+
         if(hd->mixMode != HWC_MIX_CROSS)
             hd->mixMode = HWC_MIX_CROSS;
         bAllMatch = try_mix_policy(drm, crtc, hd->is_interlaced, layers, tmp_layers, iPlaneSize, composition_planes,
