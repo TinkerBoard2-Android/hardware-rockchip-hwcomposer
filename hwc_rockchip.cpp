@@ -1289,17 +1289,10 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
     uint64_t rotation = 0;
     uint64_t alpha = 0xFF;
     uint16_t eotf = TRADITIONAL_GAMMA_SDR;
-    DrmHwcLayer* first_layer = layer_vector[0];
 
 #ifndef TARGET_BOARD_PLATFORM_RK3288
     UN_USED(fbSize);
 #endif
-
-    if(first_layer->alpha != 0xFF)
-    {
-      ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d  vop cann't support first layer with global alpha",__FUNCTION__,__LINE__);
-      return false;
-    }
 
     //loop plane groups.
     for (iter = plane_groups.begin();
@@ -1604,6 +1597,16 @@ bool MatchPlanes(
 
     for (LayerMap::iterator iter = layer_map.begin();
         iter != layer_map.end(); ++iter) {
+        if(iter == layer_map.begin())
+        {
+            DrmHwcLayer* first_layer = (iter->second)[0];
+
+            if(first_layer->alpha != 0xFF)
+            {
+              ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d  vop cann't support first layer with global alpha",__FUNCTION__,__LINE__);
+              return false;
+            }
+        }
         bMatch = MatchPlane(iter->second, &last_zpos, crtc, drm, composition_planes, bMulArea, is_interlaced, fbSize, true);
         if(!bMatch)
         {
