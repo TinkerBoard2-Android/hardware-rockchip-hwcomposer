@@ -1338,6 +1338,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             rect_merge.right = layer->displayFrame.right;
             rect_merge.bottom = layer->displayFrame.bottom;
 
+#if 0
             if(visible_rects){
                 left_min = visible_rects[0].left;
                 top_min = visible_rects[0].top;
@@ -1375,6 +1376,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                 rect_merge.bottom = hwcMIN(layer->displayFrame.bottom, bottom_max);
                }
             }
+#endif
 
             src_w = ALIGN_DOWN(src_w, 2);
             src_h = ALIGN_DOWN(src_h, 2);

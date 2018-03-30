@@ -543,7 +543,7 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
     rect_merge.top = layer.display_frame.top;
     rect_merge.right = layer.display_frame.right;
     rect_merge.bottom = layer.display_frame.bottom;
-
+#if 0
     if(visible_rects){
         left_min = visible_rects[0].left;
         top_min = visible_rects[0].top;
@@ -581,6 +581,7 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
         rect_merge.bottom = hwcMIN(layer.display_frame.bottom, bottom_max);
        }
     }
+#endif
 #endif
     ret = rgaBuffer.WaitReleased(-1);
     if (ret) {
