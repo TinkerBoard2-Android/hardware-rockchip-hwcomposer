@@ -31,7 +31,13 @@
 #define GHWC_VERSION                    "0.45"
 
 /* hdr usage */
-#define HDRUSAGE                                       0x3000000
+/*usage & 0x0F000000
+  0x1000000 bt2020
+  0x2000000 hdr10
+  0x3000000 hlg
+  0x4000000 dobly version
+ */
+#define HDRUSAGE                                       0x2000000
 
 /* msleep for hotplug in event */
 #define HOTPLUG_MSLEEP			(200)

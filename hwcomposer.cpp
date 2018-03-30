@@ -2068,7 +2068,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                   ALOGE("Failed to get usage for buffer %p (%d)", layer->handle, ret);
                   return ret;
                 }
-                if(usage & HDRUSAGE)
+                if((usage & 0x0F000000) == HDRUSAGE)
                 {
                     isHdr = true;
                     //vop limit: hdr video must in the bottom.
