@@ -1510,6 +1510,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                 return true;
             }
 
+#if  (defined TARGET_BOARD_PLATFORM_RK3399) || (defined TARGET_BOARD_PLATFORM_RK3288)
             if(hd->isHdr)
             {
                 if(connector && !connector->is_hdmi_support_hdr()
@@ -1519,6 +1520,8 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                     return true;
                 }
             }
+#endif
+
 #if 1
             if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
             {
