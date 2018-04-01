@@ -526,10 +526,6 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
     int dst_l,dst_t,dst_r,dst_b;
     int ret;
     int dst_w,dst_h,dst_stride;
-    hwc_region_t * visible_region = &layer.mlayer->visibleRegionScreen;
-    hwc_rect_t const * visible_rects = visible_region->rects;
-    hwc_rect_t  rect_merge;
-    int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
     rga_info_t src, dst;
     int alloc_format = 0;
 
@@ -538,51 +534,6 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
     src.fd = -1;
     dst.fd = -1;
 
-#ifndef TARGET_BOARD_PLATFORM_RK3368
-    rect_merge.left = layer.display_frame.left;
-    rect_merge.top = layer.display_frame.top;
-    rect_merge.right = layer.display_frame.right;
-    rect_merge.bottom = layer.display_frame.bottom;
-#if 0
-    if(visible_rects){
-        left_min = visible_rects[0].left;
-        top_min = visible_rects[0].top;
-        right_max = visible_rects[0].right;
-        bottom_max = visible_rects[0].bottom;
-
-        for (int r = 0; r < (int) visible_region->numRects; r++) {
-            int r_left;
-            int r_top;
-            int r_right;
-            int r_bottom;
-
-            r_left = hwcMAX(layer.display_frame.left, visible_rects[r].left);
-            left_min = hwcMIN(r_left, left_min);
-            r_top = hwcMAX(layer.display_frame.top, visible_rects[r].top);
-            top_min = hwcMIN(r_top, top_min);
-            r_right = hwcMIN(layer.display_frame.right, visible_rects[r].right);
-            right_max = hwcMAX(r_right, right_max);
-            r_bottom = hwcMIN(layer.display_frame.bottom, visible_rects[r].bottom);
-            bottom_max  = hwcMAX(r_bottom, bottom_max);
-        }
-
-       if(layer.format == HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO
-            || layer.format == HAL_PIXEL_FORMAT_YCrCb_NV12){
-        rect_merge.left = layer.display_frame.left;
-        rect_merge.top = layer.display_frame.top;
-        rect_merge.right =  layer.display_frame.right;
-        rect_merge.bottom = layer.display_frame.bottom;
-       }
-       else
-       {
-        rect_merge.left = hwcMAX(layer.display_frame.left, left_min);
-        rect_merge.top = hwcMAX(layer.display_frame.top, top_min);
-        rect_merge.right =  hwcMIN(layer.display_frame.right, right_max);
-        rect_merge.bottom = hwcMIN(layer.display_frame.bottom, bottom_max);
-       }
-    }
-#endif
-#endif
     ret = rgaBuffer.WaitReleased(-1);
     if (ret) {
         ALOGE("Failed to wait for rga buffer release %d", ret);
@@ -623,8 +574,8 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
     src_w = ALIGN_DOWN(src_w, 2);
     src_h = ALIGN_DOWN(src_h, 2);
 
-    dst_w = rect_merge.right - rect_merge.left;
-    dst_h = rect_merge.bottom - rect_merge.top;
+    dst_w = layer.rect_merge.right - layer.rect_merge.left;
+    dst_h = layer.rect_merge.bottom - layer.rect_merge.top;
 
     dst_w = ALIGN(dst_w, 8);
     dst_h = ALIGN(dst_h, 2);

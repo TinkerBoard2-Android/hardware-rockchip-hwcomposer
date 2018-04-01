@@ -744,6 +744,9 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     unsigned int size;
     int ret = 0;
     int src_w, src_h, dst_w, dst_h;
+    hwc_region_t * visible_region = &sf_layer->visibleRegionScreen;
+    hwc_rect_t const * visible_rects = visible_region->rects;
+    int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
 
   UN_USED(importer);
 
@@ -927,6 +930,40 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         is_yuv = true;
     else
         is_yuv = false;
+
+    rect_merge.left = display_frame.left;
+    rect_merge.top = display_frame.top;
+    rect_merge.right = display_frame.right;
+    rect_merge.bottom = display_frame.bottom;
+
+    if(visible_rects && format != HAL_PIXEL_FORMAT_YCrCb_NV12_VIDEO
+            && format != HAL_PIXEL_FORMAT_YCrCb_NV12){
+        left_min = visible_rects[0].left;
+        top_min = visible_rects[0].top;
+        right_max = visible_rects[0].right;
+        bottom_max = visible_rects[0].bottom;
+
+        for (int r = 0; r < (int) visible_region->numRects; r++) {
+            int r_left;
+            int r_top;
+            int r_right;
+            int r_bottom;
+
+            r_left = hwcMAX(display_frame.left, visible_rects[r].left);
+            left_min = hwcMIN(r_left, left_min);
+            r_top = hwcMAX(display_frame.top, visible_rects[r].top);
+            top_min = hwcMIN(r_top, top_min);
+            r_right = hwcMIN(display_frame.right, visible_rects[r].right);
+            right_max = hwcMAX(r_right, right_max);
+            r_bottom = hwcMIN(display_frame.bottom, visible_rects[r].bottom);
+            bottom_max  = hwcMAX(r_bottom, bottom_max);
+        }
+
+        rect_merge.left = hwcMAX(display_frame.left, left_min);
+        rect_merge.top = hwcMAX(display_frame.top, top_min);
+        rect_merge.right =  hwcMIN(display_frame.right, right_max);
+        rect_merge.bottom = hwcMIN(display_frame.bottom, bottom_max);
+    }
 
     if(hd->hasEotfPlane)
     {
