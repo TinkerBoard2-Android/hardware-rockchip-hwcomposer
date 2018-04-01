@@ -1921,6 +1921,15 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       dump_layer(ctx->gralloc, false, layer, j);
     }
 
+    if(i == HWC_DISPLAY_VIRTUAL)
+    {
+        for (int j = 0; j < num_layers; ++j) {
+            hwc_layer_1_t *layer = &display_contents[i]->hwLayers[j];
+            layer->compositionType = HWC_FRAMEBUFFER;
+        }
+        continue;
+    }
+
     ctx->layer_contents.emplace_back();
     DrmHwcDisplayContents &layer_content = ctx->layer_contents.back();
     ctx->comp_plane_group.emplace_back();
