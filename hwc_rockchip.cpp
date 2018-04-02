@@ -2103,7 +2103,7 @@ AllMatch:
     {
         float scale_factor = vop_band_width(hd, layers);
         float head_factor = 0.0, tail_factor = 0.0;
-        if(scale_factor > 4)
+        if(scale_factor > 5)
         {
             ALOGD_IF(log_level(DBG_DEBUG), "scale_factor=%f is so big",scale_factor);
             if(layers.size() >= 4)
