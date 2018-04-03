@@ -2233,19 +2233,27 @@ void video_ui_optimize(const gralloc_module_t *gralloc, hwc_display_contents_1_t
                         int iWidth = hwc_get_handle_width(gralloc,second_layer->handle);
                         int iHeight = hwc_get_handle_height(gralloc,second_layer->handle);
 #endif
-                        unsigned int *cpu_addr;
+                        unsigned int *cpu_addr = NULL;;
 
 #if 0
                         IMG_native_handle_t * pvHandle = (IMG_native_handle_t *)second_layer->handle;
                         cpu_addr= (unsigned int *)pvHandle->pvBase;
 #else
-                        gralloc->lock(gralloc, second_layer->handle, GRALLOC_USAGE_SW_READ_MASK,
+                        ret = gralloc->lock(gralloc, second_layer->handle, GRALLOC_USAGE_SW_READ_MASK,
                                 0, 0, iWidth, iHeight, (void **)&cpu_addr);
+                        if( (ret != 0) || (cpu_addr == NULL) || (cpu_addr == MAP_FAILED) )
+                        {
+                            ALOGD("%s:line=%d lock failed w=%d,h=%d,cpu_addr=%p", __FUNCTION__, __LINE__, iWidth, iHeight, cpu_addr);
+                        }
+                        else
 #endif
-                        ret = DetectValidData((int *)(cpu_addr),iWidth,iHeight);
-                        if(!ret){
-                            hd->bHideUi = true;
-                            ALOGD_IF(log_level(DBG_VERBOSE), "@video UI close,iWidth=%d,iHeight=%d",iWidth,iHeight);
+                        {
+                            ret = DetectValidData((int *)(cpu_addr),iWidth,iHeight);
+                            if(!ret)
+                            {
+                                hd->bHideUi = true;
+                                ALOGD_IF(log_level(DBG_VERBOSE), "@video UI close,iWidth=%d,iHeight=%d",iWidth,iHeight);
+                            }
                         }
 #if 1
                         gralloc->unlock(gralloc, second_layer->handle);
