@@ -2106,7 +2106,7 @@ AllMatch:
         if(scale_factor > 5)
         {
             ALOGD_IF(log_level(DBG_DEBUG), "scale_factor=%f is so big",scale_factor);
-            if(layers.size() >= 4)
+            if(layers.size() >= 4 && !bHasSkipLayer)
             {
                 resore_tmp_layers_except_fb(layers, tmp_layers);
 
