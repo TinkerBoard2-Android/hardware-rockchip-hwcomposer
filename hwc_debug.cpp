@@ -157,12 +157,12 @@ void dump_layer(const gralloc_module_t *gralloc, bool bDump, hwc_layer_1_t *laye
   int format;
   char layername[100];
 
-  if (!log_level(DBG_VERBOSE))
+  if (!bDump && !log_level(DBG_VERBOSE))
     return;
 
     if(layer->flags & HWC_SKIP_LAYER)
     {
-        ALOGD_IF(log_level(DBG_VERBOSE),"layer %p skipped", layer);
+        ALOGD_IF(log_level(DBG_VERBOSE) || bDump, "layer %p skipped", layer);
     }
     else
     {

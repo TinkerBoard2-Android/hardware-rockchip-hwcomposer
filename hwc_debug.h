@@ -8,6 +8,16 @@
 #if RK_DRM_GRALLOC
 #include "gralloc_drm_handle.h"
 #endif
+#include <utils/CallStack.h>
+
+//Print call statck when you call ALOGD_CALLSTACK.
+#define ALOGD_CALLSTACK(...)                             \
+    do {                                                 \
+        ALOGD(__VA_ARGS__);                              \
+        android::CallStack callstack;                    \
+        callstack.update();                              \
+        callstack.log(LOG_TAG, ANDROID_LOG_DEBUG, "  "); \
+    }while (false)
 
 namespace android {
 

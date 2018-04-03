@@ -2871,6 +2871,12 @@ err:
         if (!dc)
           continue;
 
+        int num_layers = dc->numHwLayers;
+        for (int j = 0; j < num_layers; j++) {
+          hwc_layer_1_t *layer = &dc->hwLayers[j];
+          dump_layer(ctx->gralloc, true, layer, j);
+        }
+
         hwc_sync_release(dc);
     }
     ctx->drm.ClearAllDisplay();
