@@ -1348,7 +1348,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             dst_l = 0;
             dst_t = 0;
 
-#ifdef TARGET_BOARD_PLATFORM_RK3368
+#if !RK_RGA_SCALE_AND_ROTATE
             if((layer->transform == HWC_TRANSFORM_ROT_90) || (layer->transform == HWC_TRANSFORM_ROT_270))
             {
                 dst_r = (int)(src_b - src_t);
@@ -1476,6 +1476,13 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             {
                 ALOGD_IF(log_level(DBG_DEBUG),"rga scale(%f,%f) out of range,go to GPU GLES at line=%d",
                         rga_h_scale,rga_v_scale,__LINE__);
+                return true;
+            }
+
+            if(src_w >= 1920 && src_h >= 1080)
+            {
+                ALOGD_IF(log_level(DBG_DEBUG),"rga2 lite take more than 6ms when roate 1080p or bigger video(%d,%d),go to GPU GLES at line=%d",
+                        src_w,src_h,__LINE__);
                 return true;
             }
 #else
@@ -2385,7 +2392,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             if(layer.mlayer->compositionType == HWC_FRAMEBUFFER_TARGET)
                 continue;
 
-#ifdef TARGET_BOARD_PLATFORM_RK3368
+#if !RK_RGA_SCALE_AND_ROTATE
             if(layer.h_scale_mul > 1.0 &&  (int)(layer.display_frame.right - layer.display_frame.left) > 2560)
             {
                 ALOGD_IF(log_level(DBG_DEBUG),"On rk3368 don't use rga for scale, go to GPU GLES at line=%d", __LINE__);
@@ -2394,7 +2401,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             }
 #endif
             if(layer.transform!=DrmHwcTransform::kRotate0
-#ifndef TARGET_BOARD_PLATFORM_RK3368
+#if  RK_RGA_SCALE_AND_ROTATE
                 || (layer.h_scale_mul > 1.0 &&  (int)(layer.display_frame.right - layer.display_frame.left) > 2560)
 #endif
                 )
