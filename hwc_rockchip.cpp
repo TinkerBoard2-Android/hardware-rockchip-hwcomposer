@@ -1337,124 +1337,123 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                         if(!(*iter_plane)->is_use() && (*iter_plane)->GetCrtcSupported(*crtc))
                         {
                             bool bNeed = false;
-                            if(bReserve)
+
+                            b_yuv  = (*iter_plane)->get_yuv();
+                            if((*iter_layer)->is_yuv)
                             {
-                                b_yuv  = (*iter_plane)->get_yuv();
-                                if((*iter_layer)->is_yuv)
+                                if(!b_yuv)
                                 {
-                                    if(!b_yuv)
+                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support yuv",(*iter_plane)->id());
+                                    continue;
+                                }
+                                else
+                                    bNeed = true;
+                            }
+
+                            b_scale = (*iter_plane)->get_scale();
+                            if((*iter_layer)->is_scale)
+                            {
+                                if(!b_scale)
+                                {
+                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale",(*iter_plane)->id());
+                                    continue;
+                                }
+                                else
+                                {
+                                    if((*iter_layer)->h_scale_mul >= 8.0 || (*iter_layer)->v_scale_mul >= 8.0 ||
+                                        (*iter_layer)->h_scale_mul <= 0.125 || (*iter_layer)->v_scale_mul <= 0.125)
                                     {
-                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support yuv",(*iter_plane)->id());
+                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale factor(%f,%f)",
+                                                (*iter_plane)->id(), (*iter_layer)->h_scale_mul, (*iter_layer)->v_scale_mul);
                                         continue;
                                     }
                                     else
                                         bNeed = true;
                                 }
+                            }
 
-                                b_scale = (*iter_plane)->get_scale();
-                                if((*iter_layer)->is_scale)
-                                {
-                                    if(!b_scale)
-                                    {
-                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale",(*iter_plane)->id());
-                                        continue;
-                                    }
-                                    else
-                                    {
-                                        if((*iter_layer)->h_scale_mul >= 8.0 || (*iter_layer)->v_scale_mul >= 8.0 ||
-                                            (*iter_layer)->h_scale_mul <= 0.125 || (*iter_layer)->v_scale_mul <= 0.125)
-                                        {
-                                            ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support scale factor(%f,%f)",
-                                                    (*iter_plane)->id(), (*iter_layer)->h_scale_mul, (*iter_layer)->v_scale_mul);
-                                            continue;
-                                        }
-                                        else
-                                            bNeed = true;
-                                    }
-                                }
-
-                                if ((*iter_layer)->blending == DrmHwcBlending::kPreMult)
-                                    alpha = (*iter_layer)->alpha;
+                            if ((*iter_layer)->blending == DrmHwcBlending::kPreMult)
+                                alpha = (*iter_layer)->alpha;
 
 #ifdef TARGET_BOARD_PLATFORM_RK3328
-                                //disable global alpha feature for rk3328,since vop has bug on rk3328.
-                                b_alpha = false;
+                            //disable global alpha feature for rk3328,since vop has bug on rk3328.
+                            b_alpha = false;
 #else
-                                b_alpha = (*iter_plane)->alpha_property().id()?true:false;
+                            b_alpha = (*iter_plane)->alpha_property().id()?true:false;
 #endif
-                                if(alpha != 0xFF)
+                            if(alpha != 0xFF)
+                            {
+                                if(!b_alpha)
                                 {
-                                    if(!b_alpha)
-                                    {
-                                        ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
-                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support alpha,layer alpha=0x%x,alpha id=%d",
-                                                (*iter_plane)->id(),(*iter_layer)->alpha,(*iter_plane)->alpha_property().id());
-                                        continue;
-                                    }
-                                    else
-                                        bNeed = true;
+                                    ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
+                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support alpha,layer alpha=0x%x,alpha id=%d",
+                                            (*iter_plane)->id(),(*iter_layer)->alpha,(*iter_plane)->alpha_property().id());
+                                    continue;
                                 }
+                                else
+                                    bNeed = true;
+                            }
 
-                                eotf = (*iter_layer)->eotf;
-                                b_hdr2sdr = (*iter_plane)->get_hdr2sdr();
-                                if(eotf != TRADITIONAL_GAMMA_SDR)
+                            eotf = (*iter_layer)->eotf;
+                            b_hdr2sdr = (*iter_plane)->get_hdr2sdr();
+                            if(eotf != TRADITIONAL_GAMMA_SDR)
+                            {
+                                if(!b_hdr2sdr)
                                 {
-                                    if(!b_hdr2sdr)
-                                    {
-                                        ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
-                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support etof,layer eotf=%d,hdr2sdr=%d",
-                                                (*iter_plane)->id(),(*iter_layer)->eotf,(*iter_plane)->get_hdr2sdr());
-                                        continue;
-                                    }
-                                    else
-                                        bNeed = true;
+                                    ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
+                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support etof,layer eotf=%d,hdr2sdr=%d",
+                                            (*iter_plane)->id(),(*iter_layer)->eotf,(*iter_plane)->get_hdr2sdr());
+                                    continue;
                                 }
+                                else
+                                    bNeed = true;
+                            }
 
 #if USE_AFBC_LAYER
-                                b_afbc = (*iter_plane)->get_afbc();
-                                if((*iter_layer)->is_afbc && (*iter_plane)->get_afbc_prop())
+                            b_afbc = (*iter_plane)->get_afbc();
+                            if((*iter_layer)->is_afbc && (*iter_plane)->get_afbc_prop())
+                            {
+                                if(!b_afbc)
                                 {
-                                    if(!b_afbc)
-                                    {
-                                        ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
-                                        ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support afbc,layer", (*iter_plane)->id());
-                                        continue;
-                                    }
-                                    else
-                                        bNeed = true;
+                                    ALOGV("layer name=%s,plane id=%d",(*iter_layer)->name.c_str(),(*iter_plane)->id());
+                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) cann't support afbc,layer", (*iter_plane)->id());
+                                    continue;
                                 }
+                                else
+                                    bNeed = true;
+                            }
 #endif
 
 #ifdef TARGET_BOARD_PLATFORM_RK3288
-                                int src_w,src_h;
+                            int src_w,src_h;
 
-                                src_w = (int)((*iter_layer)->source_crop.right - (*iter_layer)->source_crop.left);
+                            src_w = (int)((*iter_layer)->source_crop.right - (*iter_layer)->source_crop.left);
 #if RK_VIDEO_SKIP_LINE
-                                if((*iter_layer)->bSkipLine)
+                            if((*iter_layer)->bSkipLine)
+                            {
+                                if((*iter_layer)->format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
                                 {
-                                    if((*iter_layer)->format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-                                    {
-                                        src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12_10;
-                                    }
-                                    else
-                                    {
-                                        src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12;
-                                    }
+                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12_10;
                                 }
                                 else
-#endif
-                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top);
-
-                                float src_size = (float)src_w * src_h;
-                                if(src_size/fbSize > 0.75)
                                 {
-                                    bNeed = true;
-                                    ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) need by big area,src_size=%f,fbSize=%d",(*iter_plane)->id(),src_size,fbSize);
+                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12;
                                 }
-#endif
                             }
+                            else
+#endif
+                                src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top);
+
+                            float src_size = (float)src_w * src_h;
+                            if(src_size/fbSize > 0.75)
+                            {
+                                bNeed = true;
+                                ALOGD_IF(log_level(DBG_DEBUG),"Plane(%d) need by big area,src_size=%f,fbSize=%d",(*iter_plane)->id(),src_size,fbSize);
+                            }
+#endif
+
                             //Reserve some plane with no need for specific features in current layer.
-                            if(!bNeed && !bMulArea && !is_interlaced)
+                            if(bReserve && !bNeed && !bMulArea && !is_interlaced)
                             {
 #if USE_AFBC_LAYER
                                 if(!(*iter_layer)->is_afbc && b_afbc)
