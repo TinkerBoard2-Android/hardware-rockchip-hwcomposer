@@ -2379,6 +2379,14 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                             layer.format, layer.h_scale_mul, layer.v_scale_mul, __LINE__);
                     break;
                 }
+
+                if(layer.alpha != 0xff)
+                {
+                    use_framebuffer_target = true;
+                    ALOGD_IF(log_level(DBG_DEBUG),"per-pixel alpha with global alpha is not support,global alpha=0x%x,go to GPU GLES at line=%d",
+                            layer.alpha, __LINE__);
+                    break;
+                }
             }
         }
     }
