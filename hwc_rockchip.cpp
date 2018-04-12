@@ -2022,7 +2022,7 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
           GLES | 70b34c9080 | 0000 | 0000 | 00 | 0105 | RGBA_8888   |    0.0,    0.0, 2400.0,   84.0 |    0, 1516, 2400, 1600 | taskbar
           GLES | 711ec5a900 | 0000 | 0002 | 00 | 0105 | RGBA_8888   |    0.0,    0.0,   39.0,   49.0 | 1136, 1194, 1175, 1243 | Sprite
     ************************************************************/
-   // if(hd->isVideo)
+    if(!hd->bPreferMixDown)
     {
         if(hd->mixMode != HWC_MIX_UP)
             hd->mixMode = HWC_MIX_UP;
@@ -2045,7 +2045,7 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
     -----------+----------+------+------+----+------+-------------+--------------------------------+------------------------+------
           GLES | 711aa61e80 | 0000 | 0000 | 00 | 0100 | RGBx_8888   |    0.0,    0.0, 2400.0, 1600.0 |    0,    0, 2400, 1600 | com.android.systemui.ImageWallpaper
           GLES | 711ab1ef00 | 0000 | 0000 | 00 | 0105 | RGBA_8888   |    0.0,    0.0, 2400.0, 1600.0 |    0,    0, 2400, 1600 | com.android.launcher3/com.android.launcher3.Launcher
-           HWC | 711aa61100 | 0000 | 0000 | 00 | 0105 | RGBA_8888   |    0.0,    0.0, 2400.0,    2.0 |    0,    0, 2400,    2 | StatusBar
+          GLES | 711aa61100 | 0000 | 0000 | 00 | 0105 | RGBA_8888   |    0.0,    0.0, 2400.0,    2.0 |    0,    0, 2400,    2 | StatusBar
            HWC | 711ec5ad80 | 0000 | 0000 | 00 | 0105 | RGBA_8888   |    0.0,    0.0, 2400.0,   84.0 |    0, 1516, 2400, 1600 | taskbar
            HWC | 711ec5a900 | 0000 | 0002 | 00 | 0105 | RGBA_8888   |    0.0,    0.0,   39.0,   49.0 |  941,  810,  980,  859 | Sprite
     ************************************************************/
@@ -2062,6 +2062,22 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
             goto AllMatch;
         else
             resore_tmp_layers_except_fb(layers, tmp_layers);
+    }
+
+    if(hd->bPreferMixDown && ((int)layers.size() > iPlaneSize))
+    {
+        if(hd->mixMode != HWC_MIX_DOWN)
+            hd->mixMode = HWC_MIX_DOWN;
+        layer_indices.first = 0;
+        layer_indices.second = layers.size() - iPlaneSize;
+        ALOGD_IF(log_level(DBG_DEBUG), "%s:mix down (%d,%d)",__FUNCTION__,layer_indices.first, layer_indices.second);
+        bAllMatch = try_mix_policy(drm, crtc, hd->is_interlaced, layers, tmp_layers, iPlaneSize, composition_planes,
+                            layer_indices.first, layer_indices.second, fbSize);
+        if(bAllMatch)
+            goto AllMatch;
+        else
+            resore_tmp_layers_except_fb(layers, tmp_layers);
+
     }
 
     /*************************mix up*************************

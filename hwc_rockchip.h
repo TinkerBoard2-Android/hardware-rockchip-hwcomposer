@@ -178,6 +178,7 @@ typedef struct hwc_drm_display {
   HDMI_STAT last_hdmi_status;
   int display_timeline;
   int hotplug_timeline;
+  bool bPreferMixDown;
 } hwc_drm_display_t;
 
 /*

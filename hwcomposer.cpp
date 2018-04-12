@@ -2025,6 +2025,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     hd->iPlaneSize = 0;
     hd->hasEotfPlane = false;
     hd->is_interlaced = (mode.interlaced()>0) ? true:false;
+    hd->bPreferMixDown = false;
     for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
         iter != plane_groups.end(); ++iter)
     {
@@ -2206,8 +2207,15 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 #if RK_PRINT_LAYER_NAME
             if(strstr(layername,"SurfaceView") && strstr(layername,"gallery"))
             {
-                 ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d w=%d,h=%d,force_not_invalid_refresh=%d,format=0x%x",
-                        __FUNCTION__,__LINE__,src_w,src_h,force_not_invalid_refresh,format);
+              ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d w=%d,h=%d,force_not_invalid_refresh=%d,format=0x%x",
+                       __FUNCTION__,__LINE__,src_w,src_h,force_not_invalid_refresh,format);
+            }
+
+            if(strstr(layername,"drawpath"))
+            {
+              hd->bPreferMixDown = true;
+              ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d in drawpath mode prefer use mix down policy",
+                     __FUNCTION__,__LINE__);
             }
 #endif
          }
@@ -3252,6 +3260,7 @@ static int hwc_initialize_display(struct hwc_context_t *ctx, int display) {
     hd->display_timeline = 0;
     hd->is_3d = false;
     hd->hasEotfPlane = false;
+    hd->bPreferMixDown = false;
 
     return 0;
 }
