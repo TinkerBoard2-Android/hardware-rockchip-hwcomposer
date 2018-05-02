@@ -550,7 +550,7 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
     dst_l = 0;
     dst_t = 0;
 
-#ifdef TARGET_BOARD_PLATFORM_RK3368
+#if !RK_RGA_SCALE_AND_ROTATE
     if(layer.transform & DrmHwcTransform::kRotate90 || layer.transform & DrmHwcTransform::kRotate270)
     {
         dst_r = (int)(layer.source_crop.bottom - layer.source_crop.top);

@@ -235,6 +235,8 @@ endif
 endif
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3126c)
+# disable scale when using rga1/rga1_plus.
+RK_RGA_SCALE_AND_ROTATE = 0
 RGA_VER = 1
 LOCAL_CPPFLAGS += -DTARGET_BOARD_PLATFORM_RK3126C  -DRK_DRM_GRALLOC=1 \
                -DMALI_AFBC_GRALLOC=1
