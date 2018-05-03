@@ -25,7 +25,7 @@
 
 namespace android {
 
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
 struct DrmRgaBuffer {
   DrmRgaBuffer() : release_fence_fd_(-1) {
   }

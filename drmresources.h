@@ -25,7 +25,7 @@
 #include "drmplane.h"
 
 #include <stdint.h>
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
 #include <RockchipRga.h>
 #endif
 
@@ -112,7 +112,7 @@ class DrmResources {
 
   std::vector<PlaneGroup *>& GetPlaneGroups();
 
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
   bool isSupportRkRga() {
 	RockchipRga& rkRga(RockchipRga::get());
 	return rkRga.RkRgaIsReady();

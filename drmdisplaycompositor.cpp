@@ -299,7 +299,7 @@ DrmDisplayCompositor::DrmDisplayCompositor()
       active_(false),
       use_hw_overlays_(true),
       framebuffer_index_(0),
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
       rgaBuffer_index_(0),
       mRga_(RockchipRga::get()),
       mUseRga_(false),
@@ -518,7 +518,7 @@ int DrmDisplayCompositor::PrepareFramebuffer(
   return ret;
 }
 
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
 int DrmDisplayCompositor::PrepareRgaBuffer(
 DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer) {
     int rga_transform = 0;
@@ -634,10 +634,10 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
                 src_l, src_t, src_w, src_h,
                 layer.stride, layer.height, layer.format);
     rga_set_rect(&dst.rect, dst_l, dst_t,  dst_w, dst_h, dst_stride, dst_h, alloc_format);
-    ALOGD_IF(log_level(DBG_DEBUG),"rgaRotateScale  : src[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x],dst[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x]",
+    ALOGD_IF(log_level(DBG_DEBUG),"RK_RGA_COMPSITE_SYNC rgaRotateScale  : src[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x],dst[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x]",
         src.rect.xoffset, src.rect.yoffset, src.rect.width, src.rect.height, src.rect.wstride, src.rect.hstride, src.rect.format,
         dst.rect.xoffset, dst.rect.yoffset, dst.rect.width, dst.rect.height, dst.rect.wstride, dst.rect.hstride, dst.rect.format);
-    ALOGD_IF(log_level(DBG_DEBUG),"rgaRotateScale : src hnd=%p,dst hnd=%p, format=0x%x, transform=0x%x\n",
+    ALOGD_IF(log_level(DBG_DEBUG),"RK_RGA_COMPSITE_SYNC rgaRotateScale : src hnd=%p,dst hnd=%p, format=0x%x, transform=0x%x\n",
         (void*)layer.sf_handle, (void*)(rgaBuffer.buffer()->handle), layer.format, rga_transform);
 
     src.hnd = layer.sf_handle;
@@ -753,7 +753,7 @@ int DrmDisplayCompositor::ApplyPreComposite(
   return 0;
 }
 
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
 static int fence_merge(char* value,int fd1,int fd2)
 {
     int ret = -1;
@@ -917,7 +917,7 @@ int DrmDisplayCompositor::PrepareFrame(DrmDisplayComposition *display_comp) {
     framebuffer_index_ = (framebuffer_index_ + 1) % DRM_DISPLAY_BUFFERS;
   }
 
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
     bool bUseRga = false;
 #endif
 
@@ -942,8 +942,25 @@ int DrmDisplayCompositor::PrepareFrame(DrmDisplayComposition *display_comp) {
         source_layers.clear();
         source_layers.push_back(pre_comp_layer_index);
         break;
-#if RK_RGA
-      case DrmCompositionPlane::Type::kLayer:
+     case DrmCompositionPlane::Type::kLayer:
+#if RK_RGA_PREPARE_ASYNC
+        if(drm_->isSupportRkRga() && !source_layers.empty())
+        {
+            DrmHwcLayer &layer = layers[source_layers.front()];
+
+            if((layer.is_yuv && layer.transform!=DrmHwcTransform::kRotate0) ||
+                (layer.h_scale_mul > 1.0 &&  (int)(layer.display_frame.right - layer.display_frame.left) > 2560))
+            {
+                RockchipRga& rkRga(RockchipRga::get());
+                ret = rkRga.RkRgaFlush();
+                if(ret)
+                {
+                    ALOGE("%s:line=%d flush rga fail",__FUNCTION__,__LINE__);
+                }
+            }
+        }
+#endif
+#if RK_RGA_COMPSITE_SYNC
         if(drm_->isSupportRkRga() && !source_layers.empty())
         {
             DrmHwcLayer &layer = layers[source_layers.front()];
@@ -964,14 +981,14 @@ int DrmDisplayCompositor::PrepareFrame(DrmDisplayComposition *display_comp) {
                 mUseRga_ = mUseRga_ ? mUseRga_ : true;
             }
         }
-        break;
 #endif
+        break;
       default:
         break;
     }
   }
 
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
     if(mUseRga_ && !bUseRga)
     {
         freeRgaBuffers();
@@ -1163,7 +1180,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     uint16_t eotf = TRADITIONAL_GAMMA_SDR;
     DrmHwcBlending blending = DrmHwcBlending::kNone;
     uint32_t colorspace = V4L2_COLORSPACE_DEFAULT;
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
     bool is_rotate_by_rga = false;
 #endif
     int zpos = 0;
@@ -1262,7 +1279,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 #endif
     format = layer.format;
 
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
       is_rotate_by_rga = layer.is_rotate_by_rga;
 #endif
       rotation = 0;
@@ -1297,7 +1314,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 
     // TODO: Once we have atomic test, this should fall back to GL
     if (
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
     !is_rotate_by_rga &&
 #endif
     rotation && !(rotation & plane->get_rotate())) {
@@ -1436,7 +1453,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     index++;
 
     if (
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
     !is_rotate_by_rga &&
 #endif
     plane->rotation_property().id()) {

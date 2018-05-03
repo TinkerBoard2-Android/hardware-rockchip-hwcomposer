@@ -6,6 +6,7 @@
 #include "drmhwcomposer.h"
 #include "drmresources.h"
 #include "vsyncworker.h"
+#include "drmframebuffer.h"
 #include <fcntl.h>
 
 namespace android {
@@ -179,6 +180,11 @@ typedef struct hwc_drm_display {
   int display_timeline;
   int hotplug_timeline;
   bool bPreferMixDown;
+#if  RK_RGA_PREPARE_ASYNC
+    int rgaBuffer_index;
+    DrmRgaBuffer rgaBuffers[MaxRgaBuffers];
+    bool mUseRga;
+#endif
 } hwc_drm_display_t;
 
 /*

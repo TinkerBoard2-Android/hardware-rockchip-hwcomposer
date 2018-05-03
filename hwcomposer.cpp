@@ -1058,7 +1058,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 #if USE_AFBC_LAYER
     is_afbc = false;
 #endif
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
     is_rotate_by_rga = false;
 #endif
     bMix = false;
@@ -1513,7 +1513,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
         }
 #endif
         if(
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
             !ctx->drm.isSupportRkRga() && layer->transform
 #else
             layer->transform
@@ -1908,6 +1908,194 @@ static bool set_hdmi_hdr_meta(struct hwc_context_t *ctx, DrmConnector *connector
     }
 }
 
+
+#if RK_RGA_PREPARE_ASYNC
+static int PrepareRgaBuffer(DrmRgaBuffer &rgaBuffer, DrmHwcLayer &layer) {
+    int rga_transform = 0;
+    int src_l,src_t,src_w,src_h;
+    int dst_l,dst_t,dst_r,dst_b;
+    int ret;
+    int dst_w,dst_h,dst_stride;
+    rga_info_t src, dst;
+    int alloc_format = 0;
+
+    memset(&src, 0, sizeof(rga_info_t));
+    memset(&dst, 0, sizeof(rga_info_t));
+    src.fd = -1;
+    dst.fd = -1;
+
+#if 0
+    ret = rgaBuffer.WaitReleased(-1);
+    if (ret) {
+        ALOGE("Failed to wait for rga buffer release %d", ret);
+        return ret;
+    }
+    rgaBuffer.set_release_fence_fd(-1);
+#endif
+    src_l = (int)layer.source_crop.left;
+    src_t = (int)layer.source_crop.top;
+    src_w = (int)(layer.source_crop.right - layer.source_crop.left);
+    src_h = (int)(layer.source_crop.bottom - layer.source_crop.top);
+    src_l = ALIGN_DOWN(src_l, 2);
+    src_t = ALIGN_DOWN(src_t, 2);
+    dst_l = 0;
+    dst_t = 0;
+
+#if !RK_RGA_SCALE_AND_ROTATE
+    if(layer.transform & DrmHwcTransform::kRotate90 || layer.transform & DrmHwcTransform::kRotate270)
+    {
+        dst_r = (int)(layer.source_crop.bottom - layer.source_crop.top);
+        dst_b = (int)(layer.source_crop.right - layer.source_crop.left);
+        src_h = ALIGN_DOWN(src_h, 8);
+        src_w = ALIGN_DOWN(src_w, 2);
+    }
+    else
+    {
+        dst_r = (int)(layer.source_crop.right - layer.source_crop.left);
+        dst_b = (int)(layer.source_crop.bottom - layer.source_crop.top);
+        src_w = ALIGN_DOWN(src_w, 8);
+        src_h = ALIGN_DOWN(src_h, 2);
+    }
+    dst_w = dst_r - dst_l;
+    dst_h = dst_b - dst_t;
+    int dst_raw_w = dst_w;
+    int dst_raw_h = dst_h;
+    dst_w = ALIGN_DOWN(dst_w, 8);
+    dst_h = ALIGN_DOWN(dst_h, 2);
+#else
+    src_w = ALIGN_DOWN(src_w, 2);
+    src_h = ALIGN_DOWN(src_h, 2);
+
+    dst_w = layer.rect_merge.right - layer.rect_merge.left;
+    dst_h = layer.rect_merge.bottom - layer.rect_merge.top;
+
+    dst_w = ALIGN(dst_w, 8);
+    dst_h = ALIGN(dst_h, 2);
+#endif
+
+    if(dst_w < 0 || dst_h <0 )
+      ALOGE("RGA invalid dst_w=%d,dst_h=%d",dst_w,dst_h);
+
+    //If the layer's format is NV12_10,then use RGA to switch it to NV12.
+    if(layer.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+        alloc_format = HAL_PIXEL_FORMAT_YCrCb_NV12;
+    else
+        alloc_format = layer.format;
+
+    if (!rgaBuffer.Allocate(dst_w, dst_h, alloc_format)) {
+        ALOGE("Failed to allocate rga buffer with size %dx%d", dst_w, dst_h);
+        return -ENOMEM;
+    }
+
+    dst_stride = rgaBuffer.buffer()->getStride();
+
+    //DumpLayer("rga", layer.sf_handle);
+
+    if(layer.transform & DrmHwcTransform::kRotate90) {
+        rga_transform = DRM_RGA_TRANSFORM_ROT_90;
+    }
+    else if(layer.transform & DrmHwcTransform::kRotate270) {
+        rga_transform = DRM_RGA_TRANSFORM_ROT_270;
+    }
+    else if(layer.transform & DrmHwcTransform::kRotate180) {
+        rga_transform = DRM_RGA_TRANSFORM_ROT_180;
+    }
+    else if(layer.transform & DrmHwcTransform::kRotate0) {
+        rga_transform = DRM_RGA_TRANSFORM_ROT_0;
+    }
+    else if(layer.transform & DrmHwcTransform::kFlipH) {
+        rga_transform = DRM_RGA_TRANSFORM_FLIP_H;
+    }
+    else if(layer.transform & DrmHwcTransform::kFlipV) {
+        rga_transform = DRM_RGA_TRANSFORM_FLIP_V;
+    }
+    else {
+        ALOGE("%s: line=%d, wrong transform=0x%x", __FUNCTION__, __LINE__, layer.transform);
+        ret = -1;
+        return ret;
+    }
+
+    if(rga_transform != DRM_RGA_TRANSFORM_FLIP_H && layer.transform & DrmHwcTransform::kFlipH)
+        rga_transform |= DRM_RGA_TRANSFORM_FLIP_H;
+
+    if (rga_transform != DRM_RGA_TRANSFORM_FLIP_V && layer.transform & DrmHwcTransform::kFlipV)
+        rga_transform |= DRM_RGA_TRANSFORM_FLIP_V;
+
+    //rga async mode,flush in Composite thread.
+    src.sync_mode = RGA_BLIT_ASYNC;
+    rga_set_rect(&src.rect,
+                src_l, src_t, src_w, src_h,
+                layer.stride, layer.height, layer.format);
+    rga_set_rect(&dst.rect, dst_l, dst_t,  dst_w, dst_h, dst_stride, dst_h, alloc_format);
+    ALOGD_IF(log_level(DBG_DEBUG),"RK_RGA_PREPARE_ASYNC rgaRotateScale  : src[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x],dst[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x]",
+        src.rect.xoffset, src.rect.yoffset, src.rect.width, src.rect.height, src.rect.wstride, src.rect.hstride, src.rect.format,
+        dst.rect.xoffset, dst.rect.yoffset, dst.rect.width, dst.rect.height, dst.rect.wstride, dst.rect.hstride, dst.rect.format);
+    ALOGD_IF(log_level(DBG_DEBUG),"RK_RGA_PREPARE_ASYNC rgaRotateScale : src hnd=%p,dst hnd=%p, format=0x%x, transform=0x%x\n",
+        (void*)layer.sf_handle, (void*)(rgaBuffer.buffer()->handle), layer.format, rga_transform);
+
+    src.hnd = layer.sf_handle;
+    dst.hnd = rgaBuffer.buffer()->handle;
+    src.rotation = rga_transform;
+    RockchipRga& rkRga(RockchipRga::get());
+    ret = rkRga.RkRgaBlit(&src, &dst, NULL);
+    if(ret) {
+        ALOGE("rgaRotateScale error : src[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x],dst[x=%d,y=%d,w=%d,h=%d,ws=%d,hs=%d,format=0x%x]",
+            src.rect.xoffset, src.rect.yoffset, src.rect.width, src.rect.height, src.rect.wstride, src.rect.hstride, src.rect.format,
+            dst.rect.xoffset, dst.rect.yoffset, dst.rect.width, dst.rect.height, dst.rect.wstride, dst.rect.hstride, dst.rect.format);
+        ALOGE("rgaRotateScale error : %s,src hnd=%p,dst hnd=%p",
+            strerror(errno), (void*)layer.sf_handle, (void*)(rgaBuffer.buffer()->handle));
+    }
+
+    DumpLayer("rga", dst.hnd);
+
+    //instead of the original DrmHwcLayer
+    layer.is_rotate_by_rga = true;
+    layer.buffer.Clear();
+    layer.source_crop = DrmHwcRect<float>(dst_l,dst_t,dst_w,dst_h);
+    //The dst layer's format is NV12.
+    if(layer.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
+        layer.format = HAL_PIXEL_FORMAT_YCrCb_NV12;
+    layer.sf_handle = rgaBuffer.buffer()->handle;
+
+#if RK_VIDEO_SKIP_LINE
+    layer.bSkipLine = false;
+#endif
+
+    layer.rga_handle = rgaBuffer.buffer()->handle;
+
+    return ret;
+}
+
+
+static int ApplyPreRotate(hwc_drm_display_t *hd, DrmHwcLayer &layer) {
+  int ret = 0;
+
+  ALOGD_IF(log_level(DBG_DEBUG), "%s:rgaBuffer_index=%d", __FUNCTION__, hd->rgaBuffer_index);
+
+  DrmRgaBuffer &rga_buffer = hd->rgaBuffers[hd->rgaBuffer_index];
+  ret = PrepareRgaBuffer(rga_buffer, layer);
+  if (ret) {
+    ALOGE("Failed to prepare rga buffer for RGA rotate %d", ret);
+    return ret;
+  }
+#if 0
+  ret = display_comp->CreateNextTimelineFence("ApplyPreRotate");
+  if (ret <= 0) {
+    ALOGE("Failed to create RGA rotate release fence %d", ret);
+    return ret;
+  }
+
+  rga_buffer.set_release_fence_fd(ret);
+#endif
+  return 0;
+}
+
+static void freeRgaBuffers(hwc_drm_display_t *hd) {
+    for(int i = 0; i < MaxRgaBuffers; i++) {
+        hd->rgaBuffers[i].Clear();
+    }
+}
+#endif
 static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                        hwc_display_contents_1_t **display_contents) {
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
@@ -2482,6 +2670,38 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
       }
     }
+#if RK_RGA_PREPARE_ASYNC
+    if(!use_framebuffer_target && ctx->drm.isSupportRkRga())
+    {
+        bool bUseRga = false;
+
+        for (size_t j = 0; j < layer_content.layers.size(); j++) {
+            DrmHwcLayer& layer = layer_content.layers[j];
+
+            if((layer.is_yuv && layer.transform!=DrmHwcTransform::kRotate0) ||
+                (layer.h_scale_mul > 1.0 &&  (int)(layer.display_frame.right - layer.display_frame.left) > 2560))
+            {
+                ret = ApplyPreRotate(hd,layer);
+                if (ret)
+                {
+                    freeRgaBuffers(hd);
+                    hd->mUseRga = hd->mUseRga ? false : hd->mUseRga;
+                    return ret;
+                }
+
+                hd->rgaBuffer_index = (hd->rgaBuffer_index + 1) % MaxRgaBuffers;
+                bUseRga = true;
+                hd->mUseRga = hd->mUseRga ? hd->mUseRga : true;
+            }
+        }
+
+        if(hd->mUseRga && !bUseRga)
+        {
+            freeRgaBuffers(hd);
+            hd->mUseRga = false;
+        }
+    }
+#endif
 
     if(use_framebuffer_target)
         ctx->isGLESComp = true;
@@ -2779,7 +2999,33 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
         break;
       }
       if(!layer.bClone_)
-        layer.ImportBuffer(ctx, layer.raw_sf_layer, ctx->importer.get());
+      {
+#if RK_RGA_PREPARE_ASYNC
+        if(!layer.is_rotate_by_rga)
+#endif
+            layer.ImportBuffer(ctx, layer.raw_sf_layer, ctx->importer.get());
+#if RK_RGA_PREPARE_ASYNC
+        else
+        {
+            ret = layer.buffer.ImportBuffer(layer.rga_handle,
+                                                   ctx->importer.get()
+#if RK_VIDEO_SKIP_LINE
+                                                   , layer.bSkipLine
+#endif
+                                                   );
+            if (ret) {
+                ALOGE("Failed to import rga buffer ret=%d", ret);
+                goto err;
+            }
+
+            ret = layer.handle.CopyBufferHandle(layer.rga_handle, ctx->gralloc);
+            if (ret) {
+                ALOGE("Failed to copy rga handle ret=%d", ret);
+                goto err;
+            }
+        }
+#endif
+      }
       map.layers.emplace_back(std::move(layer));
     }
   }
@@ -3262,6 +3508,11 @@ static int hwc_initialize_display(struct hwc_context_t *ctx, int display) {
     hd->is_3d = false;
     hd->hasEotfPlane = false;
     hd->bPreferMixDown = false;
+
+#if RK_RGA_PREPARE_ASYNC
+    hd->rgaBuffer_index = 0;
+    hd->mUseRga = false;
+#endif
 
     return 0;
 }

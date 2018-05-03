@@ -1507,7 +1507,7 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                     }
                                 }
                             }
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
                             if(!drm->isSupportRkRga()
 #if USE_AFBC_LAYER
                                || (*iter_layer)->is_afbc

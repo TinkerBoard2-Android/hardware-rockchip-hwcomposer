@@ -354,7 +354,7 @@ static void ConstructCommand(const DrmHwcLayer *layers,
     bool swap_xy = false;
     bool flip_xy[2] = { false, false };
 
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
     if(!layer.is_rotate_by_rga)
 #endif
     {

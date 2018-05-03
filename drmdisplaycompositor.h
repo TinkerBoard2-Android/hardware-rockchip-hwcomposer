@@ -29,7 +29,7 @@
 #include <sstream>
 #include <tuple>
 
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
 #include <RockchipRga.h>
 #endif
 
@@ -153,13 +153,13 @@ class DrmDisplayCompositor {
 
   int PrepareFramebuffer(DrmFramebuffer &fb,
                          DrmDisplayComposition *display_comp);
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
   int PrepareRgaBuffer(DrmRgaBuffer &rgaBuffer,
                          DrmDisplayComposition *display_comp, DrmHwcLayer &layer);
 #endif
   int ApplySquash(DrmDisplayComposition *display_comp);
   int ApplyPreComposite(DrmDisplayComposition *display_comp);
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
   int ApplyPreRotate(DrmDisplayComposition *display_comp,
                 DrmHwcLayer &layer);
   void freeRgaBuffers();
@@ -195,7 +195,7 @@ class DrmDisplayCompositor {
 
   int framebuffer_index_;
   DrmFramebuffer framebuffers_[DRM_DISPLAY_BUFFERS];
-#if RK_RGA
+#if RK_RGA_COMPSITE_SYNC
   int rgaBuffer_index_;
   DrmRgaBuffer rgaBuffers_[MaxRgaBuffers];
   RockchipRga& mRga_;

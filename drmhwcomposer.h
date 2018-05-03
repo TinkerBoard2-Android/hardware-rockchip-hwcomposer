@@ -26,6 +26,9 @@
 #include "separate_rects.h"
 #include "drmhwcgralloc.h"
 #include "hwc_debug.h"
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
+#include <RockchipRga.h>
+#endif
 
 /*hwc version*/
 #define GHWC_VERSION                    "0.46"
@@ -219,8 +222,9 @@ struct DrmHwcLayer {
   bool is_afbc;
 #endif
 
-#if RK_RGA
+#if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
   bool is_rotate_by_rga;
+  buffer_handle_t rga_handle;
 #endif
   float h_scale_mul;
   float v_scale_mul;
