@@ -36,9 +36,6 @@ int hwc_init_version()
     strcat(acVersion,"-rk3326");
 #endif
 
-#ifdef TARGET_BOARD_PLATFORM_RK3326
-    strcat(acVersion,"-rk3326");
-#endif
 
 #ifdef TARGET_BOARD_PLATFORM_RK3126C
     strcat(acVersion,"-rk3126c");
