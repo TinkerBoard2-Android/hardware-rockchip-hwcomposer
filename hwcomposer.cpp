@@ -1461,6 +1461,14 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                         rga_h_scale,rga_v_scale,__LINE__);
                 return true;
             }
+
+            if(src_w >= 1920 || src_h >= 1080)
+            {
+                ALOGD_IF(log_level(DBG_DEBUG),"rga1/rga1_plus take more than 20ms when roate 1080p or bigger video(%d,%d),go to GPU GLES at line=%d",
+                        src_w,src_h,__LINE__);
+                return true;
+            }
+
 #elif (RGA_VER == 2)
             /* Arbitrary non-integer scaling ratio, from 1/8 to 8
                RGA2-Lite:
