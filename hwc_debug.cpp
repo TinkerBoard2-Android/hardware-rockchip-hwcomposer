@@ -75,7 +75,7 @@ int DumpLayer(const char* layer_name,buffer_handle_t handle)
             ALOGE("Failed to open gralloc module");
             return ret;
         }
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
         width = hwc_get_handle_attibute(gralloc,handle,ATT_WIDTH);
         height = hwc_get_handle_attibute(gralloc,handle,ATT_HEIGHT);
         stride = hwc_get_handle_attibute(gralloc,handle,ATT_STRIDE);

@@ -909,7 +909,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 
     if(sf_handle)
     {
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
         width = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_WIDTH);
         height = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_HEIGHT);
         stride = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_STRIDE);
@@ -1067,8 +1067,8 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     size = (source_crop.right - source_crop.left) * (source_crop.bottom - source_crop.top) * bpp;
     is_large = (mode.h_display()*mode.v_display()*4*3/4 > size)? true:false;
 
-    char layername[100];
 #if RK_PRINT_LAYER_NAME
+    char layername[100];
 #ifdef USE_HWC2
     if(sf_handle)
     {
@@ -1082,8 +1082,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 
     mlayer = sf_layer;
 
-    ALOGV("\t layerName=%s,sourceCropf(%f,%f,%f,%f)",layername,
-    source_crop.left,source_crop.top,source_crop.right,source_crop.bottom);
+    ALOGV("\t sourceCropf(%f,%f,%f,%f)",source_crop.left,source_crop.top,source_crop.right,source_crop.bottom);
     ALOGV("h_scale_mul=%f,v_scale_mul=%f,is_scale=%d,is_large=%d",h_scale_mul,v_scale_mul,is_scale,is_large);
 
   transform = 0;
@@ -1147,13 +1146,17 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     if ( sf_handle && bFbTarget_ )
     {
         D("we got buffer handle for fb_target_layer, to get internal_format.");
+#if RK_PER_MODE
+        struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)sf_handle;
+        internal_format = drm_hnd->internal_format;
+#else
         ret = gralloc->perform(gralloc, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                              sf_handle, &internal_format);
         if (ret) {
             ALOGE("Failed to get internal_format for buffer %p (%d)", sf_handle, ret);
             return ret;
         }
-
+#endif
         if(isAfbcInternalFormat(internal_format))
         {
             D("to set 'is_afbc'.");
@@ -1209,12 +1212,7 @@ int DrmHwcLayer::ImportBuffer(struct hwc_context_t *ctx, hwc_layer_1_t *sf_layer
   if (ret)
     return ret;
 
-  ret = ctx->gralloc->perform(ctx->gralloc, GRALLOC_MODULE_PERFORM_GET_USAGE,
-                         handle.get(), &gralloc_buffer_usage);
-  if (ret) {
-    ALOGE("Failed to get usage for buffer %p (%d)", handle.get(), ret);
-    return ret;
-  }
+  gralloc_buffer_usage = hwc_get_handle_usage(ctx->gralloc,sf_layer->handle);
 
   return ret;
 }
@@ -1320,7 +1318,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 
         if(layer->handle)
         {
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
             format = hwc_get_handle_attibute(ctx->gralloc,layer->handle,ATT_FORMAT);
 #else
             format = hwc_get_handle_format(ctx->gralloc,layer->handle);
@@ -1611,13 +1609,17 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             }
 
 #if USE_AFBC_LAYER
+#if RK_PER_MODE
+            struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)layer->handle;
+            internal_format = drm_hnd->internal_format;
+#else
             ret = ctx->gralloc->perform(ctx->gralloc, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                                  layer->handle, &internal_format);
             if (ret) {
                 ALOGE("Failed to get internal_format for buffer %p (%d)", layer->handle, ret);
                 return false;
             }
-
+#endif
             if(isAfbcInternalFormat(internal_format))
                 iFbdcCnt++;
 #endif
@@ -2303,7 +2305,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 
         if(layer->handle)
         {
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
             format = hwc_get_handle_attibute(ctx->gralloc,layer->handle, ATT_FORMAT);
 #else
             format = hwc_get_handle_format(ctx->gralloc,layer->handle);
@@ -2318,12 +2320,8 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             {
                 hd->is10bitVideo = true;
                 hd->isVideo = true;
-                ret = ctx->gralloc->perform(ctx->gralloc, GRALLOC_MODULE_PERFORM_GET_USAGE,
-                                       layer->handle, &usage);
-                if (ret) {
-                  ALOGE("Failed to get usage for buffer %p (%d)", layer->handle, ret);
-                  return ret;
-                }
+                usage = hwc_get_handle_usage(ctx->gralloc,layer->handle);
+
                 if((usage & 0x0F000000) == HDRUSAGE)
                 {
                     isHdr = true;
@@ -2397,17 +2395,11 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                layer->compositionType = HWC_NODRAW;
                //layer->flags |= HWC_SKIP_LAYER;
                ALOGD_IF(log_level(DBG_DEBUG),
-                       "%s:line=%d layer size[%d,%d] too small ,set HWC_NODRAW, LayerName = %s, ",
-                       __FUNCTION__,__LINE__,src_w,src_h,layername);
+                       "%s:line=%d layer size[%d,%d] too small ,set HWC_NODRAW",
+                       __FUNCTION__,__LINE__,src_w,src_h);
             }
 
 #if RK_PRINT_LAYER_NAME
-            if(strstr(layername,"SurfaceView") && strstr(layername,"gallery"))
-            {
-              ALOGD_IF(log_level(DBG_DEBUG),"%s:line=%d w=%d,h=%d,force_not_invalid_refresh=%d,format=0x%x",
-                       __FUNCTION__,__LINE__,src_w,src_h,force_not_invalid_refresh,format);
-            }
-
             if(strstr(layername,"drawpath"))
             {
               hd->bPreferMixDown = true;
@@ -2417,6 +2409,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 #endif
          }
     }
+
 #if RK_INVALID_REFRESH
     if(ctx->mOneWinOpt && force_not_invalid_refresh && hd->rel_xres >= 3840 && hd->rel_xres != hd->framebuffer_width)
     {
@@ -2940,7 +2933,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       }
     }
 
-
     if(display_contents.layers.size() == 0 && framebuffer_target_index >= 0)
     {
       hwc_layer_1_t *sf_layer = &dc->hwLayers[framebuffer_target_index];
@@ -2986,7 +2978,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       if(!layer.sf_handle && layer.raw_sf_layer->handle)
       {
         layer.sf_handle = layer.raw_sf_layer->handle;
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
         layer.width = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_WIDTH);
         layer.height = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_HEIGHT);
         layer.stride = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_STRIDE);
@@ -3047,6 +3039,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   ctx->drm.UpdateDisplayRoute();
   ctx->drm.UpdatePropertys();
   ctx->drm.ClearDisplay();
+
   composition = ctx->drm.compositor()->CreateComposition(ctx->importer.get());
   if (!composition) {
     ALOGE("%s: Drm composition init failed",__FUNCTION__);

@@ -162,7 +162,6 @@ void VSyncWorker::Routine() {
   if (!enabled)
     return;
 
-  PRINT_TIME_START;
   int64_t timestamp;
   DrmConnector *conn = drm_->GetConnectorFromType(display);
   if (!conn) {
@@ -211,7 +210,6 @@ void VSyncWorker::Routine() {
   if (procs && ((unsigned long)procs->vsync > 0x10))
     procs->vsync(procs, display, timestamp);
   last_timestamp_ = timestamp;
-  PRINT_TIME_END("vsync");
 
   ALOGD_IF(log_level(DBG_INFO),"----------------------------VSyncWorker Routine end----------------------------");
 }

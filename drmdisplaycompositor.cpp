@@ -507,12 +507,17 @@ int DrmDisplayCompositor::PrepareFramebuffer(
   }
 
 #if USE_AFBC_LAYER
+#if RK_PER_MODE
+      struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)fb.buffer()->handle;
+      pre_comp_layer.internal_format = drm_hnd->internal_format;
+#else
     ret = gralloc_->perform(gralloc_, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                          fb.buffer()->handle, &pre_comp_layer.internal_format);
     if (ret) {
         ALOGE("Failed to get internal_format for buffer %p (%d)", fb.buffer()->handle, ret);
         return ret;
     }
+#endif
 #endif
 
   return ret;
@@ -888,12 +893,17 @@ int DrmDisplayCompositor::PrepareFrame(DrmDisplayComposition *display_comp) {
       squash_layer.display_frame = DrmHwcRect<int>(
           0, 0, squash_layer.buffer->width, squash_layer.buffer->height);
 #if USE_AFBC_LAYER
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)fb.buffer()->handle;
+    squash_layer.internal_format = drm_hnd->internal_format;
+#else
     ret = gralloc_->perform(gralloc_, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                          fb.buffer()->handle, &squash_layer.internal_format);
     if (ret) {
         ALOGE("Failed to get internal_format for buffer %p (%d)", fb.buffer()->handle, ret);
         return ret;
     }
+#endif
 #endif
      ret = display_comp->CreateNextTimelineFence("SquashLayer");
       if (ret <= 0) {

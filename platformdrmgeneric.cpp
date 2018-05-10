@@ -106,7 +106,7 @@ int DrmGenericImporter::ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo
   int fd,width,height,byte_stride,format;
 
   fd = hwc_get_handle_primefd(gralloc_, handle);
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
   width = hwc_get_handle_attibute(gralloc_,handle,ATT_WIDTH);
   height = hwc_get_handle_attibute(gralloc_,handle,ATT_HEIGHT);
   byte_stride = hwc_get_handle_attibute(gralloc_,handle,ATT_BYTE_STRIDE);
@@ -170,8 +170,13 @@ int DrmGenericImporter::ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo
   __u64 modifier[4];
   uint64_t internal_format;
   memset(modifier, 0, sizeof(modifier));
+#if RK_PER_MODE
+  struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)handle;
+  internal_format = drm_hnd->internal_format;
+#else
   gralloc_->perform(gralloc_, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                          handle, &internal_format);
+#endif
   if (isAfbcInternalFormat(internal_format))
   {
       D("KP : to set DRM_FORMAT_MOD_ARM_AFBC.");

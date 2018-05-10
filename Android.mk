@@ -81,7 +81,15 @@ RGA_VER = 3
 RK_RGA_SCALE_AND_ROTATE = 1
 
 RK_3D_VIDEO = 1
+
+# In performance mode,we get handle's parameters from gralloc_drm_handle_t instead of gralloc's perform.
+# it will lead reduce compatibility. So we disable it by default.
+RK_PER_MODE = 0
+ifeq ($(strip $(RK_PER_MODE)), 1)
+RK_PRINT_LAYER_NAME = 0
+else
 RK_PRINT_LAYER_NAME = 1
+endif
 
 # vop Multi-Zone sort
 RK_SORT_AREA_BY_XPOS = 1
@@ -324,7 +332,7 @@ LOCAL_CPPFLAGS += -DUSE_DRM_GENERIC_IMPORTER \
                -DRK_3D_VIDEO=$(RK_3D_VIDEO) -DRK_PRINT_LAYER_NAME=$(RK_PRINT_LAYER_NAME) \
 	       -DRK_SORT_AREA_BY_XPOS=$(RK_SORT_AREA_BY_XPOS) -DRK_HOR_INTERSECT_LIMIT=$(RK_HOR_INTERSECT_LIMIT) \
 	       -DENABLE_RELEASE_FENCE=1 -DFORCE_WAIT_ACQUIRE_FENCE=0 -DRK_RGA_SCALE_AND_ROTATE=$(RK_RGA_SCALE_AND_ROTATE) \
-               -DRGA_VER=$(RGA_VER)
+               -DRGA_VER=$(RGA_VER) -DRK_PER_MODE=$(RK_PER_MODE)
 MAJOR_VERSION := "RK_GRAPHICS_VER=commit-id:$(shell cd $(LOCAL_PATH) && git log  -1 --oneline | awk '{print $$1}')"
 LOCAL_CPPFLAGS += -DRK_GRAPHICS_VER=\"$(MAJOR_VERSION)\"
 endif

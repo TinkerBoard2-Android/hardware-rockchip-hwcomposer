@@ -571,6 +571,12 @@ exit:
 
 int hwc_get_handle_width(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->width;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_WIDTH;
     int width = -1;
@@ -586,10 +592,17 @@ int hwc_get_handle_width(const gralloc_module_t *gralloc, buffer_handle_t hnd)
     }
 
     return width;
+#endif
 }
 
 int hwc_get_handle_height(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->height;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_HEIGHT;
     int height = -1;
@@ -605,10 +618,17 @@ int hwc_get_handle_height(const gralloc_module_t *gralloc, buffer_handle_t hnd)
     }
 
     return height;
+#endif
 }
 
 int hwc_get_handle_stride(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->pixel_stride;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_STRIDE;
     int stride = -1;
@@ -624,10 +644,17 @@ int hwc_get_handle_stride(const gralloc_module_t *gralloc, buffer_handle_t hnd)
     }
 
     return stride;
+#endif
 }
 
 int hwc_get_handle_byte_stride(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->stride;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_BYTE_STRIDE;
     int byte_stride = -1;
@@ -643,10 +670,17 @@ int hwc_get_handle_byte_stride(const gralloc_module_t *gralloc, buffer_handle_t 
     }
 
     return byte_stride;
+#endif
 }
 
 int hwc_get_handle_format(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->format;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_FORMAT;
     int format = -1;
@@ -662,10 +696,17 @@ int hwc_get_handle_format(const gralloc_module_t *gralloc, buffer_handle_t hnd)
     }
 
     return format;
+#endif
 }
 
 int hwc_get_handle_usage(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->usage;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_USAGE;
     int usage = -1;
@@ -681,10 +722,17 @@ int hwc_get_handle_usage(const gralloc_module_t *gralloc, buffer_handle_t hnd)
     }
 
     return usage;
+#endif
 }
 
 int hwc_get_handle_size(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->size;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_SIZE;
     int size = -1;
@@ -700,6 +748,7 @@ int hwc_get_handle_size(const gralloc_module_t *gralloc, buffer_handle_t hnd)
     }
 
     return size;
+#endif
 }
 
 /*
@@ -772,6 +821,12 @@ int hwc_get_handle_attibute(const gralloc_module_t *gralloc, buffer_handle_t hnd
 */
 int hwc_get_handle_primefd(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->prime_fd;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_PRIME_FD;
     int fd = -1;
@@ -787,11 +842,18 @@ int hwc_get_handle_primefd(const gralloc_module_t *gralloc, buffer_handle_t hnd)
     }
 
     return fd;
+#endif
 }
 
 #if RK_DRM_GRALLOC
 uint32_t hwc_get_handle_phy_addr(const gralloc_module_t *gralloc, buffer_handle_t hnd)
 {
+#if RK_PER_MODE
+    struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)hnd;
+
+    UN_USED(gralloc);
+    return drm_hnd->phy_addr;
+#else
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_HADNLE_PHY_ADDR;
     uint32_t phy_addr = 0;
@@ -807,6 +869,7 @@ uint32_t hwc_get_handle_phy_addr(const gralloc_module_t *gralloc, buffer_handle_
     }
 
     return phy_addr;
+#endif
 }
 #endif
 
@@ -2206,7 +2269,7 @@ void video_ui_optimize(const gralloc_module_t *gralloc, hwc_display_contents_1_t
         hwc_layer_1_t *first_layer = &display_content->hwLayers[0];
         if(first_layer->handle)
         {
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
             format = hwc_get_handle_attibute(gralloc, first_layer->handle, ATT_FORMAT);
 #else
             format = hwc_get_handle_format(gralloc, first_layer->handle);
@@ -2216,7 +2279,7 @@ void video_ui_optimize(const gralloc_module_t *gralloc, hwc_display_contents_1_t
                 bool bDiff = true;
                 int iUiFd = 0;
                 hwc_layer_1_t * second_layer =  &display_content->hwLayers[1];
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
                 format = hwc_get_handle_attibute(gralloc, second_layer->handle, ATT_FORMAT);
 #else
                 format = hwc_get_handle_format(gralloc, second_layer->handle);
@@ -2238,7 +2301,7 @@ void video_ui_optimize(const gralloc_module_t *gralloc, hwc_display_contents_1_t
                     }
                     else if(!hd->bHideUi)
                     {
-#if RK_DRM_GRALLOC
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
                         int iWidth = hwc_get_handle_attibute(gralloc,second_layer->handle,ATT_WIDTH);
                         int iHeight = hwc_get_handle_attibute(gralloc,second_layer->handle,ATT_HEIGHT);
 #else
