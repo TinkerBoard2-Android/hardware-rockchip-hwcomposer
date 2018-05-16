@@ -546,6 +546,25 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
     }
   }
 
+  //use raw modes to get mode.
+  for (const DrmMode &conn_mode : c->raw_modes()) {
+    if (conn_mode.type() & DRM_MODE_TYPE_PREFERRED) {
+      c->set_best_mode(conn_mode);
+      return 0;
+    }
+    else {
+      temp = conn_mode.h_display()*conn_mode.v_display();
+      if(MaxResolution <= temp)
+        MaxResolution = temp;
+    }
+  }
+  for (const DrmMode &conn_mode : c->raw_modes()) {
+    if(MaxResolution == conn_mode.h_display()*conn_mode.v_display()) {
+      c->set_best_mode(conn_mode);
+      return 0;
+    }
+  }
+
   ALOGE("Error: Should not get here display=%d %s %d\n", display, __FUNCTION__, __LINE__);
   DrmMode mode;
   c->set_best_mode(mode);
