@@ -102,12 +102,16 @@ bool DrmMode::equal(uint32_t width, uint32_t height, float vrefresh,
 {
   float v_refresh = clock_ / (float)(v_total_ * h_total_) * 1000.0f;
   uint32_t flags_temp;
+  uint32_t vrefresh_temp = 0, v_refresh_temp=0;
   if (flags_ & DRM_MODE_FLAG_INTERLACE)
     v_refresh *= 2;
   if (flags_ & DRM_MODE_FLAG_DBLSCAN)
     v_refresh /= 2;
   if (v_scan_ > 1)
     v_refresh /= v_scan_ ;
+
+  vrefresh_temp = vrefresh * 100;
+  v_refresh_temp = v_refresh * 100;
 
   /* vrefresh within 1 HZ */
   if (fabs(v_refresh - vrefresh) > 1.0f)
@@ -116,13 +120,15 @@ bool DrmMode::equal(uint32_t width, uint32_t height, float vrefresh,
   if (h_display_ == width && v_display_ == height &&
       hsync_start == h_sync_start_ && hsync_end == h_sync_end_ &&
       vsync_start == v_sync_start_ && vsync_end == v_sync_end_ &&
-      htotal == h_total_ && vtotal == v_total_ && flags == flags_)
+      htotal == h_total_ && vtotal == v_total_ && flags == flags_ &&
+      vrefresh_temp == v_refresh_temp)
     return true;
 
   if (h_display_ == width && v_display_ == height &&
       hsync_start == h_sync_start_ && hsync_end == h_sync_end_ &&
       vsync_start == v_sync_start_ && vsync_end == v_sync_end_ &&
-      htotal == h_total_ && vtotal == v_total_ ) {
+      htotal == h_total_ && vtotal == v_total_ &&
+      vrefresh_temp == v_refresh_temp) {
         flags_temp = DRM_MODE_FLAG_PHSYNC|DRM_MODE_FLAG_NHSYNC|DRM_MODE_FLAG_PVSYNC|
                          DRM_MODE_FLAG_NVSYNC|DRM_MODE_FLAG_INTERLACE|
                          DRM_MODE_FLAG_420_MASK;
