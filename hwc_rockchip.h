@@ -185,6 +185,12 @@ typedef struct hwc_drm_display {
     DrmRgaBuffer rgaBuffers[MaxRgaBuffers];
     bool mUseRga;
 #endif
+    int transform_nv12;
+    int transform_normal;
+#if RK_ROTATE_VIDEO_MODE
+    int original_min_freq;
+    bool bRotateVideoMode;
+#endif
 } hwc_drm_display_t;
 
 /*

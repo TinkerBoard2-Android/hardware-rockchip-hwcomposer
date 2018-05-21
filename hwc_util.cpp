@@ -7,6 +7,33 @@
 #include <errno.h>
 #include <string.h>
 
+static int sysfs_read(const char *path)
+{
+    char buf[80];
+    char freq[50];
+    int len;
+    int fd = open(path, O_RDONLY);
+
+    ALOGV("%s: [%s:]", __FUNCTION__, path);
+    if (fd < 0) {
+        strerror_r(errno, buf, sizeof(buf));
+        ALOGE("%s: [%s]", __FUNCTION__, path);
+        ALOGE("Error opening %s: %s\n", path, buf);
+        return -1;
+    }
+
+    len = read(fd, freq, 10);
+    if (len < 0) {
+        strerror_r(errno, buf, sizeof(buf));
+        ALOGE("%s: [%s]", __FUNCTION__, path);
+        ALOGE("Error writing to %s: %s\n", path, buf);
+    }
+
+    close(fd);
+
+    return atoi(freq)/1000;
+}
+
 static void sysfs_write(const char *path,const char *s)
 {
     char buf[80];
@@ -29,6 +56,29 @@ static void sysfs_write(const char *path,const char *s)
     }
 
     close(fd);
+}
+
+/*
+ * set cpu0 scaling_min_freq
+ * Parameters:
+ *  freq:
+ *      unit is M.
+ * Return:
+ *      original freq.
+ */
+int set_cpu_min_freq(int freq)
+{
+    int set_freq = 1000 * freq;
+    int old_freq;
+    char freq_buf[50];
+    old_freq = sysfs_read(CPU0_SCALING_MIN_FREQ);
+    sprintf(freq_buf,"%d",set_freq);
+    sysfs_write(CPU0_SCALING_MIN_FREQ, (const char *)freq_buf);
+#if (defined TARGET_BOARD_PLATFORM_RK3399) || (defined TARGET_BOARD_PLATFORM_RK3368)
+    sysfs_write(CPU4_SCALING_MIN_FREQ, (const char *)freq_buf);
+#endif
+    ALOGV("%s: change min freq %d==>%d",__FUNCTION__,old_freq,freq);
+    return old_freq;
 }
 
 /*

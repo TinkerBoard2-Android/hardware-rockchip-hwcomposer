@@ -82,6 +82,9 @@ RK_RGA_SCALE_AND_ROTATE = 1
 
 RK_3D_VIDEO = 1
 
+# When enter rotate video,we need improve cpu freq in some platforms.
+RK_ROTATE_VIDEO_MODE = 0
+
 # In performance mode,we get handle's parameters from gralloc_drm_handle_t instead of gralloc's perform.
 # it will lead reduce compatibility. So we disable it by default.
 RK_PER_MODE = 0
@@ -204,6 +207,7 @@ LOCAL_CPPFLAGS += -DTARGET_BOARD_PLATFORM_RK3288  -DRK_DRM_GRALLOC=1 \
                -DMALI_AFBC_GRALLOC=1
 RK_SORT_AREA_BY_XPOS = 0
 RK_HOR_INTERSECT_LIMIT = 1
+RK_ROTATE_VIDEO_MODE = 1
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_PRODUCT)),tablet)
 LOCAL_CPPFLAGS += -DRK3288_MID
 endif
@@ -332,7 +336,7 @@ LOCAL_CPPFLAGS += -DUSE_DRM_GENERIC_IMPORTER \
                -DRK_3D_VIDEO=$(RK_3D_VIDEO) -DRK_PRINT_LAYER_NAME=$(RK_PRINT_LAYER_NAME) \
 	       -DRK_SORT_AREA_BY_XPOS=$(RK_SORT_AREA_BY_XPOS) -DRK_HOR_INTERSECT_LIMIT=$(RK_HOR_INTERSECT_LIMIT) \
 	       -DENABLE_RELEASE_FENCE=1 -DFORCE_WAIT_ACQUIRE_FENCE=0 -DRK_RGA_SCALE_AND_ROTATE=$(RK_RGA_SCALE_AND_ROTATE) \
-               -DRGA_VER=$(RGA_VER) -DRK_PER_MODE=$(RK_PER_MODE)
+               -DRGA_VER=$(RGA_VER) -DRK_PER_MODE=$(RK_PER_MODE) -DRK_ROTATE_VIDEO_MODE=$(RK_ROTATE_VIDEO_MODE)
 MAJOR_VERSION := "RK_GRAPHICS_VER=commit-id:$(shell cd $(LOCAL_PATH) && git log  -1 --oneline | awk '{print $$1}')"
 LOCAL_CPPFLAGS += -DRK_GRAPHICS_VER=\"$(MAJOR_VERSION)\"
 endif

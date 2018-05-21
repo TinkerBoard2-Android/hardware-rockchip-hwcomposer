@@ -1323,8 +1323,8 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 
     //If the transform nv12 layers is bigger than one,then go into GPU GLES.
     //If the transform normal layers is bigger than zero,then go into GPU GLES.
-    int transform_nv12 = 0;
-    int transform_normal = 0;
+    hd->transform_nv12 = 0;
+    hd->transform_normal = 0;
     int ret = 0;
     int format = 0;
 #if USE_AFBC_LAYER
@@ -1620,9 +1620,9 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                 }
 #endif
                 if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-                    transform_nv12++;
+                    hd->transform_nv12++;
                 else if(layer->compositionType != HWC_NODRAW)
-                    transform_normal++;
+                    hd->transform_normal++;
             }
 
 #if USE_AFBC_LAYER
@@ -1642,7 +1642,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 #endif
         }
     }
-    if(transform_nv12 > 1 || transform_normal > 0)
+    if(hd->transform_nv12 > 1 || hd->transform_normal > 0)
     {
         ALOGD_IF(log_level(DBG_DEBUG), "too many rotate layers,go to GPU GLES at line=%d", __LINE__);
         return true;
@@ -2728,6 +2728,14 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 
     if(ctx->isGLESComp)
     {
+#if RK_ROTATE_VIDEO_MODE
+        if(hd->bRotateVideoMode)
+        {
+            ALOGD_IF(log_level(DBG_DEBUG), "Exit Rotate video Mode mode");
+            set_cpu_min_freq(hd->original_min_freq);
+            hd->bRotateVideoMode = false;
+        }
+#endif
         //remove all layers except fb layer
         for (auto k = layer_content.layers.begin(); k != layer_content.layers.end();)
         {
@@ -2743,6 +2751,23 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                                         hd->iPlaneSize, fbSize, comp_plane.composition_planes);
         if(!bAllMatch)
             ALOGE("Fetal error when match plane for fb layer");
+    }
+    else
+    {
+#if RK_ROTATE_VIDEO_MODE
+        if(hd->transform_nv12==1 && !hd->bRotateVideoMode)
+        {
+            ALOGD_IF(log_level(DBG_DEBUG), "Enter Rotate video Mode mode");
+            hd->original_min_freq = set_cpu_min_freq(408);
+            hd->bRotateVideoMode = true;
+        }
+        else if(hd->transform_nv12!=1 && hd->bRotateVideoMode)
+        {
+            ALOGD_IF(log_level(DBG_DEBUG), "Exit Rotate video Mode mode");
+            set_cpu_min_freq(hd->original_min_freq);
+            hd->bRotateVideoMode = false;
+        }
+#endif
     }
 
     for (int j = 0; j < num_layers; ++j) {
@@ -3531,7 +3556,9 @@ static int hwc_initialize_display(struct hwc_context_t *ctx, int display) {
     hd->rgaBuffer_index = 0;
     hd->mUseRga = false;
 #endif
-
+#if RK_ROTATE_VIDEO_MODE
+    hd->bRotateVideoMode = false;
+#endif
     return 0;
 }
 
