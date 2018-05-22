@@ -1296,8 +1296,25 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     bool isFind = FindAppHintInFile(ctx->regFile, AUTO_FILL_PROG_NAME, IS_AUTO_FILL, &is_auto_fill, IMG_INT_TYPE);
     if(is_auto_fill)
     {
+        if(!hd->bPerfMode)
+        {
+            ALOGD_IF(log_level(DBG_DEBUG),"enter perf mode");
+            ctl_gpu_performance(1);
+            ctl_cpu_performance(1, 0);
+            hd->bPerfMode = true;
+        }
         ALOGD_IF(log_level(DBG_DEBUG),"is auto fill program,go to GPU GLES at line=%d",  __LINE__);
         return true;
+    }
+    else
+    {
+        if(hd->bPerfMode)
+        {
+            ALOGD_IF(log_level(DBG_DEBUG),"exit perf mode");
+            ctl_gpu_performance(0);
+            ctl_cpu_performance(0, 0);
+            hd->bPerfMode = false;
+        }
     }
 #endif
 

@@ -191,6 +191,10 @@ typedef struct hwc_drm_display {
     int original_min_freq;
     bool bRotateVideoMode;
 #endif
+#if RK_CTS_WORKROUND
+    bool bPerfMode;
+#endif
+
 } hwc_drm_display_t;
 
 /*

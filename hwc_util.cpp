@@ -84,6 +84,32 @@ int set_cpu_min_freq(int freq)
 }
 
 /*
+ * Control gpu performance mode.
+ * Parameters:
+ *  on:
+ *      1: open performance
+ *      0: close performance
+ */
+void ctl_gpu_performance(int on)
+{
+    if(on != 0 && on != 1)
+    {
+        ALOGE("%s: invalid parameters,on=%d", __FUNCTION__, on);
+        return;
+    }
+
+    if(strcmp(GPU_GOV_PATH,""))
+    {
+        sysfs_write(GPU_GOV_PATH, on ? "performance" : "simple_ondemand");
+    }
+    else
+    {
+        ALOGV("%s: GPU_GOV_PATH is NULL",__FUNCTION__);
+    }
+}
+
+
+/*
  * Control cpu performance mode.
  * Parameters:
  *  on:
