@@ -1,4 +1,6 @@
 #include "hwc_util.h"
+#define LOG_TAG "hwcomposer-util"
+
 #include <cutils/log.h>
 #include <cutils/properties.h>
 #include <stdlib.h>
@@ -213,5 +215,226 @@ int DetectValidData(int *data,int w,int h)
 
     return 0;
 }
+
+#if RK_CTS_WORKROUND
+static bool ConvertCharToData(const char *pszHintName, const char *pszData, void *pReturn, IMG_DATA_TYPE eDataType)
+{
+	bool bFound = false;
+
+
+	switch(eDataType)
+	{
+		case IMG_STRING_TYPE:
+		{
+			strcpy((char*)pReturn, pszData);
+
+			ALOGD_IF(RK_CTS_DEBUG, "Hint: Setting %s to %s\n", pszHintName, (char*)pReturn);
+
+			bFound = true;
+
+			break;
+		}
+		case IMG_FLOAT_TYPE:
+		{
+			*(float*)pReturn = (float) atof(pszData);
+
+			ALOGD_IF(RK_CTS_DEBUG, "Hint: Setting %s to %f", pszHintName, *(float*)pReturn);
+
+			bFound = true;
+
+			break;
+		}
+		case IMG_UINT_TYPE:
+		case IMG_FLAG_TYPE:
+		{
+			/* Changed from atoi to stroul to support hexadecimal numbers */
+			*(u32*)pReturn = (u32) strtoul(pszData, NULL, 0);
+			if (*(u32*)pReturn > 9)
+			{
+				ALOGD_IF(RK_CTS_DEBUG, "Hint: Setting %s to %u (0x%X)", pszHintName, *(u32*)pReturn, *(u32*)pReturn);
+			}
+			else
+			{
+				ALOGD_IF(RK_CTS_DEBUG, "Hint: Setting %s to %u", pszHintName, *(u32*)pReturn);
+			}
+			bFound = true;
+
+			break;
+		}
+		case IMG_INT_TYPE:
+		{
+			*(int*)pReturn = (int) atoi(pszData);
+
+			ALOGD_IF(RK_CTS_DEBUG, "Hint: Setting %s to %d\n", pszHintName, *(int*)pReturn);
+
+			bFound = true;
+
+			break;
+		}
+		default:
+		{
+			ALOGD_IF(RK_CTS_DEBUG, "ConvertCharToData: Bad eDataType");
+
+			break;
+		}
+	}
+
+	return bFound;
+}
+
+static int getProcessCmdLine(char* outBuf, size_t bufSize)
+{
+	int ret = 0;
+
+	FILE* file = NULL;
+	long pid = 0;
+	char procPath[128]={0};
+
+	pid = getpid();
+	sprintf(procPath, "/proc/%ld/cmdline", pid);
+
+	file = fopen(procPath, "r");
+	if ( NULL == file )
+	{
+		ALOGE("fail to open file (%s)",strerror(errno));
+	}
+
+	if ( NULL == fgets(outBuf, bufSize - 1, file) )
+	{
+		ALOGE("fail to read from cmdline_file.");
+	}
+
+	if ( NULL != file )
+	{
+		fclose(file);
+	}
+
+	return ret;
+}
+
+bool FindAppHintInFile(FILE *regFile, const char *pszAppName,
+								  const char *pszHintName, void *pReturn,
+								  IMG_DATA_TYPE eDataType)
+{
+	bool bFound = false;
+
+	if(regFile)
+	{
+		char pszTemp[1024], pszApplicationSectionName[1024];
+		int iLineNumber;
+		bool bUseThisSection, bInAppSpecificSection;
+
+        fseek(regFile, 0, SEEK_SET);
+		/* Build the section name */
+		snprintf(pszApplicationSectionName, 1024, "[%s]", pszAppName);
+
+		bUseThisSection 		= false;
+		bInAppSpecificSection	= false;
+
+		iLineNumber = -1;
+
+		while(fgets(pszTemp, 1024, regFile))
+		{
+			size_t uiStrLen;
+
+			iLineNumber++;
+			ALOGD_IF(RK_CTS_DEBUG, "FindAppHintInFile iLineNumber=%d pszTemp=%s",iLineNumber,pszTemp);
+
+			uiStrLen = strlen(pszTemp);
+
+			if (pszTemp[uiStrLen-1]!='\n')
+			{
+			    ALOGE("FindAppHintInFile : Error at line %u",iLineNumber);
+
+				continue;
+			}
+
+			if((uiStrLen >= 2) && (pszTemp[uiStrLen-2] == '\r'))
+			{
+				/* CRLF (Windows) line ending */
+				pszTemp[uiStrLen-2] = '\0';
+			}
+			else
+			{
+				/* LF (unix) line ending */
+				pszTemp[uiStrLen-1] = '\0';
+			}
+
+			switch (pszTemp[0])
+			{
+				case '[':
+				{
+					/* Section */
+					bUseThisSection 		= false;
+					bInAppSpecificSection	= false;
+
+					if (!strcmp("[default]", pszTemp))
+					{
+						bUseThisSection = true;
+					}
+					else if (!strcmp(pszApplicationSectionName, pszTemp))
+					{
+						bUseThisSection 		= true;
+						bInAppSpecificSection 	= true;
+					}
+
+					break;
+				}
+				default:
+				{
+					char *pszPos;
+
+					if (!bUseThisSection)
+					{
+						/* This line isn't for us */
+						continue;
+					}
+
+					pszPos = strstr(pszTemp, pszHintName);
+
+					if (pszPos!=pszTemp)
+					{
+						/* Hint name isn't at start of string */
+						continue;
+					}
+
+					if (*(pszPos + strlen(pszHintName)) != '=')
+					{
+						/* Hint name isn't exactly correct, or isn't followed by an equals sign */
+						continue;
+					}
+
+					/* Move to after the equals sign */
+					pszPos += strlen(pszHintName) + 1;
+
+					/* Convert anything after the equals sign to the requested data type */
+					bFound = ConvertCharToData(pszHintName, pszPos, pReturn, eDataType);
+
+					if (bFound && bInAppSpecificSection)
+					{
+						/*
+						// If we've found the hint in the application specific section we may
+						// as well drop out now, since this should override any default setting
+						*/
+						//fclose(regFile);
+
+						return true;
+					}
+
+					break;
+				}
+			}
+		}
+
+		//fclose(regFile);
+	}
+	else
+	{
+		ALOGE("%s regFile is null",__FUNCTION__);
+	}
+
+	return bFound;
+}
+#endif
 
 

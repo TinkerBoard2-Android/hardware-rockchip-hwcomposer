@@ -377,7 +377,9 @@ struct hwc_context_t {
   int fb_fd;
   int fb_blanked;
   int hdmi_status_fd;
-
+#if RK_CTS_WORKROUND
+  FILE* regFile;
+#endif
     bool                isGLESComp;
 #if RK_INVALID_REFRESH
     bool                mOneWinOpt;
@@ -1278,12 +1280,26 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     int iMode = hwc_get_int_property("sys.hwc.compose_policy","0");
     if( iMode <= 0 || (iMode == 1 && display_id == 2) || (iMode == 2 && display_id == 1) )
     {
+        ALOGD_IF(log_level(DBG_DEBUG),"sys.hwc.compose_policy=%d,go to GPU GLES at line=%d", iMode, __LINE__);
         return true;
     }
 
     iMode = hwc_get_int_property("sys.hwc","1");
     if( iMode <= 0 )
+    {
+        ALOGD_IF(log_level(DBG_DEBUG),"sys.hwc=%d,go to GPU GLES at line=%d", iMode, __LINE__);
         return true;
+    }
+
+#if RK_CTS_WORKROUND
+    int is_auto_fill = 0;
+    bool isFind = FindAppHintInFile(ctx->regFile, AUTO_FILL_PROG_NAME, IS_AUTO_FILL, &is_auto_fill, IMG_INT_TYPE);
+    if(is_auto_fill)
+    {
+        ALOGD_IF(log_level(DBG_DEBUG),"is auto fill program,go to GPU GLES at line=%d",  __LINE__);
+        return true;
+    }
+#endif
 
     if(num_layers == 1)
     {
@@ -3489,6 +3505,14 @@ static int hwc_set_active_config(struct hwc_composer_device_1 *dev, int display,
 static int hwc_device_close(struct hw_device_t *dev) {
   struct hwc_context_t *ctx = (struct hwc_context_t *)dev;
 
+#if RK_CTS_WORKROUND
+  if(ctx->regFile)
+  {
+    fclose(ctx->regFile);
+    ctx->regFile = NULL;
+  }
+#endif
+
 #if RK_INVALID_REFRESH
     free_thread_pamaters(&ctx->mRefresh);
 #endif
@@ -3762,6 +3786,14 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
          ALOGE("Open hdmi_status_fd fail in %s",__FUNCTION__);
          //return -1;
     }
+
+#if RK_CTS_WORKROUND
+    ctx->regFile = fopen(VIEW_CTS_FILE, "r");
+    if(ctx->regFile == NULL)
+    {
+        ALOGE("%s open fail errno=0x%x  (%s)",__FUNCTION__, errno,strerror(errno));
+    }
+#endif
 
   hwc_init_version();
 
