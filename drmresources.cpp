@@ -161,6 +161,7 @@ void DrmResources::ConfigurePossibleDisplays()
   int primary_length, extend_length;
   int default_display_possible = 0;
   std::string conn_name;
+  char acConnName[50];
 
   primary_length = property_get("sys.hwc.device.primary", primary_name, NULL);
   extend_length = property_get("sys.hwc.device.extend", extend_name, NULL);
@@ -209,7 +210,9 @@ void DrmResources::ConfigurePossibleDisplays()
 
     while(getline(ss, conn_name, ',')) {
       for (auto &conn : connectors_) {
-        if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()))
+        snprintf(acConnName,50,"%s-%d",connector_type_str(conn->get_type()),conn->type_id());
+        if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()) ||
+            !strcmp(acConnName, conn_name.c_str()))
           conn->set_display_possible(HWC_DISPLAY_PRIMARY_BIT);
       }
     }
@@ -220,7 +223,9 @@ void DrmResources::ConfigurePossibleDisplays()
 
     while(getline(ss, conn_name, ',')) {
       for (auto &conn : connectors_) {
-        if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()))
+        snprintf(acConnName,50,"%s-%d",connector_type_str(conn->get_type()),conn->type_id());
+        if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()) ||
+            !strcmp(acConnName, conn_name.c_str()))
           conn->set_display_possible(conn->possible_displays() | HWC_DISPLAY_EXTERNAL_BIT);
       }
     }

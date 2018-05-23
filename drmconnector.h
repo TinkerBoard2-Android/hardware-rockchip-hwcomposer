@@ -40,6 +40,7 @@ class DrmConnector {
   int Init();
 
   uint32_t id() const;
+  uint32_t type_id() const;
 
   int display() const;
   void set_display(int display);
@@ -103,6 +104,7 @@ class DrmConnector {
   DrmResources *drm_;
 
   uint32_t id_;
+  uint32_t type_id_;
   DrmEncoder *encoder_;
   int display_;
 

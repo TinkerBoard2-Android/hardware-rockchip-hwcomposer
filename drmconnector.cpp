@@ -32,6 +32,7 @@ DrmConnector::DrmConnector(DrmResources *drm, drmModeConnectorPtr c,
                            std::vector<DrmEncoder *> &possible_encoders)
     : drm_(drm),
       id_(c->connector_id),
+      type_id_(c->connector_type_id),
       encoder_(current_encoder),
       display_(-1),
       type_(c->connector_type),
@@ -106,6 +107,10 @@ bool DrmConnector::is_hdmi_support_hdr() const
 
 uint32_t DrmConnector::id() const {
   return id_;
+}
+
+uint32_t DrmConnector::type_id() const {
+  return type_id_;
 }
 
 int DrmConnector::display() const {
