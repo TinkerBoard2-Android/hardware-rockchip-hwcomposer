@@ -182,9 +182,9 @@ class DrmHotplugHandler : public DrmEventHandler {
 
       if (cur_state == old_state)
         continue;
-      ALOGI("hwc_hotplug: %s event @%" PRIu64 " for connector %u type=%s\n",
+      ALOGI("hwc_hotplug: %s event @%" PRIu64 " for connector %u type=%s, type_id=%d\n",
             cur_state == DRM_MODE_CONNECTED ? "Plug" : "Unplug", timestamp_us,
-            conn->id(),drm_->connector_type_str(conn->get_type()));
+            conn->id(),drm_->connector_type_str(conn->get_type()),conn->type_id());
       if (cur_state == DRM_MODE_CONNECTED) {
         /*
          * if connector is only one , only to use primary. by libin
@@ -194,11 +194,13 @@ class DrmHotplugHandler : public DrmEventHandler {
             ALOGI("connectors_.size()=%u only primary\n",(uint32_t)drm_->connectors().size());
         }else{
             if (conn->possible_displays() & HWC_DISPLAY_EXTERNAL_BIT){
-              ALOGD("hwc_hotplug: find the first connect external type=%s",drm_->connector_type_str(conn->get_type()));
+              ALOGD("hwc_hotplug: find the first connect external type=%s(%d)",
+                drm_->connector_type_str(conn->get_type()), conn->type_id());
               extend = conn.get();
             }
             else if (conn->possible_displays() & HWC_DISPLAY_PRIMARY_BIT){
-              ALOGD("hwc_hotplug: find the first connect primary type=%s",drm_->connector_type_str(conn->get_type()));
+              ALOGD("hwc_hotplug: find the first connect primary type=%s(%d)",
+                drm_->connector_type_str(conn->get_type()), conn->type_id());
               primary = conn.get();
             }
         }
@@ -219,7 +221,8 @@ class DrmHotplugHandler : public DrmEventHandler {
           continue;
         if (conn->raw_state() == DRM_MODE_CONNECTED) {
           primary = conn.get();
-          ALOGD("hwc_hotplug: find the second connect primary type=%s",drm_->connector_type_str(conn->get_type()));
+          ALOGD("hwc_hotplug: find the second connect primary type=%s(%d)",
+            drm_->connector_type_str(conn->get_type()), conn->type_id());
           break;
         }
       }
@@ -229,7 +232,8 @@ class DrmHotplugHandler : public DrmEventHandler {
       for (auto &conn : drm_->connectors()) {
         if (!(conn->possible_displays() & HWC_DISPLAY_PRIMARY_BIT))
           continue;
-        ALOGD("hwc_hotplug: find the third primary type=%s",drm_->connector_type_str(conn->get_type()));
+        ALOGD("hwc_hotplug: find the third primary type=%s(%d)",
+            drm_->connector_type_str(conn->get_type()), conn->type_id());
         primary = conn.get();
       }
     }
@@ -272,7 +276,8 @@ class DrmHotplugHandler : public DrmEventHandler {
           continue;
         if (conn->raw_state() == DRM_MODE_CONNECTED) {
           extend = conn.get();
-          ALOGD("hwc_hotplug: find the second connect external type=%s",drm_->connector_type_str(conn->get_type()));
+          ALOGD("hwc_hotplug: find the second connect external type=%s(%d)",
+            drm_->connector_type_str(conn->get_type()), conn->type_id());
           break;
         }
       }

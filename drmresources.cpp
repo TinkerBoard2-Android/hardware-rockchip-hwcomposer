@@ -213,7 +213,9 @@ void DrmResources::ConfigurePossibleDisplays()
         snprintf(acConnName,50,"%s-%d",connector_type_str(conn->get_type()),conn->type_id());
         if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()) ||
             !strcmp(acConnName, conn_name.c_str()))
+        {
           conn->set_display_possible(HWC_DISPLAY_PRIMARY_BIT);
+        }
       }
     }
   }
@@ -226,7 +228,9 @@ void DrmResources::ConfigurePossibleDisplays()
         snprintf(acConnName,50,"%s-%d",connector_type_str(conn->get_type()),conn->type_id());
         if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()) ||
             !strcmp(acConnName, conn_name.c_str()))
+        {
           conn->set_display_possible(conn->possible_displays() | HWC_DISPLAY_EXTERNAL_BIT);
+        }
       }
     }
   }
@@ -828,15 +832,44 @@ int DrmResources::UpdateDisplayRoute(void)
       }
     }
   }
-  if (primary && primary->encoder() && primary->encoder()->crtc())
-    property_set("sys.hwc.device.main", connector_type_str(primary->get_type()));
-  else
-    property_set("sys.hwc.device.main", "");
 
-  if (extend && extend->encoder() && extend->encoder()->crtc())
-    property_set("sys.hwc.device.aux", connector_type_str(extend->get_type()));
+  if(primary && !strcmp(connector_type_str(primary->get_type()), "HDMI-A"))
+  {
+    if (primary && primary->encoder() && primary->encoder()->crtc())
+    {
+      char primary_conn_name[50];
+      snprintf(primary_conn_name,50,"%s-%d",connector_type_str(primary->get_type()),primary->type_id());
+      property_set("sys.hwc.device.main", primary_conn_name);
+    }
+    else
+      property_set("sys.hwc.device.main", "");
+  }
   else
-    property_set("sys.hwc.device.aux", "");
+  {
+    if (primary && primary->encoder() && primary->encoder()->crtc())
+      property_set("sys.hwc.device.main", connector_type_str(primary->get_type()));
+    else
+      property_set("sys.hwc.device.main", "");
+  }
+
+  if(extend && !strcmp(connector_type_str(extend->get_type()), "HDMI-A"))
+  {
+    if (extend && extend->encoder() && extend->encoder()->crtc())
+    {
+      char extend_conn_name[50];
+      snprintf(extend_conn_name,50,"%s-%d",connector_type_str(extend->get_type()),extend->type_id());
+      property_set("sys.hwc.device.aux", extend_conn_name);
+    }
+    else
+      property_set("sys.hwc.device.aux", "");
+  }
+  else
+  {
+    if (extend && extend->encoder() && extend->encoder()->crtc())
+      property_set("sys.hwc.device.aux", connector_type_str(extend->get_type()));
+    else
+      property_set("sys.hwc.device.aux", "");
+  }
 
   drmModeAtomicReqPtr pset = drmModeAtomicAlloc();
   if (!pset) {
