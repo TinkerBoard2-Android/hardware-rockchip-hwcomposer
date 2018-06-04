@@ -31,7 +31,7 @@
 #endif
 
 /*hwc version*/
-#define GHWC_VERSION                    "0.49"
+#define GHWC_VERSION                    "0.50"
 
 /* hdr usage */
 /*usage & 0x0F000000
