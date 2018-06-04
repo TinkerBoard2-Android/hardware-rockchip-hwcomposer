@@ -52,9 +52,9 @@ int DrmCompositor::Init() {
   return 0;
 }
 
-std::unique_ptr<DrmComposition> DrmCompositor::CreateComposition(
+DrmComposition* DrmCompositor::CreateComposition(
     Importer *importer, unsigned int frame_no) {
-  std::unique_ptr<DrmComposition> composition(
+  DrmComposition* composition(
       new DrmComposition(drm_, importer, planner_.get()));
   frame_no_ = frame_no;
   int ret = composition->Init(frame_no);
@@ -66,27 +66,40 @@ std::unique_ptr<DrmComposition> DrmCompositor::CreateComposition(
 }
 
 int DrmCompositor::QueueComposition(
-    std::unique_ptr<DrmComposition> composition) {
-  int i, ret;
+    DrmComposition* composition, int dispaly) {
+  int ret = 0;
 
-  ret = composition->Plan(compositor_map_);
-  if (ret)
-    return ret;
-
-  ret = composition->DisableUnusedPlanes();
-  if (ret)
-    return ret;
-
-  for (i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
-    int ret = compositor_map_[i].QueueComposition(
-        composition->TakeDisplayComposition(i));
-    if (ret) {
-      ALOGV("Failed to queue composition for display %d (%d)", i, ret);
-      return ret;
-    }
+  if(!composition || dispaly >= HWC_NUM_PHYSICAL_DISPLAY_TYPES)
+  {
+    ALOGE("%s:invalid input parameter display=%d,composition=%p", __FUNCTION__, dispaly,composition);
+    return -1;
   }
 
-  return 0;
+  //If it return successful,it will create release fence.
+  ret = composition->Plan(compositor_map_, dispaly);
+  if(ret)
+  {
+    ALOGE("%s:Plan fail for display %d", __FUNCTION__, dispaly);
+    return ret;
+  }
+
+  ret = composition->DisableUnusedPlanes(dispaly);
+  if(ret)
+  {
+    ALOGE("%s:DisableUnusedPlanes fail for display %d", __FUNCTION__, dispaly);
+    return ret;
+  }
+
+  //It will push composition in composite Queue.
+  ret = compositor_map_[dispaly].QueueComposition(
+      composition->TakeDisplayComposition(dispaly));
+  if(ret)
+  {
+    ALOGE("%s: Failed to queue composition for display %d", __FUNCTION__, dispaly);
+    return ret;
+  }
+
+  return ret;
 }
 
 int DrmCompositor::Composite() {

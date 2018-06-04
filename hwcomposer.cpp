@@ -2236,14 +2236,14 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 
     DrmConnector *connector = ctx->drm.GetConnectorFromType(i);
     if (!connector) {
-      ALOGE("Failed to get connector for display %d line=%d", i,__LINE__);
+      ALOGE("%s:Failed to get connector for display %d line=%d",__FUNCTION__, i,__LINE__);
       hwc_list_nodraw(display_contents[i]);
       continue;
     }
     hwc_drm_display_t *hd = &ctx->displays[connector->display()];
     DrmCrtc *crtc = ctx->drm.GetCrtcFromConnector(connector);
     if (connector->state() != DRM_MODE_CONNECTED || !crtc) {
-      ALOGD_IF(log_level(DBG_DEBUG),"%s: connector[%d] is disconnect type=%s",__FUNCTION__,
+      ALOGE("%s: display=%d, connector[%d] is disconnect type=%s",__FUNCTION__,i,
                 connector->display(),ctx->drm.connector_type_str(connector->get_type()));
       hwc_list_nodraw(display_contents[i]);
       continue;
@@ -2859,6 +2859,11 @@ static void hwc_add_layer_to_retire_fence(
   }
 }
 
+/* rk:
+ * acquireFenceFd may transfer from  hwc_layer_1_t to DrmHwcLayer.
+ * So we signal acquire_fence of DrmHwcLayer at first.
+ * Then we try to signal acquireFenceFd of hwc_layer_1_t.
+ */
 void signal_all_fence(DrmHwcDisplayContents &display_contents,hwc_display_contents_1_t  *dc)
 {
   for (size_t j=0; j< display_contents.layers.size(); j++) {
@@ -2891,7 +2896,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   std::vector<DrmCompositionDisplayLayersMap> layers_map;
   std::vector<std::vector<size_t>> layers_indices;
   std::vector<uint32_t> fail_displays;
-  std::unique_ptr<DrmComposition> composition;
+  DrmComposition* composition;
 
   // layers_map.reserve(num_displays);
   layers_indices.reserve(num_displays);
@@ -3185,10 +3190,33 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       }
   }
 
-  ret = ctx->drm.compositor()->QueueComposition(std::move(composition));
-  if (ret) {
-    ALOGE("%s: QueueComposition fail",__FUNCTION__);
-    goto err;
+  /* rk:
+   * we use loop to call QueueComposition to avoid the release fence leak.
+   * Before:
+   *    QueueComposition
+   *      DrmComposition::Plan
+   *        DrmDisplayComposition::Plan[0]---> return ok,it will create release fences for display 0
+   *        DrmDisplayComposition::Plan[1]---> return err
+   *      return err to DrmComposition::Plan,then return err to QueueComposition,
+   *      it has no change to call DrmDisplayCompositor::QueueComposition(push composition in composite Queue.)
+   *      So even you call ClearDisplay,the release fences of display 0 still cann't be signal.
+   * There are two workrounds:
+   * 1. You can call SignalCompositionDone or DrmDisplayComposition.reset(NULL) for display 0 before return to QueueComposition.
+   *     Tip: DrmDisplayComposition.reset(NULL) will call SignalCompositionDone in ~DrmDisplayComposition.
+   * 2. Use loop to separate the success and the error processing.(<----current workround.)
+   *
+   */
+  for (size_t i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; ++i) {
+    if (!sf_display_contents[i])
+      continue;
+
+    ret = ctx->drm.compositor()->QueueComposition(composition, i);
+    if (ret) {
+      ALOGE("%s: QueueComposition fail for display=%zu",__FUNCTION__,i);
+      DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
+      signal_all_fence(display_contents, sf_display_contents[i]);
+      ctx->drm.ClearDisplay(i);
+    }
   }
 
   for (size_t i = 0; i < num_displays; ++i) {
@@ -3226,7 +3254,8 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
     }
   }
 
-  composition.reset(NULL);
+  delete composition;
+  composition = NULL;
 
 #if RK_INVALID_REFRESH
   hwc_static_screen_opt_set(ctx->isGLESComp);
@@ -3250,6 +3279,11 @@ err:
 
         DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
         signal_all_fence(display_contents, sf_display_contents[i]);
+    }
+    if(composition)
+    {
+      delete composition;
+      composition = NULL;
     }
     ctx->drm.ClearAllDisplay();
     return -EINVAL;

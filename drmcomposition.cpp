@@ -113,57 +113,59 @@ std::unique_ptr<DrmDisplayComposition> DrmComposition::TakeDisplayComposition(
   return std::move(composition_map_[display]);
 }
 
-int DrmComposition::Plan(std::map<int, DrmDisplayCompositor> &compositor_map) {
-  int i, ret = 0;
-  for (i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
-    if (!composition_map_[i]->crtc())
-      continue;
-    DrmDisplayComposition *comp = GetDisplayComposition(i);
-    ret = comp->Plan(compositor_map[i].squash_state(), &primary_planes_,
-                     &overlay_planes_);
-    if (ret) {
-      ALOGE("Failed to plan composition for dislay %d", i);
-      return ret;
-    }
+int DrmComposition::Plan(std::map<int, DrmDisplayCompositor> &compositor_map, int display) {
+  int ret = 0;
+  if (!composition_map_[display]->crtc())
+  {
+     ALOGE("%s: crtc is null", __FUNCTION__);
+     return 0;
+  }
+  DrmDisplayComposition *comp = GetDisplayComposition(display);
+  ret = comp->Plan(compositor_map[display].squash_state(), &primary_planes_,
+                   &overlay_planes_);
+  if (ret) {
+    ALOGE("Failed to plan composition for dislay %d", display);
+    return ret;
   }
 
   return 0;
 }
 
-int DrmComposition::DisableUnusedPlanes() {
+int DrmComposition::DisableUnusedPlanes(int display) {
 std::vector<PlaneGroup *>& plane_groups = drm_->GetPlaneGroups();
 
-  int i;
-  for (i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
-    DrmCrtc *crtc = composition_map_[i]->crtc();
-    if (!crtc)
+  DrmCrtc *crtc = composition_map_[display]->crtc();
+  if (!crtc)
+  {
+     ALOGE("%s: crtc is null", __FUNCTION__);
+     return 0;
+  }
 
-      continue;
+  DrmDisplayComposition *comp = GetDisplayComposition(display);
 
-    DrmDisplayComposition *comp = GetDisplayComposition(i);
+  /*
+   * Leave empty compositions alone
+   * TODO: re-visit this and potentially disable leftover planes after the
+   *       active compositions have gobbled up all they can
+   */
+  if (comp->type() == DRM_COMPOSITION_TYPE_EMPTY ||
+      comp->type() == DRM_COMPOSITION_TYPE_MODESET)
+  {
+    return 0;
+  }
 
-    /*
-     * Leave empty compositions alone
-     * TODO: re-visit this and potentially disable leftover planes after the
-     *       active compositions have gobbled up all they can
-     */
-    if (comp->type() == DRM_COMPOSITION_TYPE_EMPTY ||
-        comp->type() == DRM_COMPOSITION_TYPE_MODESET)
-      continue;
-
-    //loop plane groups.
-    for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
-       iter != plane_groups.end(); ++iter) {
-        //loop plane
-        for(std::vector<DrmPlane*> ::const_iterator iter_plane=(*iter)->planes.begin();
-            !(*iter)->planes.empty() && iter_plane != (*iter)->planes.end(); ++iter_plane) {
-            if ((*iter_plane)->GetCrtcSupported(*crtc) && !(*iter_plane)->is_use()) {
-                ALOGD_IF(log_level(DBG_DEBUG),"DisableUnusedPlanes plane_groups plane id=%d",(*iter_plane)->id());
-                comp->AddPlaneDisable(*iter_plane);
-               // break;
-            }
-        }
-    }
+  //loop plane groups.
+  for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
+     iter != plane_groups.end(); ++iter) {
+      //loop plane
+      for(std::vector<DrmPlane*> ::const_iterator iter_plane=(*iter)->planes.begin();
+          !(*iter)->planes.empty() && iter_plane != (*iter)->planes.end(); ++iter_plane) {
+          if ((*iter_plane)->GetCrtcSupported(*crtc) && !(*iter_plane)->is_use()) {
+              ALOGD_IF(log_level(DBG_DEBUG),"DisableUnusedPlanes plane_groups plane id=%d",(*iter_plane)->id());
+              comp->AddPlaneDisable(*iter_plane);
+             // break;
+          }
+      }
   }
   return 0;
 }

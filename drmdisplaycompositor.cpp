@@ -1674,6 +1674,7 @@ void DrmDisplayCompositor::ClearDisplay() {
 
   SingalCompsition(std::move(active_composition_));
 
+  //Singal the remainder fences in composite queue.
   while(!composite_queue_.empty())
   {
     std::unique_ptr<DrmDisplayComposition> remain_composition(

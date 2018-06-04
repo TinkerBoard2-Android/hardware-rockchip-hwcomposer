@@ -65,8 +65,8 @@ class DrmComposition {
   std::unique_ptr<DrmDisplayComposition> TakeDisplayComposition(int display);
   DrmDisplayComposition *GetDisplayComposition(int display);
 
-  int Plan(std::map<int, DrmDisplayCompositor> &compositor_map);
-  int DisableUnusedPlanes();
+  int Plan(std::map<int, DrmDisplayCompositor> &compositor_map, int display);
+  int DisableUnusedPlanes(int display);
 
  private:
   DrmComposition(const DrmComposition &) = delete;
