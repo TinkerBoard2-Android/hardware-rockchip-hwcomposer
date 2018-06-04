@@ -2219,6 +2219,12 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       dump_layer(ctx->gralloc, false, layer, j);
     }
 
+    if(num_layers == 1)
+    {
+      ALOGD_IF(log_level(DBG_DEBUG),"%s dispaly=%d layer is null", __FUNCTION__, i);
+      continue;
+    }
+
     if(i == HWC_DISPLAY_VIRTUAL)
     {
         for (int j = 0; j < num_layers; ++j) {
@@ -2927,11 +2933,13 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
     }
 
     DrmConnector *c = ctx->drm.GetConnectorFromType(i);
-    if (!c || c->state() != DRM_MODE_CONNECTED) {
+    size_t num_dc_layers = dc->numHwLayers;
+    if (!c || c->state() != DRM_MODE_CONNECTED || num_dc_layers==1) {
 
     if(c)
       ALOGD_IF(log_level(DBG_DEBUG),"hwc_set connector is disconnect,type=%s",ctx->drm.connector_type_str(c->get_type()));
-
+      if(num_dc_layers==1)
+        ALOGD_IF(log_level(DBG_DEBUG), "%s display=%zu layer is null", __FUNCTION__, i);
       hwc_sync_release(sf_display_contents[i]);
       ctx->drm.ClearDisplay(i);
       continue;
@@ -2946,7 +2954,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
                                        ctx->dummy_timeline);
     display_contents.retire_fence = OutputFd(&dc->retireFenceFd);
 
-    size_t num_dc_layers = dc->numHwLayers;
     int framebuffer_target_index = -1;
     for (size_t j = 0; j < num_dc_layers; ++j) {
       hwc_layer_1_t *sf_layer = &dc->hwLayers[j];
