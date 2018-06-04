@@ -666,10 +666,19 @@ void DrmResources::ClearDisplay(void)
     }
 }
 
+void DrmResources::ClearDisplay(int display)
+{
+  if(display >= HWC_NUM_PHYSICAL_DISPLAY_TYPES)
+  {
+    ALOGE("%s: invalid display %d",__FUNCTION__,display);
+    return;
+  }
+  compositor_.ClearDisplay(display);
+}
+
 void DrmResources::ClearAllDisplay(void)
 {
     for (int i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
-      DrmConnector *conn = GetConnectorFromType(i);
       compositor_.ClearDisplay(i);
     }
 }

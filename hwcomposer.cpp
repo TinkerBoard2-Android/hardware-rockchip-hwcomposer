@@ -2859,6 +2859,25 @@ static void hwc_add_layer_to_retire_fence(
   }
 }
 
+void signal_all_fence(DrmHwcDisplayContents &display_contents,hwc_display_contents_1_t  *dc)
+{
+  for (size_t j=0; j< display_contents.layers.size(); j++) {
+      DrmHwcLayer &layer = display_contents.layers[j];
+      int acquire_fence = layer.acquire_fence.get();
+
+      if(acquire_fence >= 0)
+      {
+          int ret = sync_wait(acquire_fence, 1000);
+          if (ret) {
+            ALOGE("signal_all_fence Failed to wait for acquire %d/%d 1000ms", acquire_fence, ret);
+            continue;
+          }
+          layer.acquire_fence.Close();
+      }
+  }
+  hwc_sync_release(dc);
+}
+
 static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
                    hwc_display_contents_1_t **sf_display_contents) {
   ATRACE_CALL();
@@ -2909,6 +2928,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       ALOGD_IF(log_level(DBG_DEBUG),"hwc_set connector is disconnect,type=%s",ctx->drm.connector_type_str(c->get_type()));
 
       hwc_sync_release(sf_display_contents[i]);
+      ctx->drm.ClearDisplay(i);
       continue;
     }
     hwc_drm_display_t *hd = &ctx->displays[c->display()];
@@ -3073,7 +3093,8 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       if(!layer.sf_handle)
       {
         ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
-        hwc_sync_release(dc);
+        signal_all_fence(display_contents, dc);
+        ctx->drm.ClearDisplay(i);
         std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
         layers_map.erase(iter);
         break;
@@ -3155,8 +3176,12 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       }
       else
       {
+          DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
           if (sf_display_contents[i])
-              hwc_sync_release(sf_display_contents[i]);
+          {
+              signal_all_fence(display_contents, sf_display_contents[i]);
+              ctx->drm.ClearDisplay(i);
+          }
       }
   }
 
@@ -3174,7 +3199,9 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 
     DrmConnector *c = ctx->drm.GetConnectorFromType(i);
     if (!c || c->state() != DRM_MODE_CONNECTED) {
-      hwc_sync_release(sf_display_contents[i]);
+      DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
+      signal_all_fence(display_contents, sf_display_contents[i]);
+      ctx->drm.ClearDisplay(i);
       continue;
     }
     hwc_drm_display_t *hd = &ctx->displays[c->display()];
@@ -3221,7 +3248,8 @@ err:
           dump_layer(ctx->gralloc, true, layer, j);
         }
 
-        hwc_sync_release(dc);
+        DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
+        signal_all_fence(display_contents, sf_display_contents[i]);
     }
     ctx->drm.ClearAllDisplay();
     return -EINVAL;

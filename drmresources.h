@@ -97,6 +97,7 @@ class DrmResources {
   int UpdateDisplayRoute(void);
   int UpdatePropertys(void);
   void ClearDisplay(void);
+  void ClearDisplay(int display);
   void ClearAllDisplay(void);
   int timeline(void);
 
