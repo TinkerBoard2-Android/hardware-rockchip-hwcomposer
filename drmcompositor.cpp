@@ -53,10 +53,11 @@ int DrmCompositor::Init() {
 }
 
 std::unique_ptr<DrmComposition> DrmCompositor::CreateComposition(
-    Importer *importer) {
+    Importer *importer, unsigned int frame_no) {
   std::unique_ptr<DrmComposition> composition(
       new DrmComposition(drm_, importer, planner_.get()));
-  int ret = composition->Init(++frame_no_);
+  frame_no_ = frame_no;
+  int ret = composition->Init(frame_no);
   if (ret) {
     ALOGE("Failed to initialize drm composition %d", ret);
     return nullptr;

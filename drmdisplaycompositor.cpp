@@ -1180,6 +1180,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 
     int fb_id = -1;
     bool is_yuv = false;
+    int frame_no = 0;
     DrmHwcRect<int> display_frame = DrmHwcRect<int>(0, 0, 0, 0);
     DrmHwcRect<float> source_crop = DrmHwcRect<float>(0.0, 0.0, 0.0, 0.0);
 #if RK_VIDEO_SKIP_LINE
@@ -1262,6 +1263,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
       display_frame = layer.display_frame;
       source_crop = layer.source_crop;
       is_yuv = layer.is_yuv;
+      frame_no = layer.frame_no;
       if (layer.blending == DrmHwcBlending::kPreMult)
         alpha = layer.alpha;
 
@@ -1445,6 +1447,8 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     std::ostringstream out_log;
 
     out_log << "DrmDisplayCompositor[" << index << "]"
+            << " display=" << display_
+            << " frame_no=" << frame_no
             << " plane=" << (plane ? plane->id() : -1)
             << " crct id=" << crtc->id()
             << " fb id=" << fb_id

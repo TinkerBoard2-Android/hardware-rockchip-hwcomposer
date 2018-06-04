@@ -34,7 +34,7 @@ class DrmCompositor {
 
   int Init();
 
-  std::unique_ptr<DrmComposition> CreateComposition(Importer *importer);
+  std::unique_ptr<DrmComposition> CreateComposition(Importer *importer, unsigned int frame_no);
 
   int QueueComposition(std::unique_ptr<DrmComposition> composition);
   int Composite();

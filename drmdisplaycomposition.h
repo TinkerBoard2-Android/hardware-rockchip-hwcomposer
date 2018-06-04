@@ -25,6 +25,7 @@
 #include <sstream>
 #include <vector>
 #include <map>
+#include <inttypes.h>
 
 #include <hardware/gralloc.h>
 #include <hardware/hardware.h>
@@ -141,6 +142,7 @@ class DrmDisplayComposition {
     return IncreaseTimelineToPoint(timeline_pre_comp_done_);
   }
   int SignalCompositionDone() {
+    ALOGD_IF(log_level(DBG_DEBUG),"%s: signal frame = %" PRIu64 "", __FUNCTION__, frame_no_);
     return IncreaseTimelineToPoint(timeline_);
   }
 

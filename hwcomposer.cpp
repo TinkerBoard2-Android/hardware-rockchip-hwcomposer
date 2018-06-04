@@ -817,7 +817,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 
   DrmConnector *conn = ctx->drm.GetConnectorFromType(display);
   if (!conn) {
-    ALOGE("Failed to get connector for display %d line=%d", display,__LINE__);
+    ALOGE("%s:Failed to get connector for display %d line=%d", __FUNCTION__,display,__LINE__);
     return -ENODEV;
   }
 
@@ -1265,7 +1265,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     hwc_drm_display_t *hd = &ctx->displays[display_id];
     DrmCrtc *crtc = NULL;
     if (!connector) {
-      ALOGE("Failed to get connector for display %d line=%d", display_id, __LINE__);
+      ALOGE("%s: Failed to get connector for display %d line=%d", __FUNCTION__,display_id, __LINE__);
     }
     else
     {
@@ -3120,7 +3120,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   ctx->drm.UpdatePropertys();
   ctx->drm.ClearDisplay();
 
-  composition = ctx->drm.compositor()->CreateComposition(ctx->importer.get());
+  composition = ctx->drm.compositor()->CreateComposition(ctx->importer.get(), get_frame());
   if (!composition) {
     ALOGE("%s: Drm composition init failed",__FUNCTION__);
     goto err;
@@ -3285,7 +3285,7 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
 
   DrmConnector *connector = ctx->drm.GetConnectorFromType(display);
   if (!connector) {
-    ALOGE("Failed to get connector for display %d line=%d", display,__LINE__);
+    ALOGE("%s:Failed to get connector for display %d line=%d", __FUNCTION__,display,__LINE__);
     return -ENODEV;
   }
 
@@ -3351,7 +3351,7 @@ static int hwc_get_display_configs(struct hwc_composer_device_1 *dev,
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   DrmConnector *connector = ctx->drm.GetConnectorFromType(display);
   if (!connector) {
-    ALOGE("Failed to get connector for display %d line=%d", display,__LINE__);
+    ALOGE("%s:Failed to get connector for display %d line=%d", __FUNCTION__,display,__LINE__);
     return -ENODEV;
   }
 
@@ -3493,7 +3493,7 @@ static int hwc_set_active_config(struct hwc_composer_device_1 *dev, int display,
   UN_USED(index);
   DrmConnector *c = ctx->drm.GetConnectorFromType(display);
   if (!c) {
-    ALOGE("Failed to get connector for display %d line=%d", display,__LINE__);
+    ALOGE("%s:Failed to get connector for display %d line=%d", __FUNCTION__,display,__LINE__);
     return -ENODEV;
   }
 

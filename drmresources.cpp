@@ -1044,7 +1044,7 @@ int DrmResources::DestroyPropertyBlob(uint32_t blob_id) {
 }
 
 int DrmResources::SetDisplayActiveMode(int display, const DrmMode &mode) {
-  std::unique_ptr<DrmComposition> comp(compositor_.CreateComposition(NULL));
+  std::unique_ptr<DrmComposition> comp(compositor_.CreateComposition(NULL, 0));
   if (!comp) {
     ALOGE("Failed to create composition for dpms on %d", display);
     return -ENOMEM;
@@ -1068,7 +1068,7 @@ int DrmResources::SetDpmsMode(int display, uint64_t mode) {
     return -EINVAL;
   }
 
-  std::unique_ptr<DrmComposition> comp(compositor_.CreateComposition(NULL));
+  std::unique_ptr<DrmComposition> comp(compositor_.CreateComposition(NULL, 0));
   if (!comp) {
     ALOGE("Failed to create composition for dpms on %d", display);
     return -ENOMEM;
