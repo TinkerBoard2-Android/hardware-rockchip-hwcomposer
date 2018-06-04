@@ -169,6 +169,7 @@ class DrmDisplayCompositor {
   int SquashFrame(DrmDisplayComposition *src, DrmDisplayComposition *dst);
   int ApplyDpms(DrmDisplayComposition *display_comp);
   int DisablePlanes(DrmDisplayComposition *display_comp);
+  void SingalCompsition(std::unique_ptr<DrmDisplayComposition> composition);
 
   void ApplyFrame(std::unique_ptr<DrmDisplayComposition> composition,
                   int status);

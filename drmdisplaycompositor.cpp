@@ -1129,7 +1129,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
   if(act_w && xxx_w)
   {
     w_scale = (float)act_w / xxx_w;
-    ALOGD("zxl xxx_w=%d,act_w=%d,w_scale=%f,w_scale=%d",xxx_w,act_w,w_scale,(int)w_scale);
+    ALOGD("xxx_w=%d,act_w=%d,w_scale=%f,w_scale=%d",xxx_w,act_w,w_scale,(int)w_scale);
   }
 
   if(act_h && xxx_h)
@@ -1229,9 +1229,9 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
         if(!(layer.gralloc_buffer_usage & 0x08000000))
 #endif
         {
-          ret = sync_wait(acquire_fence, 1000);
+          ret = sync_wait(acquire_fence, 1500);
           if (ret) {
-            ALOGE("Failed to wait for acquire %d/%d 1000ms", acquire_fence, ret);
+            ALOGE("Failed to wait for acquire %d/%d 1500ms", acquire_fence, ret);
             break;
           }
         }
@@ -1602,21 +1602,90 @@ int DrmDisplayCompositor::ApplyDpms(DrmDisplayComposition *display_comp) {
   return 0;
 }
 
+void DrmDisplayCompositor::SingalCompsition(std::unique_ptr<DrmDisplayComposition> composition) {
+  int ret;
+
+  if(!composition)
+    return;
+
+  if (DisablePlanes(composition.get()))
+    return;
+
+  //wait and close acquire fence.
+  std::vector<DrmHwcLayer> &layers = composition->layers();
+  std::vector<DrmCompositionPlane> &comp_planes = composition->composition_planes();
+
+  for (DrmCompositionPlane &comp_plane : comp_planes) {
+      std::vector<size_t> &source_layers = comp_plane.source_layers();
+      if (comp_plane.type() != DrmCompositionPlane::Type::kDisable) {
+          if (source_layers.size() > 1) {
+              ALOGE("Can't handle more than one source layer sz=%zu type=%d",
+              source_layers.size(), comp_plane.type());
+              continue;
+          }
+
+          if (source_layers.empty() || source_layers.front() >= layers.size()) {
+              ALOGE("Source layer index %zu out of bounds %zu type=%d",
+              source_layers.front(), layers.size(), comp_plane.type());
+              break;
+          }
+          DrmHwcLayer &layer = layers[source_layers.front()];
+          if (layer.acquire_fence.get() >= 0) {
+              int acquire_fence = layer.acquire_fence.get();
+              int total_fence_timeout = 0;
+#if RK_VR
+              if(!(layer.gralloc_buffer_usage & 0x08000000))
+#endif
+              {
+                  for (int i = 0; i < kAcquireWaitTries; ++i) {
+                      int fence_timeout = kAcquireWaitTimeoutMs * (1 << i);
+                      total_fence_timeout += fence_timeout;
+                      ret = sync_wait(acquire_fence, -1);
+                      if (ret)
+                          ALOGW("Acquire fence %d wait %d failed (%d). Total time %d",
+                            acquire_fence, i, ret, total_fence_timeout);
+                      else
+                      {
+                          ALOGV("Wait Acquire fence %d successful", acquire_fence);
+                          break;
+                      }
+                  }
+                  if (ret) {
+                      ALOGE("Failed to wait for acquire %d/%d", acquire_fence, ret);
+                      break;
+                  }
+              }
+              layer.acquire_fence.Close();
+          }
+
+      }
+  }
+
+  composition->SignalCompositionDone();
+
+  composition.reset(NULL);
+}
+
 void DrmDisplayCompositor::ClearDisplay() {
   AutoLock lock(&lock_, "compositor");
   int ret = lock.Lock();
   if (ret)
     return;
 
-  if (!active_composition_)
-    return;
+  SingalCompsition(std::move(active_composition_));
 
-  if (DisablePlanes(active_composition_.get()))
-    return;
+  while(!composite_queue_.empty())
+  {
+    std::unique_ptr<DrmDisplayComposition> remain_composition(
+      std::move(composite_queue_.front()));
 
-  active_composition_->SignalCompositionDone();
+    if(remain_composition)
+      ALOGD_IF(log_level(DBG_DEBUG),"ClearDisplay: composite_queue_ size=%zu frame_no=%" PRIu64 "",composite_queue_.size(), remain_composition->frame_no());
 
-  active_composition_.reset(NULL);
+    SingalCompsition(std::move(remain_composition));
+    composite_queue_.pop();
+    pthread_cond_signal(&composite_queue_cond_);
+  }
 }
 
 void DrmDisplayCompositor::ApplyFrame(
