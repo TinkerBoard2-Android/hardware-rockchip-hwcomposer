@@ -2399,8 +2399,14 @@ const char* hwc_get_baseparameter_file(void)
     return NULL;
 }
 static struct file_base_parameter base_parameter;
+static bool enableBaseparameter = true;
 #define BASE_OFFSET 8*1024
 
+bool have_baseparameter(void)
+{
+     ALOGD("BP: have baseparameter exit (%d)",enableBaseparameter);
+     return enableBaseparameter;
+}
 
 int hwc_get_baseparameter_config(char *parameter, int display, int flag, int type)
 {
@@ -2422,11 +2428,13 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 const char *baseparameterfile = hwc_get_baseparameter_file();
                 if (!baseparameterfile) {
                     ALOGE("BP: baseparamter file can not be find");
+                    enableBaseparameter = false;
                     return -1;
                 }
                 file = open(baseparameterfile, O_RDWR);
                 if (file < 0) {
                     ALOGE("BP: baseparamter file can not be opened,");
+                    enableBaseparameter = false;
                     return -1;
                 }
                  // caculate file's size and read it
@@ -2434,6 +2442,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 lseek(file, 0L, SEEK_SET);
                 if(length < sizeof(base_parameter)) {
                     ALOGE("BP: baseparamter data's length is error\n");
+                    enableBaseparameter = false;
                     sync();
                     close(file);
                     return -1;
@@ -2442,10 +2451,16 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 lseek(file, BASE_OFFSET, SEEK_SET);
                 read(file, (void*)&(base_parameter.aux), sizeof(base_parameter.aux));
                 close(file);
+                enableBaseparameter = true;
                 break;
             }
         case BP_RESOLUTION:
             {
+                if(enableBaseparameter == false)
+                {
+                    ALOGW("BP: RESOLUTION baseparameter is not ready,can't use it !");
+                    return -1;
+                }
                 if(display == HWC_DISPLAY_PRIMARY){
                     int i = 0;
                     bool type_found = false;
@@ -2549,6 +2564,11 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
             }
         case BP_FB_SIZE:
             {
+                if(enableBaseparameter == false)
+                {
+                    ALOGW("BP: FB_SIZE baseparameter is not ready,can't use it !");
+                    return -1;
+                }
                 w = base_parameter.main.hwc_info.framebuffer_width;
                 h = base_parameter.main.hwc_info.framebuffer_height;
                 vfresh = base_parameter.main.hwc_info.fps;
@@ -2572,6 +2592,12 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
             }
         case BP_DEVICE:
             {
+                if(enableBaseparameter == false)
+                {
+                    ALOGW("BP: DEVICE baseparameter is not ready,can't use it !");
+                    return -1;
+                }
+
                 if( display == HWC_DISPLAY_PRIMARY ){
                     strcpy(parameter,base_parameter.main.hwc_info.device);
                     ALOGD("BP: dev_primary = %s",parameter);
@@ -2584,25 +2610,25 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
         case BP_BRIGHTNESS:
             if(display == HWC_DISPLAY_PRIMARY){
                 brightness = base_parameter.main.bcsh.brightness;
-                if(!(bcsh_flag & 0x1)){
+                if(!(bcsh_flag & 0x1) && enableBaseparameter){
                     bcsh_flag |= 0x1;
                     sprintf(value_new,"%d",(brightness > 0 && brightness <= 100  ? brightness : 50));
                     property_set("persist.sys.brightness.main",value_new);
                     ALOGD("BP: main brightness: %s",value_new);
                 }
-                ALOGV("BP: brightness %d",property_get_int32("persist.sys.brightness.main",
+                ALOGD("BP: main brightness %d",property_get_int32("persist.sys.brightness.main",
                     brightness > 0 && brightness <= 100  ? brightness : 50));
                 return property_get_int32("persist.sys.brightness.main",
                     brightness > 0 && brightness <= 100  ? brightness : 50);
             }else{
                 brightness = base_parameter.aux.bcsh.brightness;
-                if(!(bcsh_flag & 0x10)){
+                if(!(bcsh_flag & 0x10) && enableBaseparameter){
                     bcsh_flag |= 0x10;
                     sprintf(value_new,"%d",(brightness > 0 && brightness <= 100  ? brightness : 50));
                     property_set("persist.sys.brightness.aux",value_new);
                     ALOGD("BP: aux brightness: %s",value_new);
                 }
-                ALOGV("BP: brightness %d",property_get_int32("persist.sys.brightness.aux",
+                ALOGD("BP: aux brightness %d",property_get_int32("persist.sys.brightness.aux",
                     brightness > 0 && brightness <= 100  ? brightness : 50));
                 return property_get_int32("persist.sys.brightness.aux",
                     brightness > 0 && brightness <= 100  ? brightness : 50);
@@ -2611,26 +2637,26 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
         case BP_CONTRAST:
             if(display == HWC_DISPLAY_PRIMARY){
                 contrast =  base_parameter.main.bcsh.contrast;
-                if(!(bcsh_flag & 0x2)){
+                if(!(bcsh_flag & 0x2) && enableBaseparameter){
                     bcsh_flag |= 0x2;
                     sprintf(value_new,"%d",(contrast > 0 && contrast <= 100  ? contrast : 50));
                     property_set("persist.sys.contrast.main",value_new);
                     ALOGD("BP: main contrast: %s",value_new);
                 }
-                ALOGV("BP: contrast %d",property_get_int32("persist.sys.contrast.main",
+                ALOGD("BP: main contrast %d",property_get_int32("persist.sys.contrast.main",
                     contrast > 0 && contrast <=100  ? contrast : 50));
                 return property_get_int32("persist.sys.contrast.main",
                     contrast > 0 && contrast <=100  ? contrast : 50);
 
             }else{
                 contrast =  base_parameter.aux.bcsh.contrast;
-                if(!(bcsh_flag & 0x20)){
+                if(!(bcsh_flag & 0x20) && enableBaseparameter){
                     bcsh_flag |= 0x20;
                     sprintf(value_new,"%d",(contrast > 0 && contrast <= 100  ? contrast : 50));
                     property_set("persist.sys.contrast.aux",value_new);
                     ALOGD("BP: aux contrast: %s",value_new);
                 }
-                ALOGV("BP: contrast %d",property_get_int32("persist.sys.contrast.aux",
+                ALOGD("BP: aux contrast %d",property_get_int32("persist.sys.contrast.aux",
                     contrast > 0 && contrast <= 100  ? contrast : 50));
                 return property_get_int32("persist.sys.contrast.aux",
                     contrast > 0 && contrast <= 100  ? contrast : 50);
@@ -2639,25 +2665,25 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
         case BP_SATURATION:
             if(display == HWC_DISPLAY_PRIMARY){
                 saturation =  base_parameter.main.bcsh.saturation;
-                if(!(bcsh_flag & 0x4)){
+                if(!(bcsh_flag & 0x4) && enableBaseparameter){
                     bcsh_flag |= 0x4;
                     sprintf(value_new,"%d",(saturation > 0 && saturation <= 100  ? saturation : 50));
                     property_set("persist.sys.saturation.main",value_new);
                     ALOGD("BP: main saturation: %s",value_new);
                 }
-                ALOGV("BP: saturation %d",property_get_int32("persist.sys.saturation.main",
+                ALOGD("BP: main saturation %d",property_get_int32("persist.sys.saturation.main",
                     saturation > 0 && saturation <= 100  ? saturation : 50));
                 return property_get_int32("persist.sys.saturation.main",
                     saturation > 0 && saturation <= 100  ? saturation : 50);
             }else{
                 saturation =  base_parameter.aux.bcsh.saturation;
-                if(!(bcsh_flag & 0x40)){
+                if(!(bcsh_flag & 0x40) && enableBaseparameter){
                     bcsh_flag |= 0x40;
                     sprintf(value_new,"%d",(saturation > 0 && saturation <= 100  ? saturation : 50));
                     property_set("persist.sys.saturation.aux",value_new);
                     ALOGD("BP: aux saturation: %s",value_new);
                 }
-                ALOGV("BP: saturation %d",property_get_int32("persist.sys.saturation.aux",
+                ALOGD("BP: aux saturation %d",property_get_int32("persist.sys.saturation.aux",
                     saturation > 0 && saturation <= 100  ? saturation : 50));
                 return property_get_int32("persist.sys.saturation.aux",
                     saturation > 0 && saturation <= 100  ? saturation : 50);
@@ -2666,30 +2692,29 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
         case BP_HUE:
             if(display == HWC_DISPLAY_PRIMARY){
                 hue =  base_parameter.main.bcsh.hue;
-                if(!(bcsh_flag & 0x8)){
+                if(!(bcsh_flag & 0x8) && enableBaseparameter){
                     bcsh_flag |= 0x8;
                     sprintf(value_new,"%d",(hue > 0 && hue <= 100  ? hue : 50));
                     property_set("persist.sys.hue.main",value_new);
                     ALOGD("BP: main hue: %s",value_new);
                 }
-                ALOGV("BP: hue %d",property_get_int32("persist.sys.hue.main",
+                ALOGD("BP: main hue %d",property_get_int32("persist.sys.hue.main",
                     hue > 0 && hue <= 100  ? hue : 50));
                 return property_get_int32("persist.sys.hue.main",
                     hue > 0 && hue <= 100  ? hue : 50);
 
             }else{
                 hue =  base_parameter.aux.bcsh.hue;
-                if(!(bcsh_flag & 0x80)){
+                if(!(bcsh_flag & 0x80) && enableBaseparameter){
                     bcsh_flag |= 0x80;
                     sprintf(value_new,"%d",(hue > 0 && hue <= 100  ? hue : 50));
                     property_set("persist.sys.hue.aux",value_new);
                     ALOGD("BP: aux hue: %s",value_new);
                 }
-                ALOGV("BP: hue %d",property_get_int32("persist.sys.hue.aux",
+                ALOGD("BP: aux hue %d",property_get_int32("persist.sys.hue.aux",
                     hue > 0 && hue <= 100  ? hue : 50));
                 return property_get_int32("persist.sys.hue.aux",
                     hue > 0 && hue <= 100  ? hue : 50);
-
             }
             break;
          case BP_COLOR:
@@ -2756,6 +2781,11 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
             }
             break;
          case BP_OVERSCAN:
+             if(enableBaseparameter == false)
+             {
+                 ALOGW("BP:OVERSCAN baseparameter is not ready,can't use it !");
+                 return -1;
+             }
             if(display == HWC_DISPLAY_PRIMARY){
                 leftscale = base_parameter.main.scan.leftscale;
                 topscale = base_parameter.main.scan.topscale;
