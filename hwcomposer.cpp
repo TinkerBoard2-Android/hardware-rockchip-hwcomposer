@@ -624,14 +624,14 @@ void DrmHwcBuffer::Clear() {
 
 int DrmHwcBuffer::ImportBuffer(buffer_handle_t handle, Importer *importer
 #if RK_VIDEO_SKIP_LINE
-, bool bSkipLine
+, uint32_t SkipLine
 #endif
 ) {
   hwc_drm_bo tmp_bo;
 
   int ret = importer->ImportBuffer(handle, &tmp_bo
 #if RK_VIDEO_SKIP_LINE
-  , bSkipLine
+  , SkipLine
 #endif
   );
   if (ret)
@@ -805,7 +805,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
   else
     bSkipLayer = false;
 #if RK_VIDEO_SKIP_LINE
-  bSkipLine = false;
+  SkipLine = 0;
 #endif
   bUse = true;
   sf_handle = sf_layer->handle;
@@ -1072,7 +1072,11 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         {
             if(h_scale_mul > 1.0 || v_scale_mul > 1.0)
             {
-                bSkipLine = true;
+                SkipLine = 2;
+            }
+            if(format == HAL_PIXEL_FORMAT_YCrCb_NV12_10 && h_scale_mul >= (3840 / 1600))
+            {
+                SkipLine = 3;
             }
         }
     }
@@ -1158,7 +1162,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 #if 0
   ret = buffer.ImportBuffer(sf_layer->handle, importer
 #if RK_VIDEO_SKIP_LINE
-  , bSkipLine
+  , SkipLine
 #endif
   );
   if (ret)
@@ -1230,7 +1234,7 @@ int DrmHwcLayer::ImportBuffer(struct hwc_context_t *ctx, hwc_layer_1_t *sf_layer
 {
    int ret = buffer.ImportBuffer(sf_layer->handle, importer
 #if RK_VIDEO_SKIP_LINE
-  , bSkipLine
+  , SkipLine
 #endif
   );
 
@@ -2123,7 +2127,7 @@ static int PrepareRgaBuffer(DrmRgaBuffer &rgaBuffer, DrmHwcLayer &layer) {
     layer.sf_handle = rgaBuffer.buffer()->handle;
 
 #if RK_VIDEO_SKIP_LINE
-    layer.bSkipLine = false;
+    layer.SkipLine = 0;
 #endif
 
     layer.rga_handle = rgaBuffer.buffer()->handle;
@@ -3117,7 +3121,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
             ret = layer.buffer.ImportBuffer(layer.rga_handle,
                                                    ctx->importer.get()
 #if RK_VIDEO_SKIP_LINE
-                                                   , layer.bSkipLine
+                                                   , layer.SkipLine
 #endif
                                                    );
             if (ret) {

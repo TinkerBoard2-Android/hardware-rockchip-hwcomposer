@@ -100,7 +100,7 @@ uint32_t DrmGenericImporter::ConvertHalFormatToDrm(uint32_t hal_format) {
 #endif
 int DrmGenericImporter::ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo
 #if RK_VIDEO_SKIP_LINE
-, bool bSkipLine
+, uint32_t SkipLine
 #endif
 ) {
   int fd,width,height,byte_stride,format;
@@ -136,18 +136,10 @@ int DrmGenericImporter::ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo
   }
 
 #if RK_VIDEO_SKIP_LINE
-  if(bSkipLine)
+  if(SkipLine)
   {
-    if(format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-    {
-      bo->pitches[0] = byte_stride*SKIP_LINE_NUM_NV12_10;
-      bo->height = height/SKIP_LINE_NUM_NV12_10;
-    }
-    else
-    {
-      bo->pitches[0] = byte_stride*SKIP_LINE_NUM_NV12;
-      bo->height = height/SKIP_LINE_NUM_NV12;
-    }
+    bo->pitches[0] = byte_stride * SkipLine;
+    bo->height = height / SkipLine;
   }
   else
 #endif
@@ -201,7 +193,7 @@ int DrmGenericImporter::ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo
         drm_->fd(), bo->width, bo->height, format,bo->format,
         gem_handle, bo->pitches[0], bo->fb_id);
 #if RK_VIDEO_SKIP_LINE
-    ALOGE("bSkipLine=%d",bSkipLine);
+    ALOGE("SkipLine=%d",SkipLine);
 #endif
     return ret;
   }

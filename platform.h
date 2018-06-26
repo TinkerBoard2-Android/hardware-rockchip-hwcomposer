@@ -43,7 +43,7 @@ class Importer {
   // Note: This can be called from a different thread than ReleaseBuffer. The
   //       implementation is responsible for ensuring thread safety.
 #if RK_VIDEO_SKIP_LINE
-  virtual int ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo, bool bSkipLine) = 0;
+  virtual int ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo, uint32_t SkipLine) = 0;
 #else
   virtual int ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo) = 0;
 #endif

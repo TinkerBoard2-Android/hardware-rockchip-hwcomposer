@@ -123,7 +123,7 @@ class DrmHwcBuffer {
   void Clear();
 
 #if RK_VIDEO_SKIP_LINE
-  int ImportBuffer(buffer_handle_t handle, Importer *importer, bool bSkipLine);
+  int ImportBuffer(buffer_handle_t handle, Importer *importer, uint32_t SkipLine);
 #else
   int ImportBuffer(buffer_handle_t handle, Importer *importer);
 #endif
@@ -229,7 +229,7 @@ struct DrmHwcLayer {
   float h_scale_mul;
   float v_scale_mul;
 #if RK_VIDEO_SKIP_LINE
-  bool bSkipLine;
+  uint32_t SkipLine;
 #endif
   bool bClone_;
   bool bFbTarget_;

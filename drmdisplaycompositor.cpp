@@ -669,13 +669,13 @@ DrmRgaBuffer &rgaBuffer, DrmDisplayComposition *display_comp, DrmHwcLayer &layer
     layer.sf_handle = rgaBuffer.buffer()->handle;
 
 #if RK_VIDEO_SKIP_LINE
-    layer.bSkipLine = false;
+    layer.SkipLine = 0;
 #endif
 
     ret = layer.buffer.ImportBuffer(rgaBuffer.buffer()->handle,
                                            display_comp->importer()
 #if RK_VIDEO_SKIP_LINE
-                                           , layer.bSkipLine
+                                           , layer.SkipLine
 #endif
                                            );
     if (ret) {
@@ -1184,7 +1184,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     DrmHwcRect<int> display_frame = DrmHwcRect<int>(0, 0, 0, 0);
     DrmHwcRect<float> source_crop = DrmHwcRect<float>(0.0, 0.0, 0.0, 0.0);
 #if RK_VIDEO_SKIP_LINE
-    bool bSkipLine = false;
+    uint32_t SkipLine = 0;
 #endif
     uint64_t rotation = 0;
     uint64_t alpha = 0xFF;
@@ -1249,7 +1249,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
      // DumpLayer(layer.name.c_str(),layer.get_usable_handle());
 
 #if RK_VIDEO_SKIP_LINE
-      bSkipLine = layer.bSkipLine;
+      SkipLine = layer.SkipLine;
 #endif
       if(layer.bClone_)
       {
@@ -1352,16 +1352,9 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     src_t = (int)source_crop.top;
     src_w = (int)(source_crop.right - source_crop.left);
 #if RK_VIDEO_SKIP_LINE
-    if(bSkipLine)
+    if(SkipLine)
     {
-        if(format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-        {
-            src_h = (int)(source_crop.bottom - source_crop.top)/SKIP_LINE_NUM_NV12_10;
-        }
-        else
-        {
-            src_h = (int)(source_crop.bottom - source_crop.top)/SKIP_LINE_NUM_NV12;
-        }
+        src_h = (int)(source_crop.bottom - source_crop.top)/SkipLine;
     }
     else
 #endif

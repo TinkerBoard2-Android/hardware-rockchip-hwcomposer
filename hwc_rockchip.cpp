@@ -1489,16 +1489,9 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
 
                             src_w = (int)((*iter_layer)->source_crop.right - (*iter_layer)->source_crop.left);
 #if RK_VIDEO_SKIP_LINE
-                            if((*iter_layer)->bSkipLine)
+                            if((*iter_layer)->SkipLine)
                             {
-                                if((*iter_layer)->format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-                                {
-                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12_10;
-                                }
-                                else
-                                {
-                                    src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/SKIP_LINE_NUM_NV12;
-                                }
+                                src_h = (int)((*iter_layer)->source_crop.bottom - (*iter_layer)->source_crop.top)/(*iter_layer)->SkipLine;
                             }
                             else
 #endif

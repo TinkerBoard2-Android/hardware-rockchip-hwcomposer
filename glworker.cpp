@@ -323,12 +323,9 @@ static void ConstructCommand(const DrmHwcLayer *layers,
     float tex_height = layer.buffer->height;
 
 #if RK_VIDEO_SKIP_LINE
-    if(layer.bSkipLine)
+    if(layer.SkipLine)
     {
-        if(layer.format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-            tex_height*=SKIP_LINE_NUM_NV12_10;
-        else
-            tex_height*=SKIP_LINE_NUM_NV12;
+      tex_height*=layer.SkipLine;
     }
 #endif
 
