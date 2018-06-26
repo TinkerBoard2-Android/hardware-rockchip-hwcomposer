@@ -2219,12 +2219,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       dump_layer(ctx->gralloc, false, layer, j);
     }
 
-    if(num_layers == 1)
-    {
-      ALOGD_IF(log_level(DBG_DEBUG),"%s dispaly=%d layer is null", __FUNCTION__, i);
-      continue;
-    }
-
     if(i == HWC_DISPLAY_VIRTUAL)
     {
         for (int j = 0; j < num_layers; ++j) {
