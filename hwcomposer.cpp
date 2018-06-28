@@ -2896,7 +2896,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   std::vector<DrmCompositionDisplayLayersMap> layers_map;
   std::vector<std::vector<size_t>> layers_indices;
   std::vector<uint32_t> fail_displays;
-  DrmComposition* composition;
+  DrmComposition* composition = NULL;
 
   // layers_map.reserve(num_displays);
   layers_indices.reserve(num_displays);
@@ -3281,7 +3281,7 @@ err:
         DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
         signal_all_fence(display_contents, sf_display_contents[i]);
     }
-    if(composition)
+    if(NULL != composition)
     {
       delete composition;
       composition = NULL;
