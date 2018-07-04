@@ -1077,11 +1077,11 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     {
         if (display_ == 0){
           property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
-          if(have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
+          if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
               hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
         }else{
           property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
-          if(have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
+          if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
               hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
         }
 

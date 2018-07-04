@@ -192,12 +192,17 @@ typedef struct hwc_drm_display {
 /*
  * Base_parameter is used for 3328_8.0  , by libin start.
  */
-
+#define AUTO_BIT_RESET 0x00
 #define RESOLUTION_AUTO			(1<<0)
 #define COLOR_AUTO				(1<<1)
 #define HDCP1X_EN				(1<<2)
 #define RESOLUTION_WHITE_EN		(1<<3)
 #define SCREEN_LIST_MAX 5
+#define DEFAULT_BRIGHTNESS  50
+#define DEFAULT_CONTRAST  50
+#define DEFAULT_SATURATION  50
+#define DEFAULT_HUE  50
+#define DEFAULT_OVERSCAN_VALUE 100
 
 
 struct drm_display_mode {
@@ -261,21 +266,21 @@ struct lut_data{
     uint16_t lblue[1024];
 };
 struct screen_info {
-	int type;
+	  int type;
     struct drm_display_mode resolution;// 52 bytes
     enum output_format  format; // 4 bytes
     enum output_depth depthc; // 4 bytes
-    unsigned int feature;//4 //4 bytes
+    unsigned int feature;     //4 bytes
 };
 
 
 struct disp_info {
 	struct screen_info screen_list[SCREEN_LIST_MAX];
-    struct overscan scan;//12 bytes
+  struct overscan scan;//12 bytes
 	struct hwc_inital_info hwc_info; //140 bytes
 	struct bcsh_info bcsh;
-    unsigned int reserve[128];
-    struct lut_data mlutdata;/*6k+4*/
+  unsigned int reserve[128];
+  struct lut_data mlutdata;/*6k+4*/
 };
 
 
@@ -312,9 +317,12 @@ enum flagBaseParameter
 
 const char* hwc_get_baseparameter_file(void);
 
-bool have_baseparameter(void);
+bool hwc_have_baseparameter(void);
+int  hwc_get_baseparameter_config(char *parameter, int display, int flag, int type);
+void hwc_set_baseparameter_config(DrmResources *drm);
+void hwc_save_BcshConfig(int dpy);
+int hwc_findSuitableInfoSlot(struct disp_info* info, int type);
 
-int hwc_get_baseparameter_config(char *parameter, int display, int flag, int type);
 
 int hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
 

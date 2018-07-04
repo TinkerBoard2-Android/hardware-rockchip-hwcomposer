@@ -433,7 +433,7 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
 
   if (display == HWC_DISPLAY_PRIMARY)
   {
-    if(have_baseparameter() && c->get_type() != last_mainType)
+    if(hwc_have_baseparameter() && c->get_type() != last_mainType)
     {
         property_set("persist.sys.resolution.main","use_baseparameter");
         ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main resolution",last_mainType,c->get_type());
@@ -457,7 +457,7 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   }
   else
   {
-    if(have_baseparameter() && c->get_type() != last_auxType)
+    if(hwc_have_baseparameter() && c->get_type() != last_auxType)
     {
         property_set("persist.sys.resolution.aux","use_baseparameter");
         ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux resolution",last_auxType,c->get_type());
@@ -478,6 +478,7 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
         }
     }
   }
+  hwc_set_baseparameter_config(&hd->ctx->drm);
 
   if(hd->is_3d && strcmp(resolution_3d,"0x0p0-0:0"))
   {
@@ -875,11 +876,11 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         {
             if (display == 0){
                 property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
-                if(have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
+                if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
                 hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }else{
                 property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
-                if(have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
+                if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
                 hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }
             sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
@@ -1797,7 +1798,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     memset(prop_format, 0, sizeof(prop_format));
     if (display == HWC_DISPLAY_PRIMARY)
     {
-        if(have_baseparameter() && connector->get_type() != last_mainType)
+        if(hwc_have_baseparameter() && connector->get_type() != last_mainType)
         {
             property_set("persist.sys.color.main","use_baseparameter");
             ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main color",last_mainType,connector->get_type());
@@ -1808,7 +1809,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     }
     else
     {
-        if(have_baseparameter() && connector->get_type() != last_auxType)
+        if(hwc_have_baseparameter() && connector->get_type() != last_auxType)
         {
             property_set("persist.sys.color.aux","use_baseparameter");
             ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux color",last_auxType,connector->get_type());
