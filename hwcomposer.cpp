@@ -875,11 +875,11 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         {
             if (display == 0){
                 property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
-                if(!strcmp(overscan,"use_baseparameter"))
+                if(have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
                 hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }else{
                 property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
-                if(!strcmp(overscan,"use_baseparameter"))
+                if(have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
                 hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }
             sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,

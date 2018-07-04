@@ -2397,7 +2397,7 @@ static bool enableBaseparameter = true;
 
 bool have_baseparameter(void)
 {
-     ALOGD("BP: have baseparameter exit (%d)",enableBaseparameter);
+     ALOGD_IF(log_level(DBG_DEBUG),"BP: have baseparameter exit (%d)",enableBaseparameter);
      return enableBaseparameter;
 }
 
@@ -2774,11 +2774,6 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
             }
             break;
          case BP_OVERSCAN:
-             if(enableBaseparameter == false)
-             {
-                 ALOGW("BP:OVERSCAN baseparameter is not ready,can't use it !");
-                 return -1;
-             }
             if(display == HWC_DISPLAY_PRIMARY){
                 leftscale = base_parameter.main.scan.leftscale;
                 topscale = base_parameter.main.scan.topscale;
