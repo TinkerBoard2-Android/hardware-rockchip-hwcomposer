@@ -3165,7 +3165,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   }
 
   for (size_t i = 0; i < num_displays; ++i) {
-    if (!sf_display_contents[i])
+    if (!sf_display_contents[i] || i == HWC_DISPLAY_VIRTUAL)
         continue;
 
     DrmConnector *c = ctx->drm.GetConnectorFromType(i);
@@ -3228,7 +3228,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   for (size_t i = 0; i < num_displays; ++i) {
     hwc_display_contents_1_t *dc = sf_display_contents[i];
     bool bFindDisplay = false;
-    if (!dc)
+    if (!dc  || i == HWC_DISPLAY_VIRTUAL)
       continue;
 
     DrmConnector *c = ctx->drm.GetConnectorFromType(i);
