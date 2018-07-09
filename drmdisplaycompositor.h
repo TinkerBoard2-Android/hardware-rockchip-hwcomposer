@@ -39,7 +39,7 @@
 // One for the front, one for the back, and one for cases where we need to
 // squash a frame that the hw can't display with hw overlays.
 #define DRM_DISPLAY_BUFFERS             (3)
-#define MaxRgaBuffers                   (3)
+#define MaxRgaBuffers                   (5)
 #define RGA_MAX_WIDTH                   (4096)
 #define RGA_MAX_HEIGHT                  (2304)
 #define VOP_BW_PATH			"/sys/class/devfreq/dmc/vop_bandwidth"
