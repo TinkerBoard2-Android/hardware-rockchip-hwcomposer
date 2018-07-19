@@ -202,6 +202,7 @@ std::unique_ptr<Planner> Planner::CreateInstance(DrmResources *) {
 }
 #endif
 
+#if 0
 static DrmPlane *GetCrtcPrimaryPlane(DrmCrtc *crtc,
                                      std::vector<DrmPlane *> *planes) {
   for (auto i = planes->begin(); i != planes->end(); ++i) {
@@ -213,12 +214,12 @@ static DrmPlane *GetCrtcPrimaryPlane(DrmCrtc *crtc,
   }
   return NULL;
 }
+#endif
 
 int PlanStageProtectedRotated::ProvisionPlanes(
     std::vector<DrmCompositionPlane> *composition,
     std::map<size_t, DrmHwcLayer *> &layers, DrmCrtc *crtc,
     std::vector<DrmPlane *> *planes) {
-  int ret;
   int protected_zorder = -1;
   for (auto i = layers.begin(); i != layers.end();) {
     if (!i->second->protected_usage() || !i->second->transform) {

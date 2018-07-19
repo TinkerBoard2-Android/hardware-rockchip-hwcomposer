@@ -27,7 +27,6 @@ int get_frame()
 int init_log_level()
 {
     char value[PROPERTY_VALUE_MAX];
-    int iValue;
     property_get("sys.hwc.log", value, "0");
     g_log_level = atoi(value);
     return 0;
@@ -66,7 +65,6 @@ int DumpLayer(const char* layer_name,buffer_handle_t handle)
         char data_name[100] ;
         const gralloc_module_t *gralloc;
         void* cpu_addr;
-        int i;
         int width,height,stride,byte_stride,format,size;
 
         int ret = hw_get_module(GRALLOC_HARDWARE_MODULE_ID,

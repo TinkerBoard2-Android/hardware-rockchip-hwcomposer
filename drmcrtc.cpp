@@ -150,8 +150,6 @@ const DrmProperty &DrmCrtc::alpha_scale_property() const {
 
 void DrmCrtc::dump_crtc(std::ostringstream *out) const
 {
-	uint32_t j;
-
 	*out << crtc_->crtc_id << "\t"
 	     << crtc_->buffer_id << "\t"
 	     << "(" << crtc_->x << "," << crtc_->y << ")\t("

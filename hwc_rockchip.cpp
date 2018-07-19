@@ -1343,7 +1343,10 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
 {
     uint32_t combine_layer_count = 0;
     uint32_t layer_size = layer_vector.size();
-    bool b_yuv=false,b_scale=false,b_alpha=false,b_hdr2sdr=false,b_afbc=false;
+    bool b_yuv=false,b_scale=false,b_alpha=false,b_hdr2sdr=false;
+#if USE_AFBC_LAYER
+    bool b_afbc=false;
+#endif
     std::vector<PlaneGroup *> ::const_iterator iter;
     std::vector<PlaneGroup *>& plane_groups = drm->GetPlaneGroups();
     uint64_t rotation = 0;
@@ -1631,7 +1634,6 @@ bool MatchPlanes(
     std::vector<PlaneGroup *>& plane_groups = drm->GetPlaneGroups();
     uint64_t last_zpos=0;
     bool bMatch = false;
-    uint32_t planes_can_use=0;
 
     //set use flag to false.
     for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();

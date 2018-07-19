@@ -1276,7 +1276,6 @@ void DrmResources::dump_blob(uint32_t blob_id, std::ostringstream *out) {
 }
 
 bool DrmResources::is_hdr_panel_support_st2084(DrmConnector *conn) const {
-	uint32_t i;
 	struct hdr_static_metadata* blob_data;
 	drmModePropertyBlobPtr blob;
 	bool bSupport = false;
