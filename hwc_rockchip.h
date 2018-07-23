@@ -357,11 +357,11 @@ bool hwc_have_baseparameter(void);
 int  hwc_get_baseparameter_config(char *parameter, int display, int flag, int type);
 void hwc_set_baseparameter_config(DrmResources *drm);
 void hwc_save_BcshConfig(int dpy);
-int hwc_findSuitableInfoSlot(struct disp_info* info, int type);
-
-
-int hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
-
+int  hwc_findSuitableInfoSlot(struct disp_info* info, int type);
+int  hwc_parse_format_into_prop(int display,unsigned int format,unsigned int depthc);
+int  hwc_SetGamma(DrmResources *drm);
+bool hwc_isGammaSetEnable(int type);
+int  hwc_setGamma(int fd, uint32_t crtc_id, uint32_t size,uint16_t *red, uint16_t *green, uint16_t *blue);
 
 /*
  * Base_parameter is used for 3328_8.0 , by libin end.

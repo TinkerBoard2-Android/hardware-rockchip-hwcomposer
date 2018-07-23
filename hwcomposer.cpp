@@ -324,6 +324,9 @@ class DrmHotplugHandler : public DrmEventHandler {
       //when boot system sometimes.
       drm_->UpdateDisplayRoute();
 
+      //Update LUT from baseparameter when Hot_plug devices conneted
+      hwc_SetGamma(drm_);
+
       //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
       usleep(HOTPLUG_MSLEEP*1000);
       procs_->invalidate(procs_);
@@ -367,6 +370,9 @@ class DrmHotplugHandler : public DrmEventHandler {
     //otherwise, it will lead crtc is disabled when current mode is 0
     //when boot system sometimes.
     drm_->UpdateDisplayRoute();
+
+    //Update LUT from baseparameter when Hot_plug devices conneted
+    hwc_SetGamma(drm_);
 
     //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
     usleep(HOTPLUG_MSLEEP*1000);
@@ -2229,6 +2235,11 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
       ctx->hotplug_handler.HandleEvent(0);
     }
 #endif
+    //Update LUT from baseparameter at boot time
+    if(get_frame() == 1){
+         hwc_SetGamma(&ctx->drm);
+    }
+
     init_log_level();
     hwc_dump_fps();
     ALOGD_IF(log_level(DBG_VERBOSE),"----------------------------frame=%d start ----------------------------",get_frame());

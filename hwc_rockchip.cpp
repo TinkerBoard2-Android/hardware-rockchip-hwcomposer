@@ -2644,7 +2644,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x1;
                     sprintf(value_new,"%d",(brightness > 0 && brightness <= 100  ? brightness : 50));
                     property_set("persist.sys.brightness.main",value_new);
-                    ALOGD("BP: main brightness: %s",value_new);
+                    ALOGD("BP: first set main brightness: %s",value_new);
                 }
                 ALOGD("BP: main brightness %d",property_get_int32("persist.sys.brightness.main",
                     brightness > 0 && brightness <= 100  ? brightness : 50));
@@ -2656,7 +2656,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x10;
                     sprintf(value_new,"%d",(brightness > 0 && brightness <= 100  ? brightness : 50));
                     property_set("persist.sys.brightness.aux",value_new);
-                    ALOGD("BP: aux brightness: %s",value_new);
+                    ALOGD("BP: first set aux brightness: %s",value_new);
                 }
                 ALOGD("BP: aux brightness %d",property_get_int32("persist.sys.brightness.aux",
                     brightness > 0 && brightness <= 100  ? brightness : 50));
@@ -2671,7 +2671,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x2;
                     sprintf(value_new,"%d",(contrast > 0 && contrast <= 100  ? contrast : 50));
                     property_set("persist.sys.contrast.main",value_new);
-                    ALOGD("BP: main contrast: %s",value_new);
+                    ALOGD("BP: first set main contrast: %s",value_new);
                 }
                 ALOGD("BP: main contrast %d",property_get_int32("persist.sys.contrast.main",
                     contrast > 0 && contrast <=100  ? contrast : 50));
@@ -2684,7 +2684,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x20;
                     sprintf(value_new,"%d",(contrast > 0 && contrast <= 100  ? contrast : 50));
                     property_set("persist.sys.contrast.aux",value_new);
-                    ALOGD("BP: aux contrast: %s",value_new);
+                    ALOGD("BP: first set aux contrast: %s",value_new);
                 }
                 ALOGD("BP: aux contrast %d",property_get_int32("persist.sys.contrast.aux",
                     contrast > 0 && contrast <= 100  ? contrast : 50));
@@ -2699,7 +2699,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x4;
                     sprintf(value_new,"%d",(saturation > 0 && saturation <= 100  ? saturation : 50));
                     property_set("persist.sys.saturation.main",value_new);
-                    ALOGD("BP: main saturation: %s",value_new);
+                    ALOGD("BP: first set main saturation: %s",value_new);
                 }
                 ALOGD("BP: main saturation %d",property_get_int32("persist.sys.saturation.main",
                     saturation > 0 && saturation <= 100  ? saturation : 50));
@@ -2711,7 +2711,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x40;
                     sprintf(value_new,"%d",(saturation > 0 && saturation <= 100  ? saturation : 50));
                     property_set("persist.sys.saturation.aux",value_new);
-                    ALOGD("BP: aux saturation: %s",value_new);
+                    ALOGD("BP: first set aux saturation: %s",value_new);
                 }
                 ALOGD("BP: aux saturation %d",property_get_int32("persist.sys.saturation.aux",
                     saturation > 0 && saturation <= 100  ? saturation : 50));
@@ -2726,7 +2726,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x8;
                     sprintf(value_new,"%d",(hue > 0 && hue <= 100  ? hue : 50));
                     property_set("persist.sys.hue.main",value_new);
-                    ALOGD("BP: main hue: %s",value_new);
+                    ALOGD("BP: first set main hue: %s",value_new);
                 }
                 ALOGD("BP: main hue %d",property_get_int32("persist.sys.hue.main",
                     hue > 0 && hue <= 100  ? hue : 50));
@@ -2739,7 +2739,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x80;
                     sprintf(value_new,"%d",(hue > 0 && hue <= 100  ? hue : 50));
                     property_set("persist.sys.hue.aux",value_new);
-                    ALOGD("BP: aux hue: %s",value_new);
+                    ALOGD("BP: first set aux hue: %s",value_new);
                 }
                 ALOGD("BP: aux hue %d",property_get_int32("persist.sys.hue.aux",
                     hue > 0 && hue <= 100  ? hue : 50));
@@ -3439,6 +3439,107 @@ bool hwc_video_to_area(DrmHwcRect<float> &source_yuv,DrmHwcRect<int> &display_yu
     display_yuv.right = d_right;
     display_yuv.bottom = d_bottom;
     return true;
+}
+
+int hwc_SetGamma(DrmResources *drm)
+{
+    int ret = -1;
+    if(hwc_have_baseparameter()){
+        DrmConnector *primary = drm->GetConnectorFromType(HWC_DISPLAY_PRIMARY);
+        if (primary != NULL && primary->state() == DRM_MODE_CONNECTED) {
+            int size = base_parameter.main.mlutdata.size;
+            if(size > 0){
+                uint16_t* red = (uint16_t*)malloc(size*sizeof(uint16_t));
+                uint16_t* green = (uint16_t*)malloc(size*sizeof(uint16_t));
+                uint16_t* blue = (uint16_t*)malloc(size*sizeof(uint16_t));
+
+                for (int i = 0; i < size; i++) {
+                    red[i] = base_parameter.main.mlutdata.lred[i];
+                }
+                for (int i = 0; i < size; i++) {
+                    green[i] = base_parameter.main.mlutdata.lgreen[i];
+                }
+                for (int i = 0; i < size; i++) {
+                    blue[i] = base_parameter.main.mlutdata.lblue[i];
+                }
+                if (hwc_isGammaSetEnable(primary->get_type())) {
+                    int mCurCrtcId = drm->GetCrtcFromConnector(primary)->id();
+                    ret = hwc_setGamma(drm->fd(), mCurCrtcId, (int)size, (uint16_t*)red, (uint16_t*)green, (uint16_t*)blue);
+                    if (ret<0){
+                        ALOGW("BP: nativeSetGamma failed: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                                red[0],red[1],size, size, size ,red[0], red[1]);
+                    }else{
+                        ALOGD("BP: nativeSetGamma success: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                                red[0],red[1],size, size, size ,red[0], red[1]);
+                    }
+                }else{
+                    ALOGW("BP: Device type %d is not supprot Gamma",primary->get_type());
+                }
+                free(red);
+                free(green);
+                free(blue);
+                red   = NULL;
+                green = NULL;
+                blue  = NULL;
+           }else{
+              ALOGW("BP: Gamma size = %d is err",size);
+           }
+        }
+        DrmConnector *extend = drm->GetConnectorFromType(HWC_DISPLAY_EXTERNAL);
+        if(extend != NULL && extend->state() == DRM_MODE_CONNECTED){
+             int size = base_parameter.aux.mlutdata.size;
+             if(size > 0){
+                 uint16_t* red = (uint16_t*)malloc(size*sizeof(uint16_t));
+                 uint16_t* green = (uint16_t*)malloc(size*sizeof(uint16_t));
+                 uint16_t* blue = (uint16_t*)malloc(size*sizeof(uint16_t));
+
+                 for (int i = 0; i < size; i++) {
+                     red[i] = base_parameter.aux.mlutdata.lred[i];
+                 }
+                 for (int i = 0; i < size; i++) {
+                     green[i] = base_parameter.aux.mlutdata.lgreen[i];
+                 }
+                 for (int i = 0; i < size; i++) {
+                     blue[i] = base_parameter.aux.mlutdata.lblue[i];
+                 }
+                 if (hwc_isGammaSetEnable(extend->get_type())) {
+                     int mCurCrtcId = drm->GetCrtcFromConnector(extend)->id();
+                     ret = hwc_setGamma(drm->fd(), mCurCrtcId, (int)size, (uint16_t*)red, (uint16_t*)green, (uint16_t*)blue);
+                     if (ret<0){
+                         ALOGW("BP: nativeSetGamma failed: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]",size,
+                                 red[0],red[1],size, size, size ,red[0], red[1]);
+                     }else{
+                        ALOGD("BP: nativeSetGamma success: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                                red[0],red[1],size, size, size ,red[0], red[1]);
+                    }
+                 }else{
+                    ALOGW("BP: Device type %d is not supprot Gamma",extend->get_type());
+                 }
+                 free(red);
+                 free(green);
+                 free(blue);
+                 red   = NULL;
+                 green = NULL;
+                 blue  = NULL;
+            }else{
+              ALOGW("BP: Gamma size = %d is err",size);
+           }
+        }
+    }
+    return ret;
+}
+
+bool hwc_isGammaSetEnable(int type) {
+    return type == DRM_MODE_CONNECTOR_eDP || type == DRM_MODE_CONNECTOR_LVDS ||
+        type == DRM_MODE_CONNECTOR_DSI;
+}
+int hwc_setGamma(int fd, uint32_t crtc_id, uint32_t size,
+        uint16_t *red, uint16_t *green, uint16_t *blue)
+{
+    int ret = drmModeCrtcSetGamma(fd, crtc_id, size, red, green, blue);
+    if (ret < 0)
+        ALOGE("fail to SetGamma %d(%s)", ret, strerror(errno));
+    return ret;
 }
 
 
