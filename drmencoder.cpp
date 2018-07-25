@@ -28,7 +28,7 @@ DrmEncoder::DrmEncoder(DrmResources *drm, drmModeEncoderPtr e, DrmCrtc *current_
     : id_(e->encoder_id),
       crtc_(current_crtc),
       drm_(drm),
-      // type_(e->encoder_type),
+      type_(e->encoder_type),
       possible_crtcs_(possible_crtcs),
       encoder_(e) {
 }

@@ -209,8 +209,9 @@ static int CompareLines(int *da,int w)
 
 int DetectValidData(int *data,int w,int h)
 {
-    int i;
+    int i,j;
     int *da;
+    int ret;
     /*  detect model
     -------------------------
     |   |   |    |    |      |

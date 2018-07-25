@@ -1033,12 +1033,15 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
   ATRACE_CALL();
 
   int ret = 0;
+  uint32_t afbc_plane_id = 0;
   uint32_t plane_size = 0;
   uint32_t vop_bandwidth = 0, total_bandwidth = 0;
 
   std::vector<DrmHwcLayer> &layers = display_comp->layers();
   std::vector<DrmCompositionPlane> &comp_planes =
       display_comp->composition_planes();
+  std::vector<DrmCompositionRegion> &pre_comp_regions =
+      display_comp->pre_comp_regions();
 
   DrmCrtc *crtc = display_comp->crtc();
   if (!crtc) {
@@ -1221,6 +1224,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
       DrmHwcLayer &layer = layers[source_layers.front()];
       if (!test_only && layer.acquire_fence.get() >= 0) {
         int acquire_fence = layer.acquire_fence.get();
+        int total_fence_timeout = 0;
 #if RK_VR
         if(!(layer.gralloc_buffer_usage & 0x08000000))
 #endif
@@ -1524,6 +1528,8 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     ALOGD_IF(log_level(DBG_VERBOSE),"%s",out_log.str().c_str());
     out_log.clear();
   }
+
+out:
 
   if (!ret) {
     uint32_t flags = DRM_MODE_ATOMIC_ALLOW_MODESET;

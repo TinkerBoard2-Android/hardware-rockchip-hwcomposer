@@ -160,6 +160,7 @@ class DrmHotplugHandler : public DrmEventHandler {
   }
 
   void HandleEvent(uint64_t timestamp_us) {
+    int ret;
     DrmConnector *extend = NULL;
     DrmConnector *primary = NULL;
 
@@ -418,6 +419,7 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   int timeline;
   static uint32_t last_mainType,last_auxType;
   uint32_t MaxResolution = 0,temp;
+  uint32_t flags_temp;
 
   timeline = property_get_int32("sys.display.timeline", -1);
   /*
@@ -860,6 +862,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         int left_margin, right_margin, top_margin, bottom_margin;
         float left_margin_f, right_margin_f, top_margin_f, bottom_margin_f;
         float lscale = 0, tscale = 0, rscale = 0, bscale = 0;
+        int xres,yres;
         int disp_old_l,disp_old_t,disp_old_r,disp_old_b;
 
         if(hd->stereo_mode != NON_3D)
@@ -1257,11 +1260,9 @@ static void hwc_dump(struct hwc_composer_device_1 *dev, char *buff,
   buff[buff_len - 1] = '\0';
 }
 
-#if 0
 static bool hwc_skip_layer(const std::pair<int, int> &indices, int i) {
   return indices.first >= 0 && i >= indices.first && i <= indices.second;
 }
-#endif
 
 static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector, hwc_display_contents_1_t *display_content, int display_id)
 {
@@ -1367,7 +1368,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     //If the transform normal layers is bigger than zero,then go into GPU GLES.
     hd->transform_nv12 = 0;
     hd->transform_normal = 0;
-    // int ret = 0;
+    int ret = 0;
     int format = 0;
 #if USE_AFBC_LAYER
     uint64_t internal_format = 0;
@@ -1389,11 +1390,11 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
         if(hd->isVideo && (layer->transform != 0))
         {
             int src_l,src_t,src_r,src_b,src_w,src_h;
-            int dst_l,dst_t,dst_w,dst_h;
-            // hwc_region_t * visible_region = &layer->visibleRegionScreen;
-            // hwc_rect_t const * visible_rects = visible_region->rects;
+            int dst_l,dst_t,dst_r,dst_b,dst_w,dst_h;
+            hwc_region_t * visible_region = &layer->visibleRegionScreen;
+            hwc_rect_t const * visible_rects = visible_region->rects;
             hwc_rect_t  rect_merge;
-            // int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
+            int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
             float rga_h_scale=1.0, rga_v_scale=1.0;
 
             src_l = (int)layer->sourceCropf.left;
@@ -1714,6 +1715,8 @@ static HDMI_STAT detect_hdmi_status(void)
 }
 
 static bool parse_hdmi_output_format_prop(char* strprop, drm_hdmi_output_type *format, dw_hdmi_rockchip_color_depth *depth) {
+    char color_depth[PROPERTY_VALUE_MAX];
+    char color_format[PROPERTY_VALUE_MAX];
     if (!strcmp(strprop, "Auto")) {
         *format = DRM_HDMI_OUTPUT_YCBCR_HQ;
         *depth = ROCKCHIP_DEPTH_DEFAULT;
@@ -1980,8 +1983,7 @@ static bool set_hdmi_hdr_meta(struct hwc_context_t *ctx, DrmConnector *connector
 static int PrepareRgaBuffer(DrmRgaBuffer &rgaBuffer, DrmHwcLayer &layer) {
     int rga_transform = 0;
     int src_l,src_t,src_w,src_h;
-    int dst_l,dst_t;
-    // int dst_r,dst_b;
+    int dst_l,dst_t,dst_r,dst_b;
     int ret;
     int dst_w,dst_h,dst_stride;
     rga_info_t src, dst;
@@ -2210,6 +2212,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 
   for (int i = 0; i < (int)num_displays; ++i) {
     bool use_framebuffer_target = false;
+    drmModeConnection state;
 
     if (!display_contents[i])
       continue;
@@ -2350,7 +2353,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     // Since we can't composite HWC_SKIP_LAYERs by ourselves, we'll let SF
     // handle all layers in between the first and last skip layers. So find the
     // outer indices and mark everything in between as HWC_FRAMEBUFFER
-    // std::pair<int, int> skip_layer_indices(-1, -1);
+    std::pair<int, int> skip_layer_indices(-1, -1);
 
     int format = 0;
     int usage = 0;
@@ -2682,6 +2685,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     if(!use_framebuffer_target)
     {
         bool bAllMatch = false;
+        int iUsePlane = 0;
 
         hd->mixMode = HWC_DEFAULT;
         if(crtc && layer_content.layers.size()>0)
@@ -2939,6 +2943,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       ctx->drm.ClearDisplay(i);
       continue;
     }
+    hwc_drm_display_t *hd = &ctx->displays[c->display()];
 
     std::ostringstream display_index_formatter;
     display_index_formatter << "retire fence for display " << i;
@@ -3233,6 +3238,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       ctx->drm.ClearDisplay(i);
       continue;
     }
+    hwc_drm_display_t *hd = &ctx->displays[c->display()];
 
     for (auto &fail_display : fail_displays) {
         if( i == fail_display )
@@ -3617,7 +3623,6 @@ static int hwc_device_close(struct hw_device_t *dev) {
  * should be fixed such that it selects the preferred mode for the display, or
  * some other, saner, method of choosing the config.
  */
-#if 0
 static int hwc_set_initial_config(struct hwc_context_t *ctx, int display) {
   uint32_t config;
   size_t num_configs = 1;
@@ -3634,7 +3639,6 @@ static int hwc_set_initial_config(struct hwc_context_t *ctx, int display) {
 
   return ret;
 }
-#endif
 
 static int hwc_initialize_display(struct hwc_context_t *ctx, int display) {
     hwc_drm_display_t *hd = &ctx->displays[display];
