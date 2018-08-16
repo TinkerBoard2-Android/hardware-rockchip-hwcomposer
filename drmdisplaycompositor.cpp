@@ -1095,14 +1095,14 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     }
     else
     {
-        if (display_ == 0){
+        if(display_ == 0){
           property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
           if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
-              hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
+            hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
         }else{
           property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
           if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
-              hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
+            hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
         }
 
         sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
@@ -1112,14 +1112,14 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
                 left_margin,top_margin,right_margin,bottom_margin);
     }
 
-    if (left_margin < OVERSCAN_MIN_VALUE) left_margin = OVERSCAN_MIN_VALUE;
-    if (top_margin < OVERSCAN_MIN_VALUE) top_margin = OVERSCAN_MIN_VALUE;
-    if (right_margin < OVERSCAN_MIN_VALUE) right_margin = OVERSCAN_MIN_VALUE;
+    if (left_margin   < OVERSCAN_MIN_VALUE) left_margin   = OVERSCAN_MIN_VALUE;
+    if (top_margin    < OVERSCAN_MIN_VALUE) top_margin    = OVERSCAN_MIN_VALUE;
+    if (right_margin  < OVERSCAN_MIN_VALUE) right_margin  = OVERSCAN_MIN_VALUE;
     if (bottom_margin < OVERSCAN_MIN_VALUE) bottom_margin = OVERSCAN_MIN_VALUE;
 
-    if (left_margin > OVERSCAN_MAX_VALUE) left_margin = OVERSCAN_MAX_VALUE;
-    if (top_margin > OVERSCAN_MAX_VALUE) top_margin = OVERSCAN_MAX_VALUE;
-    if (right_margin > OVERSCAN_MAX_VALUE) right_margin = OVERSCAN_MAX_VALUE;
+    if (left_margin   > OVERSCAN_MAX_VALUE) left_margin   = OVERSCAN_MAX_VALUE;
+    if (top_margin    > OVERSCAN_MAX_VALUE) top_margin    = OVERSCAN_MAX_VALUE;
+    if (right_margin  > OVERSCAN_MAX_VALUE) right_margin  = OVERSCAN_MAX_VALUE;
     if (bottom_margin > OVERSCAN_MAX_VALUE) bottom_margin = OVERSCAN_MAX_VALUE;
 
     ret = drmModeAtomicAddProperty(pset, crtc->id(), crtc->left_margin_property().id(), left_margin) < 0 ||

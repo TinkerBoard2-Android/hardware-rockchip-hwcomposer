@@ -460,20 +460,20 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
         ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main resolution",last_mainType,c->get_type());
         last_mainType = c->get_type();
     }
-    /* if resolution is null,set to "Auto" */
-    property_get("persist.sys.resolution.main", resolution, "use_baseparameter");
-    property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
-
-    /*
-     * if unset resolution ,get it from baseparameter ,by libin
-     */
-    if(!(strcmp(resolution,"use_baseparameter")))
-    {
+    /* if baseparameter exist to use it, if none set to "Auto" */
+    if(hwc_have_baseparameter()){
+      property_get("persist.sys.resolution.main", resolution, "use_baseparameter");
+      property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
+      if(!(strcmp(resolution,"use_baseparameter"))){
         int res = 0;
         res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION,c->get_type());
         if(res){
-            ALOGE("get native config fail, res = %d",res);
+            ALOGE("BP:Get main BP_RESOLUTION fail, res = %d line =%d",res,__LINE__);
         }
+      }
+    }else{
+      property_get("persist.sys.resolution.main", resolution, "Auto");
+      property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
     }
   }
   else
@@ -484,19 +484,20 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
         ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux resolution",last_auxType,c->get_type());
         last_auxType = c->get_type();
     }
-    property_get("persist.sys.resolution.aux", resolution, "use_baseparameter");
-    property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
-
-    /*
-     * if unset resolution ,get it from baseparameter ,by libin
-     */
-    if(!(strcmp(resolution,"use_baseparameter")))
-    {
+    /* if baseparameter exist to use it, if none set to "Auto" */
+    if(hwc_have_baseparameter()){
+      property_get("persist.sys.resolution.aux", resolution, "use_baseparameter");
+      property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
+      if(!(strcmp(resolution,"use_baseparameter"))){
         int res = 0;
         res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION,c->get_type());
         if(res){
-            ALOGE("get native config fail, res = %d",res);
+            ALOGE("BP:Get aux BP_RESOLUTION fail, res = %d line =%d",res,__LINE__);
         }
+      }
+    }else{
+      property_get("persist.sys.resolution.aux", resolution, "Auto");
+      property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
     }
   }
   hwc_set_baseparameter_config(&hd->ctx->drm);
@@ -898,35 +899,35 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
             if (display == 0){
                 property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
                 if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
-                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
+                  hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }else{
                 property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
                 if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
-                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
+                  hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }
             sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
                     &right_margin, &bottom_margin);
         }
 
         //limit overscan to (OVERSCAN_MIN_VALUE,OVERSCAN_MAX_VALUE)
-        if (left_margin < OVERSCAN_MIN_VALUE) left_margin = OVERSCAN_MIN_VALUE;
-        if (top_margin < OVERSCAN_MIN_VALUE) top_margin = OVERSCAN_MIN_VALUE;
-        if (right_margin < OVERSCAN_MIN_VALUE) right_margin = OVERSCAN_MIN_VALUE;
+        if (left_margin   < OVERSCAN_MIN_VALUE) left_margin   = OVERSCAN_MIN_VALUE;
+        if (top_margin    < OVERSCAN_MIN_VALUE) top_margin    = OVERSCAN_MIN_VALUE;
+        if (right_margin  < OVERSCAN_MIN_VALUE) right_margin  = OVERSCAN_MIN_VALUE;
         if (bottom_margin < OVERSCAN_MIN_VALUE) bottom_margin = OVERSCAN_MIN_VALUE;
 
-        if (left_margin > OVERSCAN_MAX_VALUE) left_margin = OVERSCAN_MAX_VALUE;
-        if (top_margin > OVERSCAN_MAX_VALUE) top_margin = OVERSCAN_MAX_VALUE;
-        if (right_margin > OVERSCAN_MAX_VALUE) right_margin = OVERSCAN_MAX_VALUE;
+        if (left_margin   > OVERSCAN_MAX_VALUE) left_margin   = OVERSCAN_MAX_VALUE;
+        if (top_margin    > OVERSCAN_MAX_VALUE) top_margin    = OVERSCAN_MAX_VALUE;
+        if (right_margin  > OVERSCAN_MAX_VALUE) right_margin  = OVERSCAN_MAX_VALUE;
         if (bottom_margin > OVERSCAN_MAX_VALUE) bottom_margin = OVERSCAN_MAX_VALUE;
 
-        left_margin_f = (float)(100 - left_margin) / 2;
-        top_margin_f = (float)(100 - top_margin) / 2;
-        right_margin_f = (float)(100 - right_margin) / 2;
+        left_margin_f   = (float)(100 - left_margin   ) / 2;
+        top_margin_f    = (float)(100 - top_margin    ) / 2;
+        right_margin_f  = (float)(100 - right_margin  ) / 2;
         bottom_margin_f = (float)(100 - bottom_margin) / 2;
 
-        lscale = ((float)left_margin_f / 100);
-        tscale = ((float)top_margin_f / 100);
-        rscale = ((float)right_margin_f / 100);
+        lscale = ((float)left_margin_f   / 100);
+        tscale = ((float)top_margin_f    / 100);
+        rscale = ((float)right_margin_f  / 100);
         bscale = ((float)bottom_margin_f / 100);
 
         disp_old_l = display_frame.left;
@@ -934,12 +935,12 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         disp_old_r = display_frame.right;
         disp_old_b = display_frame.bottom;
 
-        display_frame.left = ((int)(display_frame.left * (1.0 - lscale - rscale)) + (int)(hd->rel_xres * lscale));
-        display_frame.top = ((int)(display_frame.top * (1.0 - tscale - bscale)) + (int)(hd->rel_yres * tscale));
+        display_frame.left = ((int)(display_frame.left  * (1.0 - lscale - rscale)) + (int)(hd->rel_xres * lscale));
+        display_frame.top =  ((int)(display_frame.top   * (1.0 - tscale - bscale)) + (int)(hd->rel_yres * tscale));
         dst_w -= ((int)(dst_w * lscale) + (int)(dst_w * rscale));
         dst_h -= ((int)(dst_h * tscale) + (int)(dst_h * bscale));
-        display_frame.right = display_frame.left + dst_w;
-        display_frame.bottom = display_frame.top + dst_h;
+        display_frame.right  = display_frame.left + dst_w;
+        display_frame.bottom = display_frame.top  + dst_h;
 
         ALOGD_IF(log_level(DBG_VERBOSE),"vop plane scale overscan, display margin(%f,%f,%f,%f) scale_factor(%f,%f,%f,%f) disp_area(%d,%d,%d,%d) ==> (%d,%d,%d,%d)",
             left_margin_f,top_margin_f,right_margin_f,bottom_margin_f,
@@ -1817,36 +1818,58 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     //hd->display_timeline = timeline;//let update_display_bestmode function update the value.
     //hd->hotplug_timeline = hd->ctx->drm.timeline();//let update_display_bestmode function update the value.
     memset(prop_format, 0, sizeof(prop_format));
-    if (display == HWC_DISPLAY_PRIMARY)
-    {
-        if(hwc_have_baseparameter() && connector->get_type() != last_mainType)
-        {
-            property_set("persist.sys.color.main","use_baseparameter");
-            ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main color",last_mainType,connector->get_type());
-            last_mainType = connector->get_type();
+    if (display == HWC_DISPLAY_PRIMARY){
+      if(hwc_have_baseparameter()){
+        if(connector->get_type() != last_mainType){
+          property_set("persist.sys.color.main","use_baseparameter");
+          ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main color",last_mainType,connector->get_type());
+          last_mainType = connector->get_type();
         }
-        /* if resolution is null,set to "Auto" */
         property_get("persist.sys.color.main", prop_format, "use_baseparameter");
-    }
-    else
-    {
-        if(hwc_have_baseparameter() && connector->get_type() != last_auxType)
-        {
-            property_set("persist.sys.color.aux","use_baseparameter");
-            ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux color",last_auxType,connector->get_type());
-            last_auxType = connector->get_type();
-        }
-        property_get("persist.sys.color.aux", prop_format, "use_baseparameter");
-    }
-    ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
-    if (ret == false) {
         hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){
-            ALOGE("BP: get color fail!");
-            return false;
+          ALOGE("BP: get color fail! to use default ");
+          color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+          color_depth = ROCKCHIP_DEPTH_DEFAULT;
         }
+      }else{
+        /* if resolution is null,set to "Auto" */
+        property_get("persist.sys.color.main", prop_format, "Auto");
+        ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
+        if (ret == false) {
+          ALOGE("Get color fail! to use default ");
+          color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+          color_depth = ROCKCHIP_DEPTH_DEFAULT;
+        }
+      }
+    }else if(display == HWC_DISPLAY_EXTERNAL){
+      if(hwc_have_baseparameter()){
+        if(connector->get_type() != last_auxType){
+          property_set("persist.sys.color.aux","use_baseparameter");
+          ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux color",last_auxType,connector->get_type());
+          last_auxType = connector->get_type();
+        }
+        property_get("persist.sys.color.aux", prop_format, "use_baseparameter");
+        hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
+        ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
+        if(ret != 2){
+          ALOGE("BP: get color fail! to use default ");
+          color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+          color_depth = ROCKCHIP_DEPTH_DEFAULT;
+        }
+      }else{
+        /* if resolution is null,set to "Auto" */
+        property_get("persist.sys.color.aux", prop_format, "Auto");
+        ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
+        if (ret == false) {
+          ALOGE("Get color fail! to use default ");
+          color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+          color_depth = ROCKCHIP_DEPTH_DEFAULT;
+        }
+      }
     }
+
 
     if(hd->color_format != color_format) {
         need_change_format = 1;
@@ -3498,12 +3521,14 @@ static int hwc_get_display_configs(struct hwc_composer_device_1 *dev,
 
   char framebuffer_size[PROPERTY_VALUE_MAX];
   uint32_t width = 0, height = 0 , vrefresh = 0 ;
-  property_get("persist.sys.framebuffer.main", framebuffer_size, "use_baseparameter");
-
+  if (display == HWC_DISPLAY_PRIMARY)
+    property_get("persist.sys.framebuffer.main", framebuffer_size, "use_baseparameter");
+  else if(display == HWC_DISPLAY_EXTERNAL)
+    property_get("persist.sys.framebuffer.aux", framebuffer_size, "use_baseparameter");
   /*
    * if unset framebuffer_size, get it from baseparameter , by libin
    */
-  if(!strcmp(framebuffer_size,"use_baseparameter")){
+  if(hwc_have_baseparameter() && !strcmp(framebuffer_size,"use_baseparameter")){
     int res = 0;
     res = hwc_get_baseparameter_config(framebuffer_size,display,BP_FB_SIZE,0);
     if(res)
