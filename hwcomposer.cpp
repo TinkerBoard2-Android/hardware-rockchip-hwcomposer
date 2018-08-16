@@ -3151,9 +3151,10 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 #endif
   for (size_t i = 0; i < num_displays; ++i) {
     hwc_display_contents_1_t *dc = sf_display_contents[i];
+    size_t num_dc_layers = dc->numHwLayers;
     DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
     bool bFindDisplay = false;
-    if (!sf_display_contents[i] || i == HWC_DISPLAY_VIRTUAL)
+    if (!sf_display_contents[i] || i == HWC_DISPLAY_VIRTUAL || num_dc_layers==1)
       continue;
 
     for (auto &fail_display : fail_displays) {
@@ -3301,7 +3302,9 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
    *
    */
   for (size_t i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; ++i) {
-    if (!sf_display_contents[i])
+    hwc_display_contents_1_t *dc = sf_display_contents[i];
+    size_t num_dc_layers = dc->numHwLayers;
+    if (!sf_display_contents[i] || num_dc_layers == 1)
       continue;
 
     ret = ctx->drm.compositor()->QueueComposition(composition, i);
@@ -3315,6 +3318,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 
   for (size_t i = 0; i < num_displays; ++i) {
     hwc_display_contents_1_t *dc = sf_display_contents[i];
+    size_t num_dc_layers = dc->numHwLayers;
     bool bFindDisplay = false;
     if (!dc  || i == HWC_DISPLAY_VIRTUAL)
       continue;
@@ -3339,7 +3343,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
     if(bFindDisplay)
         continue;
 
-    size_t num_dc_layers = dc->numHwLayers;
     for (size_t j = 0; j < num_dc_layers; ++j) {
       hwc_layer_1_t *layer = &dc->hwLayers[j];
       if (layer->flags & HWC_SKIP_LAYER)
