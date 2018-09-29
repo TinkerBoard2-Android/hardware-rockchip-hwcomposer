@@ -222,6 +222,10 @@ typedef struct hwc_drm_display {
 #if RK_CTS_WORKROUND
     bool bPerfMode;
 #endif
+#if DUAL_VIEW_MODE
+    bool bDualViewMode;
+#endif
+
 
 } hwc_drm_display_t;
 

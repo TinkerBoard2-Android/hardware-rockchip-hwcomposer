@@ -840,9 +840,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
   sf_handle = sf_layer->handle;
   alpha = sf_layer->planeAlpha;
   frame_no = get_frame();
-  source_crop = DrmHwcRect<float>(
-      sf_layer->sourceCropf.left, sf_layer->sourceCropf.top,
-      sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom);
+
 
   DrmConnector *conn = ctx->drm.GetConnectorFromType(display);
   if (!conn) {
@@ -851,6 +849,65 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
   }
 
   hwc_drm_display_t *hd = &ctx->displays[conn->display()];
+
+#if DUAL_VIEW_MODE
+  int dualModeEnable = 0,dualModeTB = 0,dualModeRatio = 0;
+  char value[PROPERTY_VALUE_MAX];
+  property_get("persist.sys.dualModeEnable", value, "0");
+  dualModeEnable = atoi(value);
+  property_get("persist.sys.dualModeTB", value, "0");
+  dualModeTB = atoi(value);
+  property_get("persist.sys.dualModeRatio", value, "0");
+  dualModeRatio = atoi(value);
+
+  //DUAL_VIEW_MODE only support 2 or 3 Ratio
+  if(dualModeRatio != 2 && dualModeRatio != 3){
+    ALOGE_IF(log_level(DBG_ERROR),"DUAL:Only support 2 or 3 Ration (%d) , disable DUAL_VIEW_MODE",dualModeRatio);
+    dualModeEnable = 0;
+  }
+
+  //DUAL_VIEW_MODE Primary framebuffer must equal to Extend
+  char framebuffer_size_pri[PROPERTY_VALUE_MAX] = {0};
+  char framebuffer_size_aux[PROPERTY_VALUE_MAX] = {0};
+  property_get("persist.sys.framebuffer.main", framebuffer_size_pri, "main");
+  property_get("persist.sys.framebuffer.aux", framebuffer_size_aux, "aux");
+  if(strcmp(framebuffer_size_pri,framebuffer_size_aux)){
+    ALOGE_IF(log_level(DBG_ERROR),"DUAL:Primary framebuffer is not  equal to Extend, disable DUAL_VIEW_MODE");
+    dualModeEnable = 0;
+  }
+
+  if(dualModeEnable == 1){
+    hd->bDualViewMode = true;
+    property_set("sys.hwc.compose_policy","0");
+    if(display == 0){
+      if(dualModeTB == 1)
+        source_crop = DrmHwcRect<float>(
+          sf_layer->sourceCropf.left, sf_layer->sourceCropf.top,
+          sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom / dualModeRatio);
+      else
+        source_crop = DrmHwcRect<float>(
+          sf_layer->sourceCropf.left, sf_layer->sourceCropf.top,
+          sf_layer->sourceCropf.right / dualModeRatio , sf_layer->sourceCropf.bottom);
+    }else if(display == 1){
+      if(dualModeTB == 1)
+        source_crop = DrmHwcRect<float>(
+          sf_layer->sourceCropf.left, sf_layer->sourceCropf.top + sf_layer->sourceCropf.bottom / dualModeRatio,
+          sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom);
+      else
+        source_crop = DrmHwcRect<float>(
+          sf_layer->sourceCropf.left + sf_layer->sourceCropf.right / dualModeRatio , sf_layer->sourceCropf.top,
+          sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom);
+
+    }
+  }else
+#endif
+
+  {
+    source_crop = DrmHwcRect<float>(
+        sf_layer->sourceCropf.left, sf_layer->sourceCropf.top,
+        sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom);
+
+  }
 
   if(bClone)
   {
@@ -2812,6 +2869,12 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             break;
         }
       }
+#if DUAL_VIEW_MODE
+      if(hd->bDualViewMode && i == HWC_DISPLAY_EXTERNAL && layer->compositionType != HWC_FRAMEBUFFER_TARGET)
+      {
+        layer->compositionType = HWC_NODRAW;
+      }
+#endif
     }
 #if RK_RGA_PREPARE_ASYNC
     if(!use_framebuffer_target && ctx->drm.isSupportRkRga())
@@ -2987,7 +3050,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 
   // layers_map.reserve(num_displays);
   layers_indices.reserve(num_displays);
-
   // Phase one does nothing that would cause errors. Only take ownership of FDs.
   for (size_t i = 0; i < num_displays; ++i) {
     hwc_display_contents_1_t *dc = sf_display_contents[i];
@@ -3023,8 +3085,8 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
     size_t num_dc_layers = dc->numHwLayers;
     if (!c || c->state() != DRM_MODE_CONNECTED || num_dc_layers==1) {
 
-    if(c)
-      ALOGD_IF(log_level(DBG_DEBUG),"hwc_set connector is disconnect,type=%s",ctx->drm.connector_type_str(c->get_type()));
+      if(c)
+        ALOGD_IF(log_level(DBG_DEBUG),"hwc_set connector is disconnect,type=%s",ctx->drm.connector_type_str(c->get_type()));
       if(num_dc_layers==1)
         ALOGD_IF(log_level(DBG_DEBUG), "%s display=%zu layer is null", __FUNCTION__, i);
       hwc_sync_release(sf_display_contents[i]);
@@ -3091,7 +3153,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
             sf_layer->acquireFenceFd = -1;
         }
 #endif
-
       for (k = 0; k < display_contents.layers.size(); ++k)
       {
          DrmHwcLayer &layer = display_contents.layers[k];
@@ -3168,67 +3229,151 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
     if(bFindDisplay)
         continue;
 
-    layers_map.emplace_back();
-    DrmCompositionDisplayLayersMap &map = layers_map.back();
-    map.display = i;
-    map.geometry_changed =
-        (dc->flags & HWC_GEOMETRY_CHANGED) == HWC_GEOMETRY_CHANGED;
-    for (size_t j=0; j< display_contents.layers.size(); j++) {
-      DrmHwcLayer &layer = display_contents.layers[j];
-      if(!layer.sf_handle && layer.raw_sf_layer->handle)
-      {
-        layer.sf_handle = layer.raw_sf_layer->handle;
-#if (!RK_PER_MODE && RK_DRM_GRALLOC)
-        layer.width = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_WIDTH);
-        layer.height = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_HEIGHT);
-        layer.stride = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_STRIDE);
-        layer.format = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_FORMAT);
-#else
-        layer.width = hwc_get_handle_width(ctx->gralloc,layer.sf_handle);
-        layer.height = hwc_get_handle_height(ctx->gralloc,layer.sf_handle);
-        layer.stride = hwc_get_handle_stride(ctx->gralloc,layer.sf_handle);
-        layer.format = hwc_get_handle_format(ctx->gralloc,layer.sf_handle);
-#endif
-      }
-      if(!layer.sf_handle)
-      {
-        ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
-        signal_all_fence(display_contents, dc);
-        ctx->drm.ClearDisplay(i);
-        std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
-        layers_map.erase(iter);
-        break;
-      }
-      if(!layer.bClone_)
-      {
-#if RK_RGA_PREPARE_ASYNC
-        if(!layer.is_rotate_by_rga)
-#endif
-            layer.ImportBuffer(ctx, layer.raw_sf_layer, ctx->importer.get());
-#if RK_RGA_PREPARE_ASYNC
-        else
-        {
-            ret = layer.buffer.ImportBuffer(layer.rga_handle,
-                                                   ctx->importer.get()
-#if RK_VIDEO_SKIP_LINE
-                                                   , layer.SkipLine
-#endif
-                                                   );
-            if (ret) {
-                ALOGE("Failed to import rga buffer ret=%d", ret);
-                goto err;
-            }
+    /*
+     * DUAL_VIEW_MODE
+     * Primary layers   ->    Primary Device
+     *                  |
+     *                  ->    Extend Device
+     */
+#if DUAL_VIEW_MODE
 
-            ret = layer.handle.CopyBufferHandle(layer.rga_handle, ctx->gralloc);
-            if (ret) {
-                ALOGE("Failed to copy rga handle ret=%d", ret);
-                goto err;
-            }
-        }
-#endif
-      }
-      map.layers.emplace_back(std::move(layer));
+    DrmConnector *c = ctx->drm.GetConnectorFromType(i);
+    if (!c || c->state() != DRM_MODE_CONNECTED || num_dc_layers==1) {
+        ALOGE("DUAL:display %zu Connector is NULL or disconnect ,layer_list is NULL",i);
+        continue;
     }
+    hwc_drm_display_t *hd = &ctx->displays[c->display()];
+    if(hd->bDualViewMode){
+      DrmHwcDisplayContents &display_contents_pri = ctx->layer_contents[0];
+
+      layers_map.emplace_back();
+      DrmCompositionDisplayLayersMap &map = layers_map.back();
+      map.display = i;
+      map.geometry_changed =
+          (dc->flags & HWC_GEOMETRY_CHANGED) == HWC_GEOMETRY_CHANGED;
+      for (size_t j=0; j< display_contents.layers.size(); j++) {
+        DrmHwcLayer &layer = display_contents.layers[j];
+        DrmHwcLayer &layer_pri = display_contents_pri.layers[j];
+        if(!layer_pri.sf_handle && layer_pri.raw_sf_layer->handle)
+        {
+          layer_pri.sf_handle = layer_pri.raw_sf_layer->handle;
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
+          layer.width = hwc_get_handle_attibute(ctx->gralloc,layer_pri.sf_handle,ATT_WIDTH);
+          layer.height = hwc_get_handle_attibute(ctx->gralloc,layer_pri.sf_handle,ATT_HEIGHT);
+          layer.stride = hwc_get_handle_attibute(ctx->gralloc,layer_pri.sf_handle,ATT_STRIDE);
+          layer.format = hwc_get_handle_attibute(ctx->gralloc,layer_pri.sf_handle,ATT_FORMAT);
+#else
+          layer.width = hwc_get_handle_width(ctx->gralloc,layer_pri.sf_handle);
+          layer.height = hwc_get_handle_height(ctx->gralloc,layer_pri.sf_handle);
+          layer.stride = hwc_get_handle_stride(ctx->gralloc,layer_pri.sf_handle);
+          layer.format = hwc_get_handle_format(ctx->gralloc,layer_pri.sf_handle);
+#endif
+        }
+        if(!layer_pri.sf_handle)
+        {
+          ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
+          signal_all_fence(display_contents, dc);
+          ctx->drm.ClearDisplay(i);
+          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
+          layers_map.erase(iter);
+          break;
+        }
+        if(!layer_pri.bClone_)
+        {
+#if RK_RGA_PREPARE_ASYNC
+          if(!layer_pri.is_rotate_by_rga)
+#endif
+              layer.ImportBuffer(ctx, layer_pri.raw_sf_layer, ctx->importer.get());
+#if RK_RGA_PREPARE_ASYNC
+          else
+          {
+              ret = layer.buffer.ImportBuffer(layer_pri.rga_handle,
+                                                     ctx->importer.get()
+#if RK_VIDEO_SKIP_LINE
+                                                     , layer_pri.SkipLine
+#endif
+                                                     );
+              if (ret) {
+                  ALOGE("Failed to import rga buffer ret=%d", ret);
+                  goto err;
+              }
+
+              ret = layer_pri.handle.CopyBufferHandle(layer_pri.rga_handle, ctx->gralloc);
+              if (ret) {
+                  ALOGE("Failed to copy rga handle ret=%d", ret);
+                  goto err;
+              }
+          }
+#endif
+        }
+        map.layers.emplace_back(std::move(layer));
+      }
+    }else
+#endif //DUAL_VIEW_MODE
+    {
+      layers_map.emplace_back();
+      DrmCompositionDisplayLayersMap &map = layers_map.back();
+      map.display = i;
+      map.geometry_changed =
+          (dc->flags & HWC_GEOMETRY_CHANGED) == HWC_GEOMETRY_CHANGED;
+      for (size_t j=0; j< display_contents.layers.size(); j++) {
+        DrmHwcLayer &layer = display_contents.layers[j];
+        if(!layer.sf_handle && layer.raw_sf_layer->handle)
+        {
+          layer.sf_handle = layer.raw_sf_layer->handle;
+#if (!RK_PER_MODE && RK_DRM_GRALLOC)
+          layer.width = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_WIDTH);
+          layer.height = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_HEIGHT);
+          layer.stride = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_STRIDE);
+          layer.format = hwc_get_handle_attibute(ctx->gralloc,layer.sf_handle,ATT_FORMAT);
+#else
+          layer.width = hwc_get_handle_width(ctx->gralloc,layer.sf_handle);
+          layer.height = hwc_get_handle_height(ctx->gralloc,layer.sf_handle);
+          layer.stride = hwc_get_handle_stride(ctx->gralloc,layer.sf_handle);
+          layer.format = hwc_get_handle_format(ctx->gralloc,layer.sf_handle);
+#endif
+        }
+        if(!layer.sf_handle)
+        {
+          ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
+          signal_all_fence(display_contents, dc);
+          ctx->drm.ClearDisplay(i);
+          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
+          layers_map.erase(iter);
+          break;
+        }
+        if(!layer.bClone_)
+        {
+#if RK_RGA_PREPARE_ASYNC
+          if(!layer.is_rotate_by_rga)
+#endif
+              layer.ImportBuffer(ctx, layer.raw_sf_layer, ctx->importer.get());
+#if RK_RGA_PREPARE_ASYNC
+          else
+          {
+              ret = layer.buffer.ImportBuffer(layer.rga_handle,
+                                                     ctx->importer.get()
+#if RK_VIDEO_SKIP_LINE
+                                                     , layer.SkipLine
+#endif
+                                                     );
+              if (ret) {
+                  ALOGE("Failed to import rga buffer ret=%d", ret);
+                  goto err;
+              }
+
+              ret = layer.handle.CopyBufferHandle(layer.rga_handle, ctx->gralloc);
+              if (ret) {
+                  ALOGE("Failed to copy rga handle ret=%d", ret);
+                  goto err;
+              }
+          }
+#endif
+        }
+        map.layers.emplace_back(std::move(layer));
+      }
+    }
+
   }
 
   if(layers_map.size() == 0)

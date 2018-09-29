@@ -350,6 +350,14 @@ endif
 ifeq ($(TARGET_USES_HWC2),true)
     LOCAL_CFLAGS += -DUSE_HWC2
 endif
+
+# DUAL_VIEW_MODE enable
+ifeq ($(strip $(BOARD_MULTISCREEN_SPLICING)),true)
+LOCAL_CPPFLAGS += -DDUAL_VIEW_MODE=1
+else
+LOCAL_CPPFLAGS += -DDUAL_VIEW_MODE=0
+endif
+
 # RK_RGA_PREPARE_ASYNC and RK_RGA_COMPSITE_SYNC are exclusive.
 # 	RK_RGA_PREPARE_ASYNC: use async rga in hwc_prepare.
 #	RK_RGA_COMPSITE_SYNC: use sync rga in composite thread.

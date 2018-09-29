@@ -1257,6 +1257,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
         }
         layer.acquire_fence.Close();
       }
+
       if (
 #if RK_3D_VIDEO
       !layer.bClone_ &&
@@ -1266,7 +1267,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
         break;
       }
 
-     // DumpLayer(layer.name.c_str(),layer.get_usable_handle());
+     //DumpLayer(layer.name.c_str(),layer.get_usable_handle());
 
 #if RK_VIDEO_SKIP_LINE
       SkipLine = layer.SkipLine;
