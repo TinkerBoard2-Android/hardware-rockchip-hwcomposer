@@ -851,18 +851,20 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
   hwc_drm_display_t *hd = &ctx->displays[conn->display()];
 
 #if DUAL_VIEW_MODE
-  int dualModeEnable = 0,dualModeTB = 0,dualModeRatio = 0;
+  int dualModeEnable = 0,dualModeTB = 0,dualModeRatioPri = 0,dualModeRatioAux = 0;
   char value[PROPERTY_VALUE_MAX];
   property_get("persist.sys.dualModeEnable", value, "0");
   dualModeEnable = atoi(value);
   property_get("persist.sys.dualModeTB", value, "0");
   dualModeTB = atoi(value);
-  property_get("persist.sys.dualModeRatio", value, "0");
-  dualModeRatio = atoi(value);
+  property_get("persist.sys.dualModeRatioPri", value, "0");
+  dualModeRatioPri = atoi(value);
+  property_get("persist.sys.dualModeRatioAux", value, "0");
+  dualModeRatioAux = atoi(value);
 
   //DUAL_VIEW_MODE only support 2 or 3 Ratio
-  if(dualModeRatio != 2 && dualModeRatio != 3){
-    ALOGE_IF(log_level(DBG_ERROR),"DUAL:Only support 2 or 3 Ration (%d) , disable DUAL_VIEW_MODE",dualModeRatio);
+  if(dualModeRatioPri == 0 || dualModeRatioAux == 0){
+    ALOGE_IF(log_level(DBG_ERROR),"DUAL:Not support 0 Ration (%d:%d) , disable DUAL_VIEW_MODE",dualModeRatioPri,dualModeRatioAux);
     dualModeEnable = 0;
   }
 
@@ -883,19 +885,19 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
       if(dualModeTB == 1)
         source_crop = DrmHwcRect<float>(
           sf_layer->sourceCropf.left, sf_layer->sourceCropf.top,
-          sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom / dualModeRatio);
+          sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom / (dualModeRatioPri + dualModeRatioAux) * dualModeRatioPri);
       else
         source_crop = DrmHwcRect<float>(
           sf_layer->sourceCropf.left, sf_layer->sourceCropf.top,
-          sf_layer->sourceCropf.right / dualModeRatio , sf_layer->sourceCropf.bottom);
+          sf_layer->sourceCropf.right / (dualModeRatioPri + dualModeRatioAux) * dualModeRatioPri , sf_layer->sourceCropf.bottom);
     }else if(display == 1){
       if(dualModeTB == 1)
         source_crop = DrmHwcRect<float>(
-          sf_layer->sourceCropf.left, sf_layer->sourceCropf.top + sf_layer->sourceCropf.bottom / dualModeRatio,
+          sf_layer->sourceCropf.left, sf_layer->sourceCropf.top + sf_layer->sourceCropf.bottom / (dualModeRatioPri + dualModeRatioAux) * dualModeRatioPri,
           sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom);
       else
         source_crop = DrmHwcRect<float>(
-          sf_layer->sourceCropf.left + sf_layer->sourceCropf.right / dualModeRatio , sf_layer->sourceCropf.top,
+          sf_layer->sourceCropf.left + sf_layer->sourceCropf.right / (dualModeRatioPri + dualModeRatioAux) * dualModeRatioPri , sf_layer->sourceCropf.top,
           sf_layer->sourceCropf.right, sf_layer->sourceCropf.bottom);
 
     }
