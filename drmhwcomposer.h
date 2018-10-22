@@ -244,7 +244,7 @@ struct DrmHwcLayer {
 
 #if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
   bool is_rotate_by_rga;
-  buffer_handle_t rga_handle;
+  buffer_handle_t rga_handle = NULL;
 #endif
   float h_scale_mul;
   float v_scale_mul;
@@ -256,7 +256,7 @@ struct DrmHwcLayer {
   bool bUse;
   bool bMix;
   int stereo;
-  hwc_layer_1_t *raw_sf_layer;
+  hwc_layer_1_t *raw_sf_layer = NULL;
   int format;
   int width;
   int height;
@@ -268,7 +268,7 @@ struct DrmHwcLayer {
   uint16_t eotf;
   std::string name;
   size_t index;
-  hwc_layer_1_t *mlayer;
+  hwc_layer_1_t *mlayer = NULL;
   hwc_rect_t  rect_merge;
 
   int ImportBuffer(struct hwc_context_t *ctx, hwc_layer_1_t *sf_layer, Importer *importer);

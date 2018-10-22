@@ -838,6 +838,8 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 #endif
   bUse = true;
   sf_handle = sf_layer->handle;
+  raw_sf_layer = sf_layer;
+  mlayer = sf_layer;
   alpha = sf_layer->planeAlpha;
   frame_no = get_frame();
 
@@ -1180,7 +1182,6 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     is_rotate_by_rga = false;
 #endif
     bMix = false;
-    raw_sf_layer = sf_layer;
     bpp = android::bytesPerPixel(format);
     size = (source_crop.right - source_crop.left) * (source_crop.bottom - source_crop.top) * bpp;
     is_large = (mode.h_display()*mode.v_display()*4*3/4 > size)? true:false;
@@ -1198,7 +1199,6 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     name = layername;
 #endif
 
-    mlayer = sf_layer;
 
     ALOGV("\t sourceCropf(%f,%f,%f,%f)",source_crop.left,source_crop.top,source_crop.right,source_crop.bottom);
     ALOGV("h_scale_mul=%f,v_scale_mul=%f,is_scale=%d,is_large=%d",h_scale_mul,v_scale_mul,is_scale,is_large);
@@ -3320,7 +3320,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
           (dc->flags & HWC_GEOMETRY_CHANGED) == HWC_GEOMETRY_CHANGED;
       for (size_t j=0; j< display_contents.layers.size(); j++) {
         DrmHwcLayer &layer = display_contents.layers[j];
-        if(!layer.sf_handle && layer.raw_sf_layer->handle)
+        if(!layer.sf_handle && layer.raw_sf_layer && layer.raw_sf_layer->handle)
         {
           layer.sf_handle = layer.raw_sf_layer->handle;
 #if (!RK_PER_MODE && RK_DRM_GRALLOC)
@@ -3338,6 +3338,16 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
         if(!layer.sf_handle)
         {
           ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
+          signal_all_fence(display_contents, dc);
+          ctx->drm.ClearDisplay(i);
+          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
+          layers_map.erase(iter);
+          break;
+        }
+
+        if(!layer.raw_sf_layer)
+        {
+          ALOGE("%s: disply=%zu raw_sf_handle is null, hw_layer init error",__FUNCTION__,i);
           signal_all_fence(display_contents, dc);
           ctx->drm.ClearDisplay(i);
           std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;

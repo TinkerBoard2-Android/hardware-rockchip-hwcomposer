@@ -657,9 +657,11 @@ DrmConnector *DrmResources::GetConnectorFromType(int display_type) const {
 }
 
 DrmCrtc *DrmResources::GetCrtcFromConnector(DrmConnector *conn) const {
-   if (conn->encoder())
-     return conn->encoder()->crtc();
-   return NULL;
+  DrmEncoder *encoder = conn->encoder();
+  if (NULL != encoder)
+    return encoder->crtc();
+  else
+    return NULL;
 }
 
 DrmPlane *DrmResources::GetPlane(uint32_t id) const {

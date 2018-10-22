@@ -1651,6 +1651,8 @@ void DrmDisplayCompositor::SingalCompsition(std::unique_ptr<DrmDisplayCompositio
               if(!(layer.gralloc_buffer_usage & 0x08000000))
 #endif
               {
+#if 0
+
                   for (int i = 0; i < kAcquireWaitTries; ++i) {
                       int fence_timeout = kAcquireWaitTimeoutMs * (1 << i);
                       total_fence_timeout += fence_timeout;
@@ -1668,6 +1670,13 @@ void DrmDisplayCompositor::SingalCompsition(std::unique_ptr<DrmDisplayCompositio
                       ALOGE("Failed to wait for acquire %d/%d", acquire_fence, ret);
                       break;
                   }
+#endif
+                  ret = sync_wait(acquire_fence, 1500);
+                  if (ret) {
+                    ALOGE("Failed to wait for acquire %d/%d 1500ms", acquire_fence, ret);
+                    break;
+                  }
+
               }
               layer.acquire_fence.Close();
           }
