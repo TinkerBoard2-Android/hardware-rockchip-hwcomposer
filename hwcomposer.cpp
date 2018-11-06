@@ -350,11 +350,13 @@ class DrmHotplugHandler : public DrmEventHandler {
     hd->rel_yres = mode.v_display();
     hd->v_total = mode.v_total();
     hd->active = false;
-    g_bSkipExtern = true;
-    g_extern_gles_cnt = 0;
-    procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
-    hd->active = true;
-    procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
+    if( extend != old_extend ){
+      g_bSkipExtern = true;
+      g_extern_gles_cnt = 0;
+      procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
+      hd->active = true;
+      procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
+    }
     /**********************long-running operations should move back of hotplug**************************/
     /*
      * If Connector changed ,update baseparameter , resolution , color.
