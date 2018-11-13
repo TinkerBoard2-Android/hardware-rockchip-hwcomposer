@@ -350,7 +350,8 @@ class DrmHotplugHandler : public DrmEventHandler {
     hd->rel_yres = mode.v_display();
     hd->v_total = mode.v_total();
     hd->active = false;
-    if( extend != old_extend ){
+    //if extend is connected at boot time, to upload this hotplug event.
+    if( extend != old_extend || (get_frame() == 1 && extend != NULL)){
       g_bSkipExtern = true;
       g_extern_gles_cnt = 0;
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
