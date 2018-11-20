@@ -121,13 +121,14 @@ int DrmConnector::Init() {
   }
 
   bSupportSt2084_ = drm_->is_hdr_panel_support_st2084(this);
+  bSupportHLG_    = drm_->is_hdr_panel_support_HLG(this);
 
   return 0;
 }
 
 bool DrmConnector::is_hdmi_support_hdr() const
 {
-    return hdr_metadata_property_.id() && bSupportSt2084_;
+    return (hdr_metadata_property_.id() && bSupportSt2084_) || (hdr_metadata_property_.id() && bSupportHLG_);
 }
 
 uint32_t DrmConnector::id() const {

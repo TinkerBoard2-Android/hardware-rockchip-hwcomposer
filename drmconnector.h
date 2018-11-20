@@ -111,6 +111,7 @@ class DrmConnector {
   int possible_displays() { return possible_displays_; }
 
   bool isSupportSt2084() { return bSupportSt2084_; }
+  bool isSupportHLG() { return bSupportHLG_; }
   bool is_hdmi_support_hdr() const;
 
   uint32_t mm_width() const;
@@ -157,6 +158,7 @@ class DrmConnector {
   uint32_t possible_displays_;
 
   bool bSupportSt2084_;
+  bool bSupportHLG_;
 
   drmModeConnectorPtr connector_;
 };

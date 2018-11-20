@@ -2559,8 +2559,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                 hd->is10bitVideo = true;
                 hd->isVideo = true;
                 usage = hwc_get_handle_usage(ctx->gralloc,layer->handle);
-
-                if((usage & 0x0F000000) == HDRUSAGE)
+                if((usage & 0x0F000000) == HDR_ST2084_USAGE || (usage & 0x0F000000) == HDR_HLG_USAGE)
                 {
                     isHdr = true;
                     //vop limit: hdr video must in the bottom.
@@ -2571,13 +2570,22 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                     }
                     if(hd->isHdr != isHdr && connector->is_hdmi_support_hdr())
                     {
+                        ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d isSupportSt2084 = %d, isSupportHLG = %d",__FUNCTION__,__LINE__,
+                             connector->isSupportSt2084(),connector->isSupportHLG() );
                         uint32_t android_colorspace = hwc_get_layer_colorspace(layer);
                         struct hdr_static_metadata hdr_metadata;
                         memset(&hdr_metadata, 0, sizeof(hdr_metadata));
-                        if((android_colorspace & HAL_DATASPACE_TRANSFER_MASK) == HAL_DATASPACE_TRANSFER_ST2084)
+                        if((android_colorspace & HAL_DATASPACE_TRANSFER_MASK) == HAL_DATASPACE_TRANSFER_ST2084
+                            && connector->isSupportSt2084())
                         {
                             ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d has st2084",__FUNCTION__,__LINE__);
                             hdr_metadata.eotf = SMPTE_ST2084;
+                        }
+                        else if((android_colorspace & HAL_DATASPACE_TRANSFER_MASK) == HAL_DATASPACE_TRANSFER_HLG
+                            && connector->isSupportHLG())
+                        {
+                            ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d has HLG",__FUNCTION__,__LINE__);
+                            hdr_metadata.eotf = HLG;
                         }
                         else
                         {
