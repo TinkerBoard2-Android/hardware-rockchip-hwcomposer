@@ -3215,6 +3215,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   if (ret)
     return ret;
 #endif
+  int fail_displays_count = 0;
   for (size_t i = 0; i < num_displays; ++i) {
     hwc_display_contents_1_t *dc = sf_display_contents[i];
     DrmHwcDisplayContents &display_contents = ctx->layer_contents[i];
@@ -3226,6 +3227,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
         if( i == fail_display )
         {
             bFindDisplay = true;
+	    fail_displays_count ++;
             ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d,Find fail display %zu",__FUNCTION__,__LINE__,i);
             break;
         }
@@ -3278,7 +3280,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
           ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
           signal_all_fence(display_contents, dc);
           ctx->drm.ClearDisplay(i);
-          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
+          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i - fail_displays_count;
           layers_map.erase(iter);
           break;
         }
@@ -3342,7 +3344,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
           ALOGE("%s: disply=%zu sf_handle is null,maybe fb target is null",__FUNCTION__,i);
           signal_all_fence(display_contents, dc);
           ctx->drm.ClearDisplay(i);
-          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
+          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i - fail_displays_count;
           layers_map.erase(iter);
           break;
         }
@@ -3352,7 +3354,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
           ALOGE("%s: disply=%zu raw_sf_handle is null, hw_layer init error",__FUNCTION__,i);
           signal_all_fence(display_contents, dc);
           ctx->drm.ClearDisplay(i);
-          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i;
+          std::vector<DrmCompositionDisplayLayersMap>::iterator iter = layers_map.begin()+i - fail_displays_count;
           layers_map.erase(iter);
           break;
         }
