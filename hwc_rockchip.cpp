@@ -3531,7 +3531,7 @@ int hwc_SetGamma(DrmResources *drm)
 
 bool hwc_isGammaSetEnable(int type) {
     return type == DRM_MODE_CONNECTOR_eDP || type == DRM_MODE_CONNECTOR_LVDS ||
-        type == DRM_MODE_CONNECTOR_DSI;
+        type == DRM_MODE_CONNECTOR_DSI || type == DRM_MODE_CONNECTOR_DPI;
 }
 int hwc_setGamma(int fd, uint32_t crtc_id, uint32_t size,
         uint16_t *red, uint16_t *green, uint16_t *blue)
