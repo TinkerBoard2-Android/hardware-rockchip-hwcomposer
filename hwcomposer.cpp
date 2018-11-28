@@ -412,6 +412,7 @@ struct hwc_context_t {
   int fb_fd;
   int fb_blanked;
   int hdmi_status_fd;
+  int dp_status_fd;
 #if RK_CTS_WORKROUND
   FILE* regFile;
 #endif
@@ -1804,6 +1805,19 @@ static HDMI_STAT detect_hdmi_status(void)
         return HDMI_ON;
 }
 
+static HDMI_STAT detect_dp_status(void)
+{
+    char status[PROPERTY_VALUE_MAX];
+
+    property_get("sys.dp_status.aux", status, "on");
+    ALOGD_IF(log_level(DBG_VERBOSE),"detect_dp_status status=%s", status);
+    if(!strcmp(status, "off"))
+        return HDMI_OFF;
+    else
+        return HDMI_ON;
+}
+
+
 static bool parse_hdmi_output_format_prop(char* strprop, drm_hdmi_output_type *format, dw_hdmi_rockchip_color_depth *depth) {
     char color_depth[PROPERTY_VALUE_MAX];
     char color_format[PROPERTY_VALUE_MAX];
@@ -2283,7 +2297,9 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   int ret = -1;
   static HDMI_STAT last_hdmi_status = HDMI_ON;
+  static HDMI_STAT last_dp_status = HDMI_ON;
   char acStatus[10];
+
 #ifdef RK3368_PX5CAR
   int win1_reserved = hwc_get_int_property("sys.hwc.win1.reserved", "0");
 #endif
@@ -2325,6 +2341,22 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
         last_hdmi_status = hdmi_status;
         ALOGD_IF(log_level(DBG_VERBOSE),"set hdmi status to %s",acStatus);
+    }
+
+    HDMI_STAT dp_status = detect_dp_status();
+    if(ctx->dp_status_fd > 0 && dp_status != last_dp_status)
+    {
+        if(dp_status == HDMI_ON)
+            strcpy(acStatus,"detect");
+        else
+            strcpy(acStatus,"off");
+        ret = write(ctx->dp_status_fd,acStatus,strlen(acStatus)+1);
+        if(ret < 0)
+        {
+            ALOGE("set dp status to %s falied",acStatus);
+        }
+        ALOGD_IF(log_level(DBG_VERBOSE),"set dp status to %s",acStatus);
+        last_dp_status = dp_status;
     }
 
   for (int i = 0; i < (int)num_displays; ++i) {
@@ -4123,6 +4155,12 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
     }
 
     ctx->hdmi_status_fd = open(HDMI_STATUS_PATH, O_RDWR, 0);
+    if(ctx->hdmi_status_fd < 0)
+    {
+         ALOGE("Open hdmi_status_fd fail in %s",__FUNCTION__);
+         //return -1;
+    }
+    ctx->dp_status_fd = open(DP_STATUS_PATH, O_RDWR, 0);
     if(ctx->hdmi_status_fd < 0)
     {
          ALOGE("Open hdmi_status_fd fail in %s",__FUNCTION__);

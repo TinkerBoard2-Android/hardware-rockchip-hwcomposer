@@ -66,7 +66,9 @@
 #define HOTPLUG_MSLEEP			(200)
 
 // hdmi status path
-#define HDMI_STATUS_PATH		"/sys/devices/platform/display-subsystem/drm/card0/card0-HDMI-A-1/status"
+#define HDMI_STATUS_PATH    "/sys/devices/platform/display-subsystem/drm/card0/card0-HDMI-A-1/status"
+#define DP_STATUS_PATH      "/sys/devices/platform/display-subsystem/drm/card0/card0-DP-1/status"
+
 
 struct hwc_import_context;
 
