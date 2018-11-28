@@ -1793,30 +1793,62 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     return false;
 }
 
-static HDMI_STAT detect_hdmi_status(void)
+static HDMI_STAT DetectStatus(const char* property)
 {
     char status[PROPERTY_VALUE_MAX];
 
-    property_get("sys.hdmi_status.aux", status, "on");
-    ALOGD_IF(log_level(DBG_VERBOSE),"detect_hdmi_status status=%s", status);
+    property_get(property, status, "on");
+    ALOGD_IF(log_level(DBG_VERBOSE),"get %s is %s", property, status);
     if(!strcmp(status, "off"))
         return HDMI_OFF;
     else
         return HDMI_ON;
 }
 
-static HDMI_STAT detect_dp_status(void)
+/* 
+ * Use property on/off to enable/disable display devices
+ *   sys.hdmi_status.aux -> HDMI
+ *   sys.dp_status.aux   -> DP
+ */
+static void DetectAuxStatus(const hwc_context_t *ctx)
 {
-    char status[PROPERTY_VALUE_MAX];
-
-    property_get("sys.dp_status.aux", status, "on");
-    ALOGD_IF(log_level(DBG_VERBOSE),"detect_dp_status status=%s", status);
-    if(!strcmp(status, "off"))
-        return HDMI_OFF;
-    else
-        return HDMI_ON;
+  static HDMI_STAT last_hdmi_status = HDMI_ON;
+  static HDMI_STAT last_dp_status = HDMI_ON;
+  char acStatus[10];
+  int ret = 0;
+  HDMI_STAT hdmi_status = DetectStatus("sys.hdmi_status.aux");
+  if(ctx->hdmi_status_fd > 0 && hdmi_status != last_hdmi_status)
+  {
+      if(hdmi_status == HDMI_ON)
+          strcpy(acStatus,"detect");
+      else
+          strcpy(acStatus,"off");
+      ret = write(ctx->hdmi_status_fd,acStatus,strlen(acStatus)+1);
+      if(ret < 0)
+      {
+          ALOGE("set hdmi status to %s falied, ret = %d", acStatus, ret);
+      }
+      last_hdmi_status = hdmi_status;
+      ALOGD_IF(log_level(DBG_VERBOSE),"set hdmi status to %s",acStatus);
+  }
+  
+  HDMI_STAT dp_status = DetectStatus("sys.dp_status.aux");
+  if(ctx->dp_status_fd > 0 && dp_status != last_dp_status)
+  {
+      if(dp_status == HDMI_ON)
+          strcpy(acStatus,"detect");
+      else
+          strcpy(acStatus,"off");
+      ret = write(ctx->dp_status_fd,acStatus,strlen(acStatus)+1);
+      if(ret < 0)
+      {
+          ALOGE("set dp status to %s falied, ret = %d", acStatus, ret);
+      }
+      ALOGD_IF(log_level(DBG_VERBOSE),"set dp status to %s",acStatus);
+      last_dp_status = dp_status;
+  }
+  return ;
 }
-
 
 static bool parse_hdmi_output_format_prop(char* strprop, drm_hdmi_output_type *format, dw_hdmi_rockchip_color_depth *depth) {
     char color_depth[PROPERTY_VALUE_MAX];
@@ -2296,9 +2328,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                        hwc_display_contents_1_t **display_contents) {
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   int ret = -1;
-  static HDMI_STAT last_hdmi_status = HDMI_ON;
-  static HDMI_STAT last_dp_status = HDMI_ON;
-  char acStatus[10];
 
 #ifdef RK3368_PX5CAR
   int win1_reserved = hwc_get_int_property("sys.hwc.win1.reserved", "0");
@@ -2327,37 +2356,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 
     ctx->drm.UpdateDisplayRoute();
 
-    HDMI_STAT hdmi_status = detect_hdmi_status();
-    if(ctx->hdmi_status_fd > 0 && hdmi_status != last_hdmi_status)
-    {
-        if(hdmi_status == HDMI_ON)
-            strcpy(acStatus,"detect");
-        else
-            strcpy(acStatus,"off");
-        ret = write(ctx->hdmi_status_fd,acStatus,strlen(acStatus)+1);
-        if(ret < 0)
-        {
-            ALOGE("set hdmi status to %s falied",acStatus);
-        }
-        last_hdmi_status = hdmi_status;
-        ALOGD_IF(log_level(DBG_VERBOSE),"set hdmi status to %s",acStatus);
-    }
-
-    HDMI_STAT dp_status = detect_dp_status();
-    if(ctx->dp_status_fd > 0 && dp_status != last_dp_status)
-    {
-        if(dp_status == HDMI_ON)
-            strcpy(acStatus,"detect");
-        else
-            strcpy(acStatus,"off");
-        ret = write(ctx->dp_status_fd,acStatus,strlen(acStatus)+1);
-        if(ret < 0)
-        {
-            ALOGE("set dp status to %s falied",acStatus);
-        }
-        ALOGD_IF(log_level(DBG_VERBOSE),"set dp status to %s",acStatus);
-        last_dp_status = dp_status;
-    }
+    DetectAuxStatus(ctx);
 
   for (int i = 0; i < (int)num_displays; ++i) {
     bool use_framebuffer_target = false;
