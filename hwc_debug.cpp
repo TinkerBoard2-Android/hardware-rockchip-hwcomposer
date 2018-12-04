@@ -64,7 +64,7 @@ int get_frame()
 int init_log_level()
 {
     char value[PROPERTY_VALUE_MAX];
-    property_get("sys.hwc.log", value, "0");
+    property_get( PROPERTY_TYPE ".hwc.log", value, "0");
     g_log_level = atoi(value);
     return 0;
 }
@@ -94,7 +94,7 @@ int DumpLayer(const char* layer_name,buffer_handle_t handle)
 {
     char pro_value[PROPERTY_VALUE_MAX];
 
-    property_get("sys.dump",pro_value,0);
+    property_get( PROPERTY_TYPE ".dump",pro_value,0);
 
     if(handle && !strcmp(pro_value,"true"))
     {
@@ -151,7 +151,7 @@ int DumpLayer(const char* layer_name,buffer_handle_t handle)
         if(DumpSurfaceCount > DUMP_LAYER_CNT)
         {
             DumpSurfaceCount = 0;
-            property_set("sys.dump","0");
+            property_set( PROPERTY_TYPE ".dump","0");
         }
     }
     return 0;
@@ -171,7 +171,7 @@ void hwc_dump_fps(void)
 
 	++n_frames;
 
-	if (property_get_bool("sys.hwc.fps", 0))
+	if (property_get_bool( PROPERTY_TYPE ".hwc.fps", 0))
 	{
 		unsigned int time = HWC_Clockms();
 		unsigned int intv = time - lastTime;

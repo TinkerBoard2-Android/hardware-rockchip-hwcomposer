@@ -843,7 +843,7 @@ int DrmDisplayCompositor::DisablePlanes(DrmDisplayComposition *display_comp) {
 
   int ret;
 #ifdef RK3368_PX5CAR
-  int win1_reserved = hwc_get_int_property("sys.hwc.win1.reserved", "0");
+  int win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
 #endif
   std::vector<DrmCompositionPlane> &comp_planes =
       display_comp->composition_planes();
@@ -1098,11 +1098,11 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     else
     {
         if(display_ == 0){
-          property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
+          property_get("persist." PROPERTY_TYPE ".overscan.main", overscan, "use_baseparameter");
           if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
             hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
         }else{
-          property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
+          property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "use_baseparameter");
           if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
             hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
         }
@@ -1137,8 +1137,8 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 
 #if RK_VR
   float w_scale=1.0,h_scale=1.0;
-  int xxx_w =  hwc_get_int_property("sys.xxx.x_w","720");
-  int xxx_h =  hwc_get_int_property("sys.xxx.x_h","1280");
+  int xxx_w =  hwc_get_int_property( PROPERTY_TYPE ".xxx.x_w","720");
+  int xxx_h =  hwc_get_int_property( PROPERTY_TYPE ".xxx.x_h","1280");
   uint32_t act_w, act_h;
   std::tie(act_w, act_h, ret) = GetActiveModeResolution();
   if (ret) {
@@ -1163,7 +1163,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     //Find out the fb target for clone layer.
     int fb_target_fb_id = -1;
 #ifdef RK3368_PX5CAR
-    int win1_reserved = hwc_get_int_property("sys.hwc.win1.reserved", "0");
+    int win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
 #endif
 
 #if RK_3D_VIDEO
@@ -1578,7 +1578,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 PRINT_TIME_START;
     char value[PROPERTY_VALUE_MAX];
     int new_value;
-    property_get("sys.hwc.msleep", value, "0");
+    property_get( PROPERTY_TYPE ".hwc.msleep", value, "0");
     new_value = atoi(value);
     usleep(new_value*1000);
 

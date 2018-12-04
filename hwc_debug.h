@@ -96,7 +96,7 @@ bool log_level(LOG_LEVEL log_level);
 #define PRINT_TIME_END(tag)        \
     gettimeofday(&tpend2,NULL);\
     usec1 = 1000*(tpend2.tv_sec - tpend1.tv_sec) + (tpend2.tv_usec- tpend1.tv_usec)/1000;\
-    if (property_get_bool("sys.hwc.time", 0)) \
+    if (property_get_bool( PROPERTY_TYPE ".hwc.time", 0)) \
     ALOGD_IF(1,"%s use time=%ld ms",tag,usec1);
 
 

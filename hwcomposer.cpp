@@ -457,7 +457,7 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   static uint32_t last_mainType,last_auxType;
   uint32_t MaxResolution = 0,temp;
 
-  timeline = property_get_int32("sys.display.timeline", -1);
+  timeline = property_get_int32( PROPERTY_TYPE ".display.timeline", -1);
   /*
    * force update propetry when timeline is zero or not exist.
    */
@@ -471,14 +471,14 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   {
     if(hwc_have_baseparameter() && c->get_type() != last_mainType)
     {
-        property_set("persist.sys.resolution.main","use_baseparameter");
+        property_set("persist." PROPERTY_TYPE ".resolution.main","use_baseparameter");
         ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main resolution",last_mainType,c->get_type());
         last_mainType = c->get_type();
     }
     /* if baseparameter exist to use it, if none set to "Auto" */
     if(hwc_have_baseparameter()){
-      property_get("persist.sys.resolution.main", resolution, "use_baseparameter");
-      property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
+      property_get("persist." PROPERTY_TYPE ".resolution.main", resolution, "use_baseparameter");
+      property_get( PROPERTY_TYPE ".3d_resolution.main", resolution_3d, "0x0p0-0:0");
       if(!(strcmp(resolution,"use_baseparameter"))){
         int res = 0;
         res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION,c->get_type());
@@ -487,22 +487,22 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
         }
       }
     }else{
-      property_get("persist.sys.resolution.main", resolution, "Auto");
-      property_get("sys.3d_resolution.main", resolution_3d, "0x0p0-0:0");
+      property_get("persist." PROPERTY_TYPE ".resolution.main", resolution, "Auto");
+      property_get( PROPERTY_TYPE ".3d_resolution.main", resolution_3d, "0x0p0-0:0");
     }
   }
   else
   {
     if(hwc_have_baseparameter() && c->get_type() != last_auxType)
     {
-        property_set("persist.sys.resolution.aux","use_baseparameter");
+        property_set("persist." PROPERTY_TYPE ".resolution.aux","use_baseparameter");
         ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux resolution",last_auxType,c->get_type());
         last_auxType = c->get_type();
     }
     /* if baseparameter exist to use it, if none set to "Auto" */
     if(hwc_have_baseparameter()){
-      property_get("persist.sys.resolution.aux", resolution, "use_baseparameter");
-      property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
+      property_get("persist." PROPERTY_TYPE ".resolution.aux", resolution, "use_baseparameter");
+      property_get( PROPERTY_TYPE ".3d_resolution.aux", resolution_3d, "0x0p0-0:0");
       if(!(strcmp(resolution,"use_baseparameter"))){
         int res = 0;
         res = hwc_get_baseparameter_config(resolution,display,BP_RESOLUTION,c->get_type());
@@ -511,8 +511,8 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
         }
       }
     }else{
-      property_get("persist.sys.resolution.aux", resolution, "Auto");
-      property_get("sys.3d_resolution.aux", resolution_3d, "0x0p0-0:0");
+      property_get("persist." PROPERTY_TYPE ".resolution.aux", resolution, "Auto");
+      property_get( PROPERTY_TYPE ".3d_resolution.aux", resolution_3d, "0x0p0-0:0");
     }
   }
   hwc_set_baseparameter_config(&hd->ctx->drm);
@@ -864,13 +864,13 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 #if DUAL_VIEW_MODE
   int dualModeEnable = 0,dualModeTB = 0,dualModeRatioPri = 0,dualModeRatioAux = 0;
   char value[PROPERTY_VALUE_MAX];
-  property_get("persist.sys.dualModeEnable", value, "0");
+  property_get("persist." PROPERTY_TYPE ".dualModeEnable", value, "0");
   dualModeEnable = atoi(value);
-  property_get("persist.sys.dualModeTB", value, "0");
+  property_get("persist." PROPERTY_TYPE ".dualModeTB", value, "0");
   dualModeTB = atoi(value);
-  property_get("persist.sys.dualModeRatioPri", value, "0");
+  property_get("persist." PROPERTY_TYPE ".dualModeRatioPri", value, "0");
   dualModeRatioPri = atoi(value);
-  property_get("persist.sys.dualModeRatioAux", value, "0");
+  property_get("persist." PROPERTY_TYPE ".dualModeRatioAux", value, "0");
   dualModeRatioAux = atoi(value);
 
   //DUAL_VIEW_MODE only support 2 or 3 Ratio
@@ -882,8 +882,8 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
   //DUAL_VIEW_MODE Primary framebuffer must equal to Extend
   char framebuffer_size_pri[PROPERTY_VALUE_MAX] = {0};
   char framebuffer_size_aux[PROPERTY_VALUE_MAX] = {0};
-  property_get("persist.sys.framebuffer.main", framebuffer_size_pri, "main");
-  property_get("persist.sys.framebuffer.aux", framebuffer_size_aux, "aux");
+  property_get("persist." PROPERTY_TYPE ".framebuffer.main", framebuffer_size_pri, "main");
+  property_get("persist." PROPERTY_TYPE ".framebuffer.aux", framebuffer_size_aux, "aux");
   if(strcmp(framebuffer_size_pri,framebuffer_size_aux)){
     ALOGE_IF(log_level(DBG_ERROR),"DUAL:Primary framebuffer is not  equal to Extend, disable DUAL_VIEW_MODE");
     dualModeEnable = 0;
@@ -891,7 +891,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 
   if(dualModeEnable == 1){
     hd->bDualViewMode = true;
-    property_set("sys.hwc.compose_policy","0");
+    property_set( PROPERTY_TYPE ".hwc.compose_policy","0");
     if(display == 0){
       if(dualModeTB == 1)
         source_crop = DrmHwcRect<float>(
@@ -972,11 +972,11 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         else
         {
             if (display == 0){
-                property_get("persist.sys.overscan.main", overscan, "use_baseparameter");
+                property_get("persist." PROPERTY_TYPE ".overscan.main", overscan, "use_baseparameter");
                 if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
                   hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }else{
-                property_get("persist.sys.overscan.aux", overscan, "use_baseparameter");
+                property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "use_baseparameter");
                 if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
                   hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }
@@ -1136,7 +1136,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     if(is_yuv){
       char value_yuv[PROPERTY_VALUE_MAX];
       int scaleMode = 0;
-      property_get("persist.sys.video.cvrs",value_yuv, "0");
+      property_get("persist." PROPERTY_TYPE ".video.cvrs",value_yuv, "0");
       scaleMode = atoi(value_yuv);
       if(scaleMode > 0){
           ret = hwc_video_to_area(source_crop,display_frame,scaleMode);
@@ -1305,7 +1305,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         if(iFbdcSupport <= 0)
         {
             char fbdc_value[PROPERTY_VALUE_MAX];
-            int ret = property_get("sys.gmali.fbdc_target", fbdc_value, "0");
+            int ret = property_get( PROPERTY_TYPE ".gmali.fbdc_target", fbdc_value, "0");
             ALOGV("ret = %d",ret);
 
             iFbdcSupport = atoi(fbdc_value);
@@ -1382,17 +1382,17 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
         =2: DISPLAY_EXTERNAL go into overlay,DISPLAY_PRIMARY go into GPU.
         others: DISPLAY_PRIMARY & DISPLAY_EXTERNAL both go into overlay.
     */
-    int iMode = hwc_get_int_property("sys.hwc.compose_policy","0");
+    int iMode = hwc_get_int_property( PROPERTY_TYPE ".hwc.compose_policy","0");
     if( iMode <= 0 || (iMode == 1 && display_id == 2) || (iMode == 2 && display_id == 1) )
     {
-        ALOGD_IF(log_level(DBG_DEBUG),"sys.hwc.compose_policy=%d,go to GPU GLES at line=%d", iMode, __LINE__);
+        ALOGD_IF(log_level(DBG_DEBUG), PROPERTY_TYPE ".hwc.compose_policy=%d,go to GPU GLES at line=%d", iMode, __LINE__);
         return true;
     }
 
-    iMode = hwc_get_int_property("sys.hwc","1");
+    iMode = hwc_get_int_property( PROPERTY_TYPE ".hwc","1");
     if( iMode <= 0 )
     {
-        ALOGD_IF(log_level(DBG_DEBUG),"sys.hwc=%d,go to GPU GLES at line=%d", iMode, __LINE__);
+        ALOGD_IF(log_level(DBG_DEBUG), PROPERTY_TYPE ".hwc=%d,go to GPU GLES at line=%d", iMode, __LINE__);
         return true;
     }
 
@@ -1826,7 +1826,7 @@ static void DetectAuxStatus(const hwc_context_t *ctx)
   static HDMI_STAT last_dp_status = HDMI_ON;
   char acStatus[10];
   int ret = 0;
-  HDMI_STAT hdmi_status = DetectStatus("sys.hdmi_status.aux");
+  HDMI_STAT hdmi_status = DetectStatus( PROPERTY_TYPE ".hdmi_status.aux");
   if(ctx->hdmi_status_fd > 0 && hdmi_status != last_hdmi_status)
   {
       if(hdmi_status == HDMI_ON)
@@ -1842,7 +1842,7 @@ static void DetectAuxStatus(const hwc_context_t *ctx)
       ALOGD_IF(log_level(DBG_VERBOSE),"set hdmi status to %s",acStatus);
   }
   
-  HDMI_STAT dp_status = DetectStatus("sys.dp_status.aux");
+  HDMI_STAT dp_status = DetectStatus( PROPERTY_TYPE ".dp_status.aux");
   if(ctx->dp_status_fd > 0 && dp_status != last_dp_status)
   {
       if(dp_status == HDMI_ON)
@@ -1929,7 +1929,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     int need_change_depth = 0;
     char prop_format[PROPERTY_VALUE_MAX];
     static uint32_t last_mainType,last_auxType;
-    timeline = property_get_int32("sys.display.timeline", -1);
+    timeline = property_get_int32( PROPERTY_TYPE ".display.timeline", -1);
     drmModeAtomicReqPtr pset = NULL;
     /*
     * force update propetry when timeline is zero or not exist.
@@ -1943,11 +1943,11 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     if (display == HWC_DISPLAY_PRIMARY){
       if(hwc_have_baseparameter()){
         if(connector->get_type() != last_mainType){
-          property_set("persist.sys.color.main","use_baseparameter");
+          property_set("persist." PROPERTY_TYPE ".color.main","use_baseparameter");
           ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update main color",last_mainType,connector->get_type());
           last_mainType = connector->get_type();
         }
-        property_get("persist.sys.color.main", prop_format, "use_baseparameter");
+        property_get("persist." PROPERTY_TYPE ".color.main", prop_format, "use_baseparameter");
         hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){
@@ -1957,7 +1957,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
         }
       }else{
         /* if resolution is null,set to "Auto" */
-        property_get("persist.sys.color.main", prop_format, "Auto");
+        property_get("persist." PROPERTY_TYPE ".color.main", prop_format, "Auto");
         ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
         if (ret == false) {
           ALOGE("Get color fail! to use default ");
@@ -1968,11 +1968,11 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
     }else if(display == HWC_DISPLAY_EXTERNAL){
       if(hwc_have_baseparameter()){
         if(connector->get_type() != last_auxType){
-          property_set("persist.sys.color.aux","use_baseparameter");
+          property_set("persist." PROPERTY_TYPE ".color.aux","use_baseparameter");
           ALOGD("BP:DisplayDevice change type[%d] => type[%d],to update aux color",last_auxType,connector->get_type());
           last_auxType = connector->get_type();
         }
-        property_get("persist.sys.color.aux", prop_format, "use_baseparameter");
+        property_get("persist." PROPERTY_TYPE ".color.aux", prop_format, "use_baseparameter");
         hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){
@@ -1982,7 +1982,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
         }
       }else{
         /* if resolution is null,set to "Auto" */
-        property_get("persist.sys.color.aux", prop_format, "Auto");
+        property_get("persist." PROPERTY_TYPE ".color.aux", prop_format, "Auto");
         ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
         if (ret == false) {
           ALOGE("Get color fail! to use default ");
@@ -2340,7 +2340,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
   int ret = -1;
 
 #ifdef RK3368_PX5CAR
-  int win1_reserved = hwc_get_int_property("sys.hwc.win1.reserved", "0");
+  int win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
 #endif
 
 #ifdef USE_HWC2
@@ -2356,7 +2356,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     if(get_frame() == 1){
          hwc_SetGamma(&ctx->drm);
     }
-
     init_log_level();
     hwc_dump_fps();
     ALOGD_IF(log_level(DBG_VERBOSE),"----------------------------frame=%d start ----------------------------",get_frame());
@@ -2419,10 +2418,10 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     {
         int timeline = 0;
         char acTimelie[10];
-        timeline = property_get_int32("sys.display.timeline", -1);
+        timeline = property_get_int32( PROPERTY_TYPE ".display.timeline", -1);
         timeline++;
         snprintf(acTimelie,10,"%d",timeline);
-        property_set("sys.display.timeline", acTimelie);
+        property_set( PROPERTY_TYPE ".display.timeline", acTimelie);
     }
 #endif
 
@@ -3727,9 +3726,9 @@ static int hwc_get_display_configs(struct hwc_composer_device_1 *dev,
   char framebuffer_size[PROPERTY_VALUE_MAX];
   uint32_t width = 0, height = 0 , vrefresh = 0 ;
   if (display == HWC_DISPLAY_PRIMARY)
-    property_get("persist.sys.framebuffer.main", framebuffer_size, "use_baseparameter");
+    property_get("persist." PROPERTY_TYPE ".framebuffer.main", framebuffer_size, "use_baseparameter");
   else if(display == HWC_DISPLAY_EXTERNAL)
-    property_get("persist.sys.framebuffer.aux", framebuffer_size, "use_baseparameter");
+    property_get("persist." PROPERTY_TYPE ".framebuffer.aux", framebuffer_size, "use_baseparameter");
   /*
    * if unset framebuffer_size, get it from baseparameter , by libin
    */

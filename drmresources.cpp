@@ -188,8 +188,8 @@ void DrmResources::ConfigurePossibleDisplays()
   std::string conn_name;
   char acConnName[50];
 
-  primary_length = property_get("sys.hwc.device.primary", primary_name, NULL);
-  extend_length = property_get("sys.hwc.device.extend", extend_name, NULL);
+  primary_length = property_get( PROPERTY_TYPE ".hwc.device.primary", primary_name, NULL);
+  extend_length = property_get( PROPERTY_TYPE ".hwc.device.extend", extend_name, NULL);
 
   /*
    * if unset primary_name or extend_name,get them from baseparameter,by libin
@@ -263,7 +263,7 @@ void DrmResources::ConfigurePossibleDisplays()
 
 int DrmResources::Init() {
   char path[PROPERTY_VALUE_MAX];
-  property_get("hwc.drm.device", path, "/dev/dri/card0");
+  property_get( PROPERTY_TYPE ".hwc.drm.device", path, "/dev/dri/card0");
 
   init_white_modes();
   /* TODO: Use drmOpenControl here instead */
@@ -712,7 +712,7 @@ void DrmResources::ClearAllDisplay(void)
 
 int DrmResources::UpdatePropertys(void)
 {
-  int timeline = property_get_int32("sys.display.timeline", -1);
+  int timeline = property_get_int32( PROPERTY_TYPE ".display.timeline", -1);
   int ret;
   /*
    * force update propetry when timeline is zero or not exist.
@@ -875,17 +875,17 @@ int DrmResources::UpdateDisplayRoute(void)
     {
       char primary_conn_name[50];
       snprintf(primary_conn_name,50,"%s-%d",connector_type_str(primary->get_type()),primary->type_id());
-      property_set("sys.hwc.device.main", primary_conn_name);
+      property_set( PROPERTY_TYPE ".hwc.device.main", primary_conn_name);
     }
     else
-      property_set("sys.hwc.device.main", "");
+      property_set( PROPERTY_TYPE ".hwc.device.main", "");
   }
   else
   {
     if (primary && primary->encoder() && primary->encoder()->crtc())
-      property_set("sys.hwc.device.main", connector_type_str(primary->get_type()));
+      property_set( PROPERTY_TYPE ".hwc.device.main", connector_type_str(primary->get_type()));
     else
-      property_set("sys.hwc.device.main", "");
+      property_set( PROPERTY_TYPE ".hwc.device.main", "");
   }
 
   if(extend && !strcmp(connector_type_str(extend->get_type()), "HDMI-A"))
@@ -894,17 +894,17 @@ int DrmResources::UpdateDisplayRoute(void)
     {
       char extend_conn_name[50];
       snprintf(extend_conn_name,50,"%s-%d",connector_type_str(extend->get_type()),extend->type_id());
-      property_set("sys.hwc.device.aux", extend_conn_name);
+      property_set( PROPERTY_TYPE ".hwc.device.aux", extend_conn_name);
     }
     else
-      property_set("sys.hwc.device.aux", "");
+      property_set( PROPERTY_TYPE ".hwc.device.aux", "");
   }
   else
   {
     if (extend && extend->encoder() && extend->encoder()->crtc())
-      property_set("sys.hwc.device.aux", connector_type_str(extend->get_type()));
+      property_set( PROPERTY_TYPE ".hwc.device.aux", connector_type_str(extend->get_type()));
     else
-      property_set("sys.hwc.device.aux", "");
+      property_set( PROPERTY_TYPE ".hwc.device.aux", "");
   }
 
   drmModeAtomicReqPtr pset = drmModeAtomicAlloc();

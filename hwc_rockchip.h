@@ -45,6 +45,22 @@
 #include "drmframebuffer.h"
 #include <fcntl.h>
 
+/*
+ * In order to pass VTS should amend property to follow google standard.
+ * From Android P version, vendor need to use the "vendor.xx.xx" property
+ * instead of the "sys.xx.xx" property.
+ * For example format as follows:
+       hwc.        ->  vendor.hwc.
+       sys.        ->  vendor.
+       persist.sys ->  persist.vendor
+ */
+#ifdef ANDROID_P
+#define PROPERTY_TYPE "vendor"
+#else
+#define PROPERTY_TYPE "sys"
+#endif
+
+
 namespace android {
 //G6110_SUPPORT_FBDC
 #define FBDC_BGRA_8888                  0x125 //HALPixelFormatSetCompression(HAL_PIXEL_FORMAT_BGRA_8888,HAL_FB_COMPRESSION_DIRECT_16x4)

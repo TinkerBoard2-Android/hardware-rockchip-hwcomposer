@@ -43,6 +43,7 @@
 #include "platform.h"
 
 #include <stdlib.h>
+#include "hwc_rockchip.h"
 
 #ifdef ANDROID_P
 #include <log/log.h>
@@ -62,7 +63,7 @@ DrmComposition::DrmComposition(DrmResources *drm, Importer *importer,
                                Planner *planner)
     : drm_(drm), importer_(importer), planner_(planner) {
   char use_overlay_planes_prop[PROPERTY_VALUE_MAX];
-  property_get("hwc.drm.use_overlay_planes", use_overlay_planes_prop, "1");
+  property_get( PROPERTY_TYPE ".hwc.drm.use_overlay_planes", use_overlay_planes_prop, "1");
   bool use_overlay_planes = atoi(use_overlay_planes_prop);
   for (auto &plane : drm->sort_planes()) {
     if (plane->type() == DRM_PLANE_TYPE_PRIMARY)
