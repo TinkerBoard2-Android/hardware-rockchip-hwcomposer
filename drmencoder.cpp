@@ -57,6 +57,9 @@ uint32_t DrmEncoder::id() const {
   return id_;
 }
 
+uint32_t DrmEncoder::type() const {
+  return type_;
+}
 DrmCrtc *DrmEncoder::crtc() const {
   return crtc_;
 }

@@ -37,7 +37,12 @@
 #include "hwc_util.h"
 #define LOG_TAG "hwcomposer-util"
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #include <cutils/properties.h>
 #include <stdlib.h>
 #include <sys/stat.h>
@@ -245,9 +250,8 @@ static int CompareLines(int *da,int w)
 
 int DetectValidData(int *data,int w,int h)
 {
-    int i,j;
+    int i;
     int *da;
-    int ret;
     /*  detect model
     -------------------------
     |   |   |    |    |      |

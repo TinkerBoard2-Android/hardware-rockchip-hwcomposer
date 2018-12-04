@@ -45,7 +45,12 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #include <hardware/gralloc.h>
 
 namespace android {
@@ -238,7 +243,6 @@ int PlanStageProtectedRotated::ProvisionPlanes(
     std::vector<DrmCompositionPlane> *composition,
     std::map<size_t, DrmHwcLayer *> &layers, DrmCrtc *crtc,
     std::vector<DrmPlane *> *planes) {
-  int ret;
   int protected_zorder = -1;
   for (auto i = layers.begin(); i != layers.end();) {
     if (!i->second->protected_usage() || !i->second->transform) {

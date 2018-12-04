@@ -44,9 +44,16 @@
 
 #include <stdlib.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#include <libsync/sw_sync.h>
+#else
 #include <cutils/log.h>
-#include <cutils/properties.h>
 #include <sw_sync.h>
+#endif
+
+#include <cutils/properties.h>
+
 #include <sync/sync.h>
 
 namespace android {

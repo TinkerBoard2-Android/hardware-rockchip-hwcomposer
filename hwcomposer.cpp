@@ -63,12 +63,19 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#include <libsync/sw_sync.h>
+#include <android/sync.h>
+#else
 #include <cutils/log.h>
+#include <sw_sync.h>
+#include <sync/sync.h>
+#endif
+
 #include <cutils/properties.h>
 #include <hardware/hardware.h>
 #include <hardware/hwcomposer.h>
-#include <sw_sync.h>
-#include <sync/sync.h>
 #include <utils/Trace.h>
 #include <drm_fourcc.h>
 #if RK_DRM_GRALLOC
@@ -181,7 +188,6 @@ class DrmHotplugHandler : public DrmEventHandler {
   }
 
   void HandleEvent(uint64_t timestamp_us) {
-    int ret;
     DrmConnector *extend = NULL;
     DrmConnector *primary = NULL;
 
@@ -450,7 +456,6 @@ static int update_display_bestmode(hwc_drm_display_t *hd, int display, DrmConnec
   int timeline;
   static uint32_t last_mainType,last_auxType;
   uint32_t MaxResolution = 0,temp;
-  uint32_t flags_temp;
 
   timeline = property_get_int32("sys.display.timeline", -1);
   /*
@@ -807,9 +812,9 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     hwc_rect_t const * visible_rects = visible_region->rects;
     int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
 
-  UN_USED(importer);
+    UN_USED(importer);
 
-  bClone_ = bClone;
+    bClone_ = bClone;
 #if RK_3D_VIDEO
     int32_t alreadyStereo = 0;
 #ifdef USE_HWC2
@@ -955,7 +960,6 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         int left_margin, right_margin, top_margin, bottom_margin;
         float left_margin_f, right_margin_f, top_margin_f, bottom_margin_f;
         float lscale = 0, tscale = 0, rscale = 0, bscale = 0;
-        int xres,yres;
         int disp_old_l,disp_old_t,disp_old_r,disp_old_b;
 
         if(hd->stereo_mode != NON_3D)
@@ -1295,14 +1299,14 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         D("we could not got buffer handle, and current buffer is for fb_target_layer, to check AFBC in a trick way.");
 
         static int iFbdcSupport = -1;
-        D_DEC(iFbdcSupport);
+        D("iFbdcSupport = %d",iFbdcSupport);
 
         // if(iFbdcSupport == -1)
         if(iFbdcSupport <= 0)
         {
             char fbdc_value[PROPERTY_VALUE_MAX];
             int ret = property_get("sys.gmali.fbdc_target", fbdc_value, "0");
-            D_DEC(ret);
+            ALOGV("ret = %d",ret);
 
             iFbdcSupport = atoi(fbdc_value);
             if(iFbdcSupport > 0 && display == 0)
@@ -1480,10 +1484,8 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 
         if(hd->isVideo && (layer->transform != 0))
         {
-            int src_l,src_t,src_r,src_b,src_w,src_h;
-            int dst_l,dst_t,dst_r,dst_b,dst_w,dst_h;
-            hwc_region_t * visible_region = &layer->visibleRegionScreen;
-            hwc_rect_t const * visible_rects = visible_region->rects;
+            int src_l=0,src_t=0,src_r=0,src_b=0,src_w=0,src_h=0;
+            int dst_l=0,dst_t=0,dst_r=0,dst_b=0,dst_w=0,dst_h=0;
             hwc_rect_t  rect_merge;
             int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
             float rga_h_scale=1.0, rga_v_scale=1.0;
@@ -1521,12 +1523,17 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             dst_w = ALIGN_DOWN(dst_w, 8);
             dst_h = ALIGN_DOWN(dst_h, 2);
 #else
+            UN_USED(dst_r);
+            UN_USED(dst_b);
             rect_merge.left = layer->displayFrame.left;
             rect_merge.top = layer->displayFrame.top;
             rect_merge.right = layer->displayFrame.right;
             rect_merge.bottom = layer->displayFrame.bottom;
 
 #if 0
+            int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
+            hwc_region_t * visible_region = &layer->visibleRegionScreen;
+            hwc_rect_t const * visible_rects = visible_region->rects;
             if(visible_rects){
                 left_min = visible_rects[0].left;
                 top_min = visible_rects[0].top;
@@ -1763,6 +1770,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 #if RK_PER_MODE
             struct gralloc_drm_handle_t* drm_hnd = (struct gralloc_drm_handle_t *)layer->handle;
             internal_format = drm_hnd->internal_format;
+            UN_USED(ret);
 #else
             ret = ctx->gralloc->perform(ctx->gralloc, GRALLOC_MODULE_PERFORM_GET_INTERNAL_FORMAT,
                                  layer->handle, &internal_format);
@@ -1773,6 +1781,8 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
 #endif
             if(isAfbcInternalFormat(internal_format))
                 iFbdcCnt++;
+#else
+                    UN_USED(ret);
 #endif
         }
     }
@@ -1851,8 +1861,6 @@ static void DetectAuxStatus(const hwc_context_t *ctx)
 }
 
 static bool parse_hdmi_output_format_prop(char* strprop, drm_hdmi_output_type *format, dw_hdmi_rockchip_color_depth *depth) {
-    char color_depth[PROPERTY_VALUE_MAX];
-    char color_format[PROPERTY_VALUE_MAX];
     if (!strcmp(strprop, "Auto")) {
         *format = DRM_HDMI_OUTPUT_YCBCR_HQ;
         *depth = ROCKCHIP_DEPTH_DEFAULT;
@@ -2140,8 +2148,8 @@ static bool set_hdmi_hdr_meta(struct hwc_context_t *ctx, DrmConnector *connector
 #if RK_RGA_PREPARE_ASYNC
 static int PrepareRgaBuffer(DrmRgaBuffer &rgaBuffer, DrmHwcLayer &layer) {
     int rga_transform = 0;
-    int src_l,src_t,src_w,src_h;
-    int dst_l,dst_t,dst_r,dst_b;
+    int src_l=0,src_t=0,src_w=0,src_h=0;
+    int dst_l=0,dst_t=0,dst_r=0,dst_b=0;
     int ret;
     int dst_w,dst_h,dst_stride;
     rga_info_t src, dst;
@@ -2191,6 +2199,8 @@ static int PrepareRgaBuffer(DrmRgaBuffer &rgaBuffer, DrmHwcLayer &layer) {
     dst_w = ALIGN_DOWN(dst_w, 8);
     dst_h = ALIGN_DOWN(dst_h, 2);
 #else
+    UN_USED(dst_r);
+    UN_USED(dst_b);
     src_w = ALIGN_DOWN(src_w, 2);
     src_h = ALIGN_DOWN(src_h, 2);
 
@@ -2360,7 +2370,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 
   for (int i = 0; i < (int)num_displays; ++i) {
     bool use_framebuffer_target = false;
-    drmModeConnection state;
 
     if (!display_contents[i])
       continue;
@@ -2524,11 +2533,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                 layer->compositionType = HWC_FRAMEBUFFER;
         }
     }
-
-    // Since we can't composite HWC_SKIP_LAYERs by ourselves, we'll let SF
-    // handle all layers in between the first and last skip layers. So find the
-    // outer indices and mark everything in between as HWC_FRAMEBUFFER
-    std::pair<int, int> skip_layer_indices(-1, -1);
 
     int format = 0;
     int usage = 0;
@@ -2860,7 +2864,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     if(!use_framebuffer_target)
     {
         bool bAllMatch = false;
-        int iUsePlane = 0;
 
         hd->mixMode = HWC_DEFAULT;
         if(crtc && layer_content.layers.size()>0)
@@ -3129,8 +3132,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       ctx->drm.ClearDisplay(i);
       continue;
     }
-    hwc_drm_display_t *hd = &ctx->displays[c->display()];
-
     std::ostringstream display_index_formatter;
     display_index_formatter << "retire fence for display " << i;
     std::string display_fence_description(display_index_formatter.str());

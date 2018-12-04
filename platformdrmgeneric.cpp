@@ -47,7 +47,12 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #if RK_DRM_GRALLOC
 #include <gralloc_drm_handle.h>
 #endif

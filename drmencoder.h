@@ -53,6 +53,7 @@ class DrmEncoder {
   DrmEncoder &operator=(const DrmEncoder &) = delete;
 
   uint32_t id() const;
+  uint32_t type() const;
 
   DrmCrtc *crtc() const;
   void set_crtc(DrmCrtc *crtc);

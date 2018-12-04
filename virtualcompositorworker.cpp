@@ -42,11 +42,18 @@
 #include <errno.h>
 #include <stdlib.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#include <libsync/sw_sync.h>
+#else
 #include <cutils/log.h>
+#include <sw_sync.h>
+#endif
+
 #include <hardware/hardware.h>
 #include <hardware/hwcomposer.h>
 #include <sched.h>
-#include <sw_sync.h>
+
 #include <sync/sync.h>
 
 namespace android {

@@ -42,7 +42,12 @@
 #include <stdint.h>
 #include <xf86drmMode.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 
 namespace android {
 
@@ -170,7 +175,6 @@ const DrmProperty &DrmCrtc::alpha_scale_property() const {
 
 void DrmCrtc::dump_crtc(std::ostringstream *out) const
 {
-	uint32_t j;
 
 	*out << crtc_->crtc_id << "\t"
 	     << crtc_->buffer_id << "\t"

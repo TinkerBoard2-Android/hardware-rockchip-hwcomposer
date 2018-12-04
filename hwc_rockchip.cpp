@@ -1518,6 +1518,9 @@ static bool MatchPlane(std::vector<DrmHwcLayer*>& layer_vector,
                                 else
                                     bNeed = true;
                             }
+#else
+                            UN_USED(b_afbc);
+
 #endif
 
 #ifdef TARGET_BOARD_PLATFORM_RK3288
@@ -1667,7 +1670,6 @@ bool MatchPlanes(
     std::vector<PlaneGroup *>& plane_groups = drm->GetPlaneGroups();
     uint64_t last_zpos=0;
     bool bMatch = false;
-    uint32_t planes_can_use=0;
 
     //set use flag to false.
     for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();

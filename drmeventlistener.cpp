@@ -42,7 +42,12 @@
 #include <linux/netlink.h>
 #include <sys/socket.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #include <xf86drm.h>
 #include <assert.h>
 

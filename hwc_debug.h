@@ -38,7 +38,13 @@
 #define _HWC_DEBUG_H_
 
 #include <stdlib.h>
+
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #include <cutils/properties.h>
 #include <hardware/hwcomposer.h>
 #if RK_DRM_GRALLOC

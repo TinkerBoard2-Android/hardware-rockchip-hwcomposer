@@ -42,7 +42,12 @@
 
 #include <stdlib.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #include <hardware/hardware.h>
 
 namespace android {

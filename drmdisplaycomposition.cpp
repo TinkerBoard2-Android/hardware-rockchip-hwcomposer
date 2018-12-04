@@ -47,8 +47,14 @@
 #include <algorithm>
 #include <unordered_set>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#include <libsync/sw_sync.h>
+#else
 #include <cutils/log.h>
 #include <sw_sync.h>
+#endif
+
 #include <sync/sync.h>
 #include <xf86drmMode.h>
 
@@ -689,6 +695,7 @@ int DrmDisplayComposition::Plan(SquashState *squash,
   }
 #else
     UN_USED(squash);
+    UN_USED(use_squash_framebuffer);
     for (size_t i = 0; i < layers_.size(); ++i)
       to_composite.emplace(std::make_pair(i, &layers_[i]));
 #endif

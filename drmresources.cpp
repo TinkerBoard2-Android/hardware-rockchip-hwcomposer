@@ -50,7 +50,12 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #include <cutils/properties.h>
 #include <drm_fourcc.h>
 #include <tinyxml2.h>
@@ -1299,7 +1304,6 @@ void DrmResources::dump_blob(uint32_t blob_id, std::ostringstream *out) {
 }
 
 bool DrmResources::is_hdr_panel_support_st2084(DrmConnector *conn) const {
-	uint32_t i;
 	struct hdr_static_metadata* blob_data;
 	drmModePropertyBlobPtr blob;
 	bool bSupport = false;

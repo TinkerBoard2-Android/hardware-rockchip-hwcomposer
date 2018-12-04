@@ -19,7 +19,12 @@
 #include "drmresources.h"
 #include "platform.h"
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 #include <inttypes.h>
 
 namespace android {

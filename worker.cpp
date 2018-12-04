@@ -45,7 +45,12 @@
 #include <sys/signal.h>
 #include <time.h>
 
+#ifdef ANDROID_P
+#include <log/log.h>
+#else
 #include <cutils/log.h>
+#endif
+
 
 namespace android {
 

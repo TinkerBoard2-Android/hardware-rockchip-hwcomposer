@@ -46,7 +46,6 @@ LOCAL_SHARED_LIBRARIES := \
 	libGLESv2 \
 	libhardware \
 	liblog \
-	libsync \
 	libui \
 	libutils \
 	librga
@@ -60,9 +59,29 @@ LOCAL_C_INCLUDES := \
 	external/libdrm \
 	external/libdrm/include/drm \
 	system/core/include/utils \
-	system/core/libsync \
-	system/core/libsync/include \
 	hardware/rockchip/librga
+
+ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 9)))
+
+LOCAL_CFLAGS += -DANDROID_P
+
+LOCAL_SHARED_LIBRARIES +=  \
+	libsync_vendor
+
+LOCAL_C_INCLUDES += \
+	system/core \
+	system/core/liblog/include \
+	frameworks/native/include
+else #Android 9.0
+
+LOCAL_SHARED_LIBRARIES +=  \
+	libsync
+
+LOCAL_C_INCLUDES += \
+	system/core/libsync \
+	system/core/libsync/include
+
+endif
 
 LOCAL_SRC_FILES := \
 	autolock.cpp \
@@ -385,6 +404,8 @@ ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
 LOCAL_PROPRIETARY_MODULE := true
 endif
 LOCAL_MODULE_TAGS := optional
+LOCAL_CFLAGS += -Wno-unused-function
+LOCAL_CFLAGS += -Wno-unused-variable
 LOCAL_MODULE_RELATIVE_PATH := hw
 LOCAL_MODULE_CLASS := SHARED_LIBRARIES
 LOCAL_MODULE_SUFFIX := $(TARGET_SHLIB_SUFFIX)
