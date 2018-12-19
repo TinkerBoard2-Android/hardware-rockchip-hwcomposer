@@ -1948,7 +1948,8 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
           last_mainType = connector->get_type();
         }
         property_get("persist." PROPERTY_TYPE ".color.main", prop_format, "use_baseparameter");
-        hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
+        if(hwc_have_baseparameter() && !strcmp(prop_format,"use_baseparameter"))
+          hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){
           ALOGE("BP: get color fail! to use default ");
@@ -1973,7 +1974,8 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
           last_auxType = connector->get_type();
         }
         property_get("persist." PROPERTY_TYPE ".color.aux", prop_format, "use_baseparameter");
-        hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
+        if(hwc_have_baseparameter() && !strcmp(prop_format,"use_baseparameter"))
+            hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){
           ALOGE("BP: get color fail! to use default ");
