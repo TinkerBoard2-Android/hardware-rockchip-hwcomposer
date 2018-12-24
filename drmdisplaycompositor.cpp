@@ -1097,20 +1097,26 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     }
     else
     {
-        if(display_ == 0){
+      if (display_ == HWC_DISPLAY_PRIMARY){
+        if(hwc_have_baseparameter()){
           property_get("persist." PROPERTY_TYPE ".overscan.main", overscan, "use_baseparameter");
-          if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
+          if(!strcmp(overscan,"use_baseparameter"))
             hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
         }else{
-          property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "use_baseparameter");
-          if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
-            hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
+          property_get("persist." PROPERTY_TYPE ".overscan.main", overscan, "overscan 100,100,100,100");
         }
-
-        sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
+      }else{
+        if(hwc_have_baseparameter()){
+          property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "use_baseparameter");
+          if(!strcmp(overscan,"use_baseparameter"))
+            hwc_get_baseparameter_config(overscan,display_,BP_OVERSCAN,0);
+        }else{
+          property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "overscan 100,100,100,100");
+        }
+      }
+      sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
                &right_margin, &bottom_margin);
-
-        ALOGD_IF(log_level(DBG_VERBOSE),"vop post scale overscan(%d,%d,%d,%d)",
+      ALOGD_IF(log_level(DBG_VERBOSE),"vop post scale overscan(%d,%d,%d,%d)",
                 left_margin,top_margin,right_margin,bottom_margin);
     }
 

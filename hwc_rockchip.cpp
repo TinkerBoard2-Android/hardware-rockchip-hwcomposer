@@ -2435,7 +2435,7 @@ static bool enableBaseparameter = false;
 
 bool hwc_have_baseparameter(void)
 {
-     ALOGD_IF(log_level(DBG_DEBUG),"BP: have baseparameter exit (%d)",enableBaseparameter);
+     ALOGI_IF(log_level(DBG_INFO),"BP: have baseparameter exit (%d)",enableBaseparameter);
      return enableBaseparameter;
 }
 
@@ -2459,13 +2459,13 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 int file;
                 const char *baseparameterfile = hwc_get_baseparameter_file();
                 if (!baseparameterfile) {
-                    ALOGE("BP: baseparamter file can not be find");
+                    ALOGW("BP: baseparamter file cann't be find.");
                     enableBaseparameter = false;
                     return -1;
                 }
                 file = open(baseparameterfile, O_RDWR);
                 if (file < 0) {
-                    ALOGE("BP: baseparamter file can not be opened,");
+                    ALOGW("BP: baseparamter file can not be opened,");
                     enableBaseparameter = false;
                     return -1;
                 }
@@ -2473,7 +2473,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 unsigned int length = lseek(file, 0L, SEEK_END);
                 lseek(file, 0L, SEEK_SET);
                 if(length < sizeof(base_parameter)) {
-                    ALOGE("BP: baseparamter data's length is error\n");
+                    ALOGW("BP: baseparamter data's length is error\n");
                     enableBaseparameter = false;
                     sync();
                     close(file);
@@ -2507,7 +2507,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     }
 
                     if(type_found){
-                        ALOGD("BP: Main screen type %d be found",type);
+                        ALOGI_IF(log_level(DBG_INFO),"BP: Main screen type %d be found",type);
                         w = base_parameter.main.screen_list[i].resolution.hdisplay;
                         h = base_parameter.main.screen_list[i].resolution.vdisplay;
                         vsync_start = base_parameter.main.screen_list[i].resolution.vsync_start;
@@ -2519,7 +2519,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                         flags = base_parameter.main.screen_list[i].resolution.flags;
                         clock = base_parameter.main.screen_list[i].resolution.clock;
                     }else{
-                        ALOGD("BP: Main screen type %d not found,to use Auto",type);
+                        ALOGI_IF(log_level(DBG_INFO),"BP: Main screen type %d not found,to use Auto",type);
                     }
 
                     if(flags & DRM_MODE_FLAG_INTERLACE){
@@ -2535,12 +2535,12 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                            w * h <= 0 || w * h > 4096 * 2160 ){
                         strcpy(parameter,"Auto");
                         property_set("persist." PROPERTY_TYPE ".resolution.main",parameter);
-                        ALOGD("BP: resolution main %s",parameter);
+                        ALOGI_IF(log_level(DBG_INFO),"BP: resolution main %s",parameter);
                     }else{
                          sprintf(parameter,"%dx%d@%f-%d-%d-%d-%d-%d-%d-%x", w, h, vfresh, hsync_start,hsync_end,\
                              htotal,vsync_start,vsync_end,vtotal, flags);
                          property_set("persist." PROPERTY_TYPE ".resolution.main",parameter);
-                         ALOGD("BP: resolution main %s \n",parameter);
+                         ALOGI_IF(log_level(DBG_INFO),"BP: resolution main %s \n",parameter);
                      }
                 }else{
                     int i = 0;
@@ -2556,7 +2556,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     }
 
                     if(type_found){
-                        ALOGD("BP: Aux screen type %d found",type);
+                        ALOGI_IF(log_level(DBG_INFO),"BP: Aux screen type %d found",type);
                         w = base_parameter.aux.screen_list[i].resolution.hdisplay;
                         h = base_parameter.aux.screen_list[i].resolution.vdisplay;
                         vsync_start = base_parameter.aux.screen_list[i].resolution.vsync_start;
@@ -2568,7 +2568,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                         flags = base_parameter.aux.screen_list[i].resolution.flags;
                         clock = base_parameter.aux.screen_list[i].resolution.clock;
                     }else{
-                        ALOGD("BP: Aux screen type %d not found,to use Auto",type);
+                        ALOGI_IF(log_level(DBG_INFO),"BP: Aux screen type %d not found,to use Auto",type);
                     }
 
                     if(flags & DRM_MODE_FLAG_INTERLACE){
@@ -2584,12 +2584,12 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                            w * h <= 0 || w * h > 4096 * 2160 ){
                         strcpy(parameter,"Auto");
                         property_set("persist." PROPERTY_TYPE ".resolution.aux",parameter);
-                        ALOGD("BP: resolution aux %s",parameter);
+                        ALOGI_IF(log_level(DBG_INFO),"BP: resolution aux %s",parameter);
                     }else{
                          sprintf(parameter,"%dx%d@%f-%d-%d-%d-%d-%d-%d-%x", w, h, vfresh, hsync_start,hsync_end,\
                              htotal,vsync_start,vsync_end,vtotal, flags);
                          property_set("persist." PROPERTY_TYPE ".resolution.aux",parameter);
-                         ALOGD("BP: resolution aux %s \n",parameter);
+                         ALOGI_IF(log_level(DBG_INFO),"BP: resolution aux %s \n",parameter);
                      }
                 }
                 break;
@@ -2609,14 +2609,14 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                         vfresh <= 120){
                     sprintf(parameter,"%dx%d@%f", w, h, vfresh);
                     property_set("persist." PROPERTY_TYPE ".framebuffer.main",parameter);
-                    ALOGD("BP: %s \n",parameter);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: %s \n",parameter);
                 }else{
 #ifdef RK_BOX
                     strcpy(parameter,"1920x1080@60");
-                    ALOGD("BP: fb_size default %s \n",parameter);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: fb_size default %s \n",parameter);
                     property_set("persist." PROPERTY_TYPE ".framebuffer.main",parameter);
 #else
-                    ALOGD("BP: fb_size=%dx%d@%f err,set 0x0@60",w,h,vfresh);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: fb_size=%dx%d@%f err,set 0x0@60",w,h,vfresh);
                     property_set("persist." PROPERTY_TYPE ".framebuffer.main","0x0@60");
 #endif
                 }
@@ -2632,10 +2632,10 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
 
                 if( display == HWC_DISPLAY_PRIMARY ){
                     strcpy(parameter,base_parameter.main.hwc_info.device);
-                    ALOGD("BP: dev_primary = %s",parameter);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: dev_primary = %s",parameter);
                 }else{
                     strcpy(parameter,base_parameter.aux.hwc_info.device);
-                    ALOGD("BP: dev_extend = %s",parameter);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: dev_extend = %s",parameter);
                 }
                 break;
             }
@@ -2646,9 +2646,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x1;
                     sprintf(value_new,"%d",(brightness > 0 && brightness <= 100  ? brightness : 50));
                     property_set("persist." PROPERTY_TYPE ".brightness.main",value_new);
-                    ALOGD("BP: first set main brightness: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set main brightness: %s",value_new);
                 }
-                ALOGD("BP: main brightness %d",property_get_int32("persist." PROPERTY_TYPE ".brightness.main",
+                ALOGI_IF(log_level(DBG_INFO),"BP: main brightness %d",property_get_int32("persist." PROPERTY_TYPE ".brightness.main",
                     brightness > 0 && brightness <= 100  ? brightness : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".brightness.main",
                     brightness > 0 && brightness <= 100  ? brightness : 50);
@@ -2658,9 +2658,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x10;
                     sprintf(value_new,"%d",(brightness > 0 && brightness <= 100  ? brightness : 50));
                     property_set("persist." PROPERTY_TYPE ".brightness.aux",value_new);
-                    ALOGD("BP: first set aux brightness: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set aux brightness: %s",value_new);
                 }
-                ALOGD("BP: aux brightness %d",property_get_int32("persist." PROPERTY_TYPE ".brightness.aux",
+                ALOGI_IF(log_level(DBG_INFO),"BP: aux brightness %d",property_get_int32("persist." PROPERTY_TYPE ".brightness.aux",
                     brightness > 0 && brightness <= 100  ? brightness : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".brightness.aux",
                     brightness > 0 && brightness <= 100  ? brightness : 50);
@@ -2673,9 +2673,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x2;
                     sprintf(value_new,"%d",(contrast > 0 && contrast <= 100  ? contrast : 50));
                     property_set("persist." PROPERTY_TYPE ".contrast.main",value_new);
-                    ALOGD("BP: first set main contrast: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set main contrast: %s",value_new);
                 }
-                ALOGD("BP: main contrast %d",property_get_int32("persist." PROPERTY_TYPE ".contrast.main",
+                ALOGI_IF(log_level(DBG_INFO),"BP: main contrast %d",property_get_int32("persist." PROPERTY_TYPE ".contrast.main",
                     contrast > 0 && contrast <=100  ? contrast : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".contrast.main",
                     contrast > 0 && contrast <=100  ? contrast : 50);
@@ -2686,9 +2686,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x20;
                     sprintf(value_new,"%d",(contrast > 0 && contrast <= 100  ? contrast : 50));
                     property_set("persist." PROPERTY_TYPE ".contrast.aux",value_new);
-                    ALOGD("BP: first set aux contrast: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set aux contrast: %s",value_new);
                 }
-                ALOGD("BP: aux contrast %d",property_get_int32("persist." PROPERTY_TYPE ".contrast.aux",
+                ALOGI_IF(log_level(DBG_INFO),"BP: aux contrast %d",property_get_int32("persist." PROPERTY_TYPE ".contrast.aux",
                     contrast > 0 && contrast <= 100  ? contrast : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".contrast.aux",
                     contrast > 0 && contrast <= 100  ? contrast : 50);
@@ -2701,9 +2701,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x4;
                     sprintf(value_new,"%d",(saturation > 0 && saturation <= 100  ? saturation : 50));
                     property_set("persist." PROPERTY_TYPE ".saturation.main",value_new);
-                    ALOGD("BP: first set main saturation: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set main saturation: %s",value_new);
                 }
-                ALOGD("BP: main saturation %d",property_get_int32("persist." PROPERTY_TYPE ".saturation.main",
+                ALOGI_IF(log_level(DBG_INFO),"BP: main saturation %d",property_get_int32("persist." PROPERTY_TYPE ".saturation.main",
                     saturation > 0 && saturation <= 100  ? saturation : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".saturation.main",
                     saturation > 0 && saturation <= 100  ? saturation : 50);
@@ -2713,9 +2713,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x40;
                     sprintf(value_new,"%d",(saturation > 0 && saturation <= 100  ? saturation : 50));
                     property_set("persist." PROPERTY_TYPE ".saturation.aux",value_new);
-                    ALOGD("BP: first set aux saturation: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set aux saturation: %s",value_new);
                 }
-                ALOGD("BP: aux saturation %d",property_get_int32("persist." PROPERTY_TYPE ".saturation.aux",
+                ALOGI_IF(log_level(DBG_INFO),"BP: aux saturation %d",property_get_int32("persist." PROPERTY_TYPE ".saturation.aux",
                     saturation > 0 && saturation <= 100  ? saturation : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".saturation.aux",
                     saturation > 0 && saturation <= 100  ? saturation : 50);
@@ -2728,9 +2728,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x8;
                     sprintf(value_new,"%d",(hue > 0 && hue <= 100  ? hue : 50));
                     property_set("persist." PROPERTY_TYPE ".hue.main",value_new);
-                    ALOGD("BP: first set main hue: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set main hue: %s",value_new);
                 }
-                ALOGD("BP: main hue %d",property_get_int32("persist." PROPERTY_TYPE ".hue.main",
+                ALOGI_IF(log_level(DBG_INFO),"BP: main hue %d",property_get_int32("persist." PROPERTY_TYPE ".hue.main",
                     hue > 0 && hue <= 100  ? hue : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".hue.main",
                     hue > 0 && hue <= 100  ? hue : 50);
@@ -2741,9 +2741,9 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     bcsh_flag |= 0x80;
                     sprintf(value_new,"%d",(hue > 0 && hue <= 100  ? hue : 50));
                     property_set("persist." PROPERTY_TYPE ".hue.aux",value_new);
-                    ALOGD("BP: first set aux hue: %s",value_new);
+                    ALOGI_IF(log_level(DBG_INFO),"BP: first set aux hue: %s",value_new);
                 }
-                ALOGD("BP: aux hue %d",property_get_int32("persist." PROPERTY_TYPE ".hue.aux",
+                ALOGI_IF(log_level(DBG_INFO),"BP: aux hue %d",property_get_int32("persist." PROPERTY_TYPE ".hue.aux",
                     hue > 0 && hue <= 100  ? hue : 50));
                 return property_get_int32("persist." PROPERTY_TYPE ".hue.aux",
                     hue > 0 && hue <= 100  ? hue : 50);
@@ -2764,11 +2764,11 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 }
                 if(type_found)
                 {
-                    ALOGD("BP: Main screen type %d found",type);
+                    ALOGW("BP: Main screen type %d found",type);
                     format = base_parameter.main.screen_list[i].format;
                     depthc = base_parameter.main.screen_list[i].depthc;
                 }else{
-                    ALOGD("BP: Main screen type %d not found,to use default color",type);
+                    ALOGW("BP: Main screen type %d not found,to use default color",type);
                 }
 
                 res = hwc_parse_format_into_prop(display,format,depthc);
@@ -2779,7 +2779,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 }else{
                         sprintf(parameter,"%u-%u",format,depthc);
                 }
-                ALOGD("BP: main color %s",parameter);
+                ALOGI_IF(log_level(DBG_INFO),"BP: main color %s",parameter);
             }else{
                 int i = 0;
                 bool type_found = false;
@@ -2794,11 +2794,11 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 }
                 if(type_found)
                 {
-                    ALOGD("BP: Aux screen type %d found",type);
+                    ALOGW("BP: Aux screen type %d found",type);
                     format = base_parameter.aux.screen_list[i].format;
                     depthc = base_parameter.aux.screen_list[i].depthc;
                 }else{
-                    ALOGD("BP: Aux screen type %d not found,to use default color",type);
+                    ALOGW("BP: Aux screen type %d not found,to use default color",type);
                 }
 
                 res = hwc_parse_format_into_prop(display,format,depthc);
@@ -2809,7 +2809,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                 }else{
                         sprintf(parameter,"%u-%u",format,depthc);
                 }
-                ALOGD("BP: aux color %s",parameter);
+                ALOGI_IF(log_level(DBG_INFO),"BP: aux color %s",parameter);
             }
             break;
          case BP_OVERSCAN:
@@ -2824,7 +2824,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     rightscale > 0 && rightscale <= 100 ? rightscale : 100,
                     bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
                 property_set("persist." PROPERTY_TYPE ".overscan.main",parameter);
-                ALOGD("BP: main overscan %s",parameter);
+                ALOGI_IF(log_level(DBG_INFO),"BP: main overscan %s",parameter);
             }else{
                 leftscale = base_parameter.aux.scan.leftscale;
                 topscale = base_parameter.aux.scan.topscale;
@@ -2836,7 +2836,7 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     rightscale > 0 && rightscale <= 100 ? rightscale : 100,
                     bottomscale > 0 && bottomscale <= 100 ? bottomscale : 100);
                 property_set("persist." PROPERTY_TYPE ".overscan.aux",parameter);
-                ALOGD("BP: aux overscan %s",parameter);
+                ALOGI_IF(log_level(DBG_INFO),"BP: aux overscan %s",parameter);
             }
             break;
         default:
@@ -2862,7 +2862,7 @@ void hwc_set_baseparameter_config(DrmResources *drm)
     int file;
     const char *baseparameterfile = hwc_get_baseparameter_file();
     if (!baseparameterfile) {
-        ALOGE("BP: baseparamter file can not be find");
+        ALOGW("BP: baseparamter file can not be find");
         sync();
         return;
     }
@@ -2958,7 +2958,7 @@ void hwc_set_baseparameter_config(DrmResources *drm)
               && (conn->possible_displays() & HWC_DISPLAY_EXTERNAL_BIT))
         isAuxHdmiConnected = true;
     }
-    ALOGD("nativeSaveConfig: size=%d isMainHdmiConnected=%d", (int)sizeof(base_parameter.main), isMainHdmiConnected);
+    ALOGI_IF(log_level(DBG_INFO),"BP:nativeSaveConfig: size=%d isMainHdmiConnected=%d", (int)sizeof(base_parameter.main), isMainHdmiConnected);
     for (auto &conn : drm->connectors()) {
       if (conn->state() == DRM_MODE_CONNECTED
               && (conn->possible_displays() & HWC_DISPLAY_PRIMARY_BIT)) {
@@ -2975,12 +2975,12 @@ void hwc_set_baseparameter_config(DrmResources *drm)
         base_parameter.main.screen_list[slot].feature &= AUTO_BIT_RESET;
         property_get("persist." PROPERTY_TYPE ".resolution.main", property, "0x0@0.00-0-0-0-0-0-0-0");
         if (strncmp(property, "Auto", 4) != 0 && strncmp(property, "0x0p0-0", 7) !=0) {
-            ALOGD("saveConfig resolution = %s", property);
+            ALOGI_IF(log_level(DBG_INFO),"BP:saveConfig resolution = %s", property);
             std::vector<DrmMode> mModes = primary->modes();
             sscanf(property,"%dx%d@%f-%d-%d-%d-%d-%d-%d-%x", &w, &h, &vfresh, &hsync_start,&hsync_end,&htotal,&vsync_start,&vsync_end,
                     &vtotal, &flags);
 
-            ALOGD("last base_parameter.main.resolution.hdisplay = %d,  vdisplay=%d(%s@%f)",
+            ALOGI_IF(log_level(DBG_INFO),"BP:last base_parameter.main.resolution.hdisplay = %d,  vdisplay=%d(%s@%f)",
                     base_parameter.main.screen_list[slot].resolution.hdisplay,
                     base_parameter.main.screen_list[slot].resolution.vdisplay,
                     base_parameter.main.hwc_info.device,  base_parameter.main.hwc_info.fps);
@@ -2999,7 +2999,7 @@ void hwc_set_baseparameter_config(DrmResources *drm)
             base_parameter.main.screen_list[slot].resolution.vsync_end = vsync_end;
             base_parameter.main.screen_list[slot].resolution.vtotal = vtotal;
             base_parameter.main.screen_list[slot].resolution.flags = flags;
-            ALOGD("saveBaseParameter foundMainIdx=%d clock=%d", foundMainIdx, base_parameter.main.screen_list[slot].resolution.clock);
+            ALOGI_IF(log_level(DBG_INFO),"BP:saveBaseParameter foundMainIdx=%d clock=%d", foundMainIdx, base_parameter.main.screen_list[slot].resolution.clock);
         } else {
             base_parameter.main.screen_list[slot].feature|= RESOLUTION_AUTO;
             memset(&base_parameter.main.screen_list[slot].resolution, 0, sizeof(base_parameter.main.screen_list[slot].resolution));
@@ -3241,9 +3241,9 @@ int hwc_findSuitableInfoSlot(struct disp_info* info, int type)
     }
     if (found == -1) {
         found = 0;
-        ALOGD("noting saved, used the first slot");
+        ALOGI_IF(log_level(DBG_INFO),"BP:noting saved, used the first slot");
     }
-    ALOGD("findSuitableInfoSlot: %d type=%d", found, type);
+    ALOGI_IF(log_level(DBG_INFO),"BP:findSuitableInfoSlot: %d type=%d", found, type);
     return found;
 }
 
@@ -3359,7 +3359,7 @@ int hwc_parse_format_into_prop(int display,unsigned int format,unsigned int dept
             return 0;
         }
     }
-        ALOGE("BP: baseparameter color is invalid.");
+        ALOGI_IF(log_level(DBG_INFO),"BP: baseparameter color is invalid.");
         return -1;
 }
 
@@ -3471,7 +3471,7 @@ int hwc_SetGamma(DrmResources *drm)
                         ALOGW("BP: nativeSetGamma failed: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
                                 red[0],red[1],size, size, size ,red[0], red[1]);
                     }else{
-                        ALOGD("BP: nativeSetGamma success: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                        ALOGI_IF(log_level(DBG_INFO),"BP: nativeSetGamma success: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
                                 red[0],red[1],size, size, size ,red[0], red[1]);
                     }
                 }else{
@@ -3511,7 +3511,7 @@ int hwc_SetGamma(DrmResources *drm)
                          ALOGW("BP: nativeSetGamma failed: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]",size,
                                  red[0],red[1],size, size, size ,red[0], red[1]);
                      }else{
-                        ALOGD("BP: nativeSetGamma success: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                        ALOGI_IF(log_level(DBG_INFO),"BP: nativeSetGamma success: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
                                 red[0],red[1],size, size, size ,red[0], red[1]);
                     }
                  }else{

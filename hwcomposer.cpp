@@ -971,17 +971,27 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         }
         else
         {
-            if (display == 0){
-                property_get("persist." PROPERTY_TYPE ".overscan.main", overscan, "use_baseparameter");
-                if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
-                  hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
+          if (display == HWC_DISPLAY_PRIMARY){
+            if(hwc_have_baseparameter()){
+              property_get("persist." PROPERTY_TYPE ".overscan.main", overscan, "use_baseparameter");
+              if(!strcmp(overscan,"use_baseparameter"))
+                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
             }else{
-                property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "use_baseparameter");
-                if(hwc_have_baseparameter() && !strcmp(overscan,"use_baseparameter"))
-                  hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
+              property_get("persist." PROPERTY_TYPE ".overscan.main", overscan, "overscan 100,100,100,100");
             }
             sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
+                              &right_margin, &bottom_margin);
+          }else{
+            if(hwc_have_baseparameter()){
+              property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "use_baseparameter");
+              if(!strcmp(overscan,"use_baseparameter"))
+                hwc_get_baseparameter_config(overscan,display,BP_OVERSCAN,0);
+            }else{
+              property_get("persist." PROPERTY_TYPE ".overscan.aux", overscan, "overscan 100,100,100,100");
+            }
+           sscanf(overscan, "overscan %d,%d,%d,%d", &left_margin, &top_margin,
                     &right_margin, &bottom_margin);
+          }
         }
 
         //limit overscan to (OVERSCAN_MIN_VALUE,OVERSCAN_MAX_VALUE)
@@ -1948,7 +1958,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
           last_mainType = connector->get_type();
         }
         property_get("persist." PROPERTY_TYPE ".color.main", prop_format, "use_baseparameter");
-        if(hwc_have_baseparameter() && !strcmp(prop_format,"use_baseparameter"))
+        if(!strcmp(prop_format,"use_baseparameter"))
           hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){
@@ -1974,7 +1984,7 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
           last_auxType = connector->get_type();
         }
         property_get("persist." PROPERTY_TYPE ".color.aux", prop_format, "use_baseparameter");
-        if(hwc_have_baseparameter() && !strcmp(prop_format,"use_baseparameter"))
+        if(!strcmp(prop_format,"use_baseparameter"))
             hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
         ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
         if(ret != 2){

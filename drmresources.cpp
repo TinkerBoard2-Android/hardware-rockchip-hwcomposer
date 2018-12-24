@@ -198,10 +198,10 @@ void DrmResources::ConfigurePossibleDisplays()
       int res = 0;
       res = hwc_get_baseparameter_config(primary_name,0,BP_DEVICE,0);
       if(res){
-          ALOGE("BP: hwc get baseparameter err");
+          ALOGW("BP: hwc get baseparameter err");
       }else{
           primary_length = strlen(primary_name);
-          //ALOGD("LB:DEBUG primary_length = %d",primary_length);
+          ALOGI_IF(log_level(DBG_INFO),"BP: primary_length = %d",primary_length);
       }
   }
   if(!extend_length){
@@ -211,7 +211,7 @@ void DrmResources::ConfigurePossibleDisplays()
           ALOGE("BP: hwc get baseparameter err");
       }else{
           extend_length = strlen(extend_name);
-          //ALOGD("LB:DEBUG extend_length = %d",extend_length);
+          ALOGI_IF(log_level(DBG_INFO),"BP: DEBUG extend_length = %d",extend_length);
       }
   }
 
