@@ -2351,7 +2351,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   int ret = -1;
 
-#ifdef RK3368_PX5CAR
+#ifdef USE_PLANE_RESERVED
   int win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
 #endif
 
@@ -2456,22 +2456,19 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
         iter != plane_groups.end(); ++iter)
     {
-#ifdef RK3368_PX5CAR
-        if (win1_reserved > 0 &&
-            ((*iter)->planes.at(0)->type() == DRM_PLANE_TYPE_OVERLAY) &&
-            (*iter)->planes.at(0)->get_yuv())
+#ifdef USE_PLANE_RESERVED
+        if (win1_reserved > 0 && GetCrtcSupported(*crtc, (*iter)->possible_crtcs) &&
+          ((*iter)->planes.at(0)->type() == DRM_PLANE_TYPE_OVERLAY) &&
+          (*iter)->planes.at(0)->get_yuv())
         {
             (*iter)->b_reserved = true;
             for(std::vector<DrmPlane*> ::const_iterator iter_plane = (*iter)->planes.begin();
-               iter_plane != (*iter)->planes.end(); ++iter_plane)
+              iter_plane != (*iter)->planes.end(); ++iter_plane)
             {
                 (*iter_plane)->set_reserved(true);
             }
-            static bool reserved_win_debug = true;
-            if (reserved_win_debug)
-                ALOGE("reserved plane share_id = %d", (*iter)->share_id);
-            reserved_win_debug = false;
-           // continue;
+            ALOGD_IF(log_level(DBG_DEBUG),"Enable USE_PLANE_RESERVED, plane share_id = %" PRIu64 "", (*iter)->share_id);
+            continue;
         }
 #endif
         if(hd->is_interlaced && (*iter)->planes.size() > 2)

@@ -842,16 +842,17 @@ int DrmDisplayCompositor::DisablePlanes(DrmDisplayComposition *display_comp) {
   }
 
   int ret;
-#ifdef RK3368_PX5CAR
+#ifdef USE_PLANE_RESERVED
   int win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
 #endif
   std::vector<DrmCompositionPlane> &comp_planes =
       display_comp->composition_planes();
   for (DrmCompositionPlane &comp_plane : comp_planes) {
     DrmPlane *plane = comp_plane.plane();
-#ifdef RK3368_PX5CAR
-    if (win1_reserved > 0 && plane->is_reserved())
+#ifdef USE_PLANE_RESERVED
+    if (win1_reserved > 0 && plane->is_reserved()){
         continue;
+    }
 #endif
     ret = drmModeAtomicAddProperty(pset, plane->id(),
                                    plane->crtc_property().id(), 0) < 0 ||
@@ -1168,7 +1169,7 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 
     //Find out the fb target for clone layer.
     int fb_target_fb_id = -1;
-#ifdef RK3368_PX5CAR
+#ifdef USE_PLANE_RESERVED
     int win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
 #endif
 
@@ -1338,10 +1339,12 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
     }
 
     // Disable the plane if there's no framebuffer
-#ifdef RK3368_PX5CAR
-    if (fb_id < 0 && win1_reserved > 0 && plane->is_reserved())
+#ifdef USE_PLANE_RESERVED
+    if (fb_id < 0 && win1_reserved > 0 && plane->is_reserved()){
         continue;
+    }
 #endif
+
     if (fb_id < 0) {
       ret = drmModeAtomicAddProperty(pset, plane->id(),
                                      plane->crtc_property().id(), 0) < 0 ||

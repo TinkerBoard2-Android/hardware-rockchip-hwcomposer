@@ -1671,6 +1671,12 @@ bool MatchPlanes(
     uint64_t last_zpos=0;
     bool bMatch = false;
 
+#ifdef USE_PLANE_RESERVED
+        uint64_t win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
+        uint64_t win1_zpos = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.zpos", "0");
+#endif
+
+
     //set use flag to false.
     for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
        iter != plane_groups.end(); ++iter) {
@@ -1687,6 +1693,12 @@ bool MatchPlanes(
 
     for (LayerMap::iterator iter = layer_map.begin();
         iter != layer_map.end(); ++iter) {
+#ifdef USE_PLANE_RESERVED
+        if(win1_reserved > 0 && win1_zpos == last_zpos)
+        {
+            last_zpos++;
+        }
+#endif
         if(iter == layer_map.begin())
         {
             DrmHwcLayer* first_layer = (iter->second)[0];
