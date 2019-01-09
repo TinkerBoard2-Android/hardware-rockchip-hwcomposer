@@ -854,7 +854,6 @@ int DrmResources::UpdateDisplayRoute(void)
                       if (primary_crtc == extend->encoder()->crtc())
                         continue;
                     }
-
                     primary_enc->set_crtc(primary_crtc);
                     primary->set_encoder(primary_enc);
                     ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d set primary with conn[%d] crtc=%d\n",
@@ -970,8 +969,10 @@ int DrmResources::UpdateDisplayRoute(void)
               !conn->current_mode().id() || !conn->encoder() ||
               !conn->encoder()->crtc())
             continue;
+          if((connector->possible_displays() & conn->possible_displays()) == 0)
+            continue;
           for (const DrmMode &conn_mode : connector->modes()) {
-            if (conn_mode == conn->current_mode()) {
+            if (conn->current_mode().equal_no_flag_and_type(conn_mode)) {
               mirror = conn->encoder()->crtc();
               break;
             }

@@ -105,6 +105,15 @@ bool DrmMode::equal(const DrmMode &m) const {
         return true;
   return false;
 }
+bool DrmMode::equal_no_flag_and_type(const DrmMode &m) const {
+  if (clock_ == m.clock() && h_display_ == m.h_display()&&
+      h_sync_start_ == m.h_sync_start() && h_sync_end_ == m.h_sync_end() &&
+      h_total_ == m.h_total() &&
+      v_display_ == m.v_display() && v_sync_start_ == m.v_sync_start() &&
+      v_sync_end_ == m.v_sync_end() && v_total_ == m.v_total())
+        return true;
+  return false;
+}
 
 bool DrmMode::equal(uint32_t width, uint32_t height, uint32_t vrefresh,
                     bool interlaced) const
