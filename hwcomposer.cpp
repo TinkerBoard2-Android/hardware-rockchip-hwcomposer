@@ -1730,7 +1730,8 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                 ALOGD_IF(log_level(DBG_DEBUG),"layer's format=0x%x is not support,go to GPU GLES at line=%d", format, __LINE__);
                 return true;
             }
-
+//From System Product 1 Fang XingWen: Give priority to frame rate stability, regardless of the HDR effect
+#if 0
 #if  (defined TARGET_BOARD_PLATFORM_RK3399) || (defined TARGET_BOARD_PLATFORM_RK3288)
             if(hd->isHdr)
             {
@@ -1742,7 +1743,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                 }
             }
 #endif
-
+#endif
 #if 1
             if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
             {
