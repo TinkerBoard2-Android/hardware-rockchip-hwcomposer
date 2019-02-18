@@ -363,7 +363,7 @@ endif #tablet
 ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3126c)
 RK_INVALID_REFRESH = 0
 else
-RK_INVALID_REFRESH = 1
+RK_INVALID_REFRESH = 0
 endif
 
 ifeq ($(TARGET_USES_HWC2),true)
