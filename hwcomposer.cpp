@@ -1174,19 +1174,23 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
      }
 
 #if RK_VIDEO_SKIP_LINE
-    if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10)
-    {
-        if(width >= 3840)
-        {
-            if(h_scale_mul > 1.0 || v_scale_mul > 1.0)
-            {
-                SkipLine = 2;
-            }
-            if(format == HAL_PIXEL_FORMAT_YCrCb_NV12_10 && h_scale_mul >= (3840 / 1600))
-            {
-                SkipLine = 3;
-            }
+    if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10){
+      if(width >= 3840){
+        if(h_scale_mul > 1.0 || v_scale_mul > 1.0){
+            SkipLine = 2;
         }
+        if(format == HAL_PIXEL_FORMAT_YCrCb_NV12_10 && h_scale_mul >= (3840 / 1600)){
+            SkipLine = 3;
+        }
+      }
+      int video_skipline = property_get_int32("vendor.video.skipline", 0);
+      if (video_skipline == 2){
+        SkipLine = 2;
+      }else if(video_skipline == 3){
+        SkipLine = 3;
+      }else{
+        SkipLine = 0;
+      }
     }
 #endif
 
