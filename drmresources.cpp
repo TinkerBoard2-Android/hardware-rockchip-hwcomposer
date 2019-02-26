@@ -846,7 +846,11 @@ int DrmResources::UpdateDisplayRoute(void)
                     __FUNCTION__, __LINE__, extend->id(), crtc->id());
             if (primary && primary->encoder() && primary->encoder()->crtc()) {
               if (crtc == primary->encoder()->crtc()) {
-                primary->encoder()->set_crtc(NULL);
+                //RK618 use a encoder(RGB) to display two connector,so if encoder is same
+                //not to set encoder.crtc NULL
+                if(enc != primary->encoder()){
+                    primary->encoder()->set_crtc(NULL);
+                }
                 primary->set_encoder(NULL);
                 for (DrmEncoder *primary_enc : primary->possible_encoders()) {
                   for (DrmCrtc *primary_crtc : primary_enc->possible_crtcs()) {
