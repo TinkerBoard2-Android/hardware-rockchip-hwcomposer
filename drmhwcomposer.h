@@ -215,6 +215,12 @@ enum class DrmHwcBlending : int32_t {
   kCoverage = HWC_BLENDING_COVERAGE,
 };
 
+typedef enum DrmGenericImporterFlag {
+  NO_FLAG = 0,
+  VOP_NOT_SUPPORT_ALPHA_SCALE = 1,
+}DrmGenericImporterFlag_t;
+
+
 const char *BlendingToString(DrmHwcBlending blending);
 
 struct DrmHwcLayer {
@@ -274,6 +280,7 @@ struct DrmHwcLayer {
   size_t index;
   hwc_layer_1_t *mlayer = NULL;
   hwc_rect_t  rect_merge;
+
 
   int ImportBuffer(struct hwc_context_t *ctx, hwc_layer_1_t *sf_layer, Importer *importer);
   int InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_layer_1_t *sf_layer, Importer *importer,

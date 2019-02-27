@@ -58,12 +58,15 @@ class DrmGenericImporter : public Importer {
 #endif
   int ReleaseBuffer(hwc_drm_bo_t *bo) override;
 
+  void SetFlag(DrmGenericImporterFlag_t flag) override;
+
  private:
   uint32_t ConvertHalFormatToDrm(uint32_t hal_format);
 
   DrmResources *drm_;
 
   const gralloc_module_t *gralloc_;
+  DrmGenericImporterFlag_t flag_;
 };
 }
 

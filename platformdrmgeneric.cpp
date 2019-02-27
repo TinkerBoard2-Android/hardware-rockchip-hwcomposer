@@ -92,18 +92,31 @@ int DrmGenericImporter::Init() {
     ALOGE("Failed to open gralloc module");
     return ret;
   }
+  flag_ = NO_FLAG;
   return 0;
+}
+void DrmGenericImporter::SetFlag(DrmGenericImporterFlag_t flag){
+  flag_ = flag;
 }
 
 uint32_t DrmGenericImporter::ConvertHalFormatToDrm(uint32_t hal_format) {
+  /*
+   * RK3326 VOP not support alpha scale, need to convert layer format
+   *   DRM_FORMAT_ARGB8888 -> DRM_FORMAT_XRGB8888
+   *   DRM_FORMAT_ABGR8888 -> DRM_FORMAT_XBGR8888
+   */
   switch (hal_format) {
     case HAL_PIXEL_FORMAT_RGB_888:
       return DRM_FORMAT_BGR888;
     case HAL_PIXEL_FORMAT_BGRA_8888:
+        if(flag_ == VOP_NOT_SUPPORT_ALPHA_SCALE)
+          return DRM_FORMAT_XRGB8888;
       return DRM_FORMAT_ARGB8888;
     case HAL_PIXEL_FORMAT_RGBX_8888:
       return DRM_FORMAT_XBGR8888;
     case HAL_PIXEL_FORMAT_RGBA_8888:
+        if(flag_ == VOP_NOT_SUPPORT_ALPHA_SCALE)
+          return DRM_FORMAT_XBGR8888;
       return DRM_FORMAT_ABGR8888;
     //Fix color error in NenaMark2.
     case HAL_PIXEL_FORMAT_RGB_565:

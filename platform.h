@@ -73,6 +73,7 @@ class Importer {
   // Note: This can be called from a different thread than ImportBuffer. The
   //       implementation is responsible for ensuring thread safety.
   virtual int ReleaseBuffer(hwc_drm_bo_t *bo) = 0;
+  virtual void SetFlag(DrmGenericImporterFlag_t flag) = 0;
 };
 
 class Planner {

@@ -1342,6 +1342,17 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 
 int DrmHwcLayer::ImportBuffer(struct hwc_context_t *ctx, hwc_layer_1_t *sf_layer, Importer *importer)
 {
+
+#if TARGET_BOARD_PLATFORM_RK3326
+   /*
+    * RK3326 VOP not support alpha scale, need to convert layer format
+    *   DRM_FORMAT_ARGB8888 -> DRM_FORMAT_XRGB8888
+    *   DRM_FORMAT_ABGR8888 -> DRM_FORMAT_XBGR8888
+    */
+   if(is_scale)
+     importer->SetFlag(DrmGenericImporterFlag::VOP_NOT_SUPPORT_ALPHA_SCALE);
+#endif
+
    int ret = buffer.ImportBuffer(sf_layer->handle, importer
 #if RK_VIDEO_SKIP_LINE
   , SkipLine
