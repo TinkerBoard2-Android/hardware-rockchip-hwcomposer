@@ -106,6 +106,8 @@ class DrmConnector {
   drmModeConnection state() const;
   drmModeConnection raw_state() const;
   void force_disconnect(bool force);
+  int priority() const;
+  void set_priority(int priority);
 
   uint32_t get_type() { return type_; }
   int possible_displays() { return possible_displays_; }
@@ -130,6 +132,7 @@ class DrmConnector {
   int display_;
 
   uint32_t type_;
+  int priority_;
   drmModeConnection state_;
   bool force_disconnect_;
 

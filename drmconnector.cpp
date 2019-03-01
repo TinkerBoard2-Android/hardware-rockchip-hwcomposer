@@ -61,6 +61,7 @@ DrmConnector::DrmConnector(DrmResources *drm, drmModeConnectorPtr c,
       encoder_(current_encoder),
       display_(-1),
       type_(c->connector_type),
+      priority_(-1),
       state_(c->connection),
       force_disconnect_(false),
       mm_width_(c->mmWidth),
@@ -137,6 +138,13 @@ uint32_t DrmConnector::id() const {
 
 uint32_t DrmConnector::type_id() const {
   return type_id_;
+}
+
+int DrmConnector::priority() const{
+  return priority_;
+}
+void DrmConnector::set_priority(int priority){
+  priority_ = priority;
 }
 
 int DrmConnector::display() const {

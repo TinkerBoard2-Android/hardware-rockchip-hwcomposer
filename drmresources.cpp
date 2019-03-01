@@ -232,14 +232,16 @@ void DrmResources::ConfigurePossibleDisplays()
 
   if (primary_length) {
     std::stringstream ss(primary_name);
-
+    int connector_priority = 0;
     while(getline(ss, conn_name, ',')) {
       for (auto &conn : connectors_) {
         snprintf(acConnName,50,"%s-%d",connector_type_str(conn->get_type()),conn->type_id());
         if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()) ||
             !strcmp(acConnName, conn_name.c_str()))
         {
+          conn->set_priority(connector_priority);
           conn->set_display_possible(HWC_DISPLAY_PRIMARY_BIT);
+          connector_priority++;
         }
       }
     }
@@ -247,14 +249,16 @@ void DrmResources::ConfigurePossibleDisplays()
 
   if (extend_length) {
     std::stringstream ss(extend_name);
-
+    int connector_priority = 0;
     while(getline(ss, conn_name, ',')) {
       for (auto &conn : connectors_) {
         snprintf(acConnName,50,"%s-%d",connector_type_str(conn->get_type()),conn->type_id());
         if (!strcmp(connector_type_str(conn->get_type()), conn_name.c_str()) ||
             !strcmp(acConnName, conn_name.c_str()))
         {
+          conn->set_priority(connector_priority);
           conn->set_display_possible(conn->possible_displays() | HWC_DISPLAY_EXTERNAL_BIT);
+          connector_priority++;
         }
       }
     }
@@ -448,7 +452,13 @@ int DrmResources::Init() {
     if (conn->state() != DRM_MODE_CONNECTED)
       continue;
     found_primary = true;
-    SetPrimaryDisplay(conn.get());
+    if(NULL == GetConnectorFromType(HWC_DISPLAY_PRIMARY)){
+      SetPrimaryDisplay(conn.get());
+    }else{
+      if(conn.get()->priority() <
+         GetConnectorFromType(HWC_DISPLAY_PRIMARY)->priority())
+        SetPrimaryDisplay(conn.get());
+    }
   }
 
   if (!found_primary) {
@@ -458,7 +468,13 @@ int DrmResources::Init() {
       if (conn->state() != DRM_MODE_CONNECTED)
         continue;
       found_primary = true;
-      SetPrimaryDisplay(conn.get());
+      if(NULL == GetConnectorFromType(HWC_DISPLAY_PRIMARY)){
+        SetPrimaryDisplay(conn.get());
+      }else{
+        if(conn.get()->priority() <
+           GetConnectorFromType(HWC_DISPLAY_PRIMARY)->priority())
+          SetPrimaryDisplay(conn.get());
+      }
     }
   }
 
@@ -467,7 +483,13 @@ int DrmResources::Init() {
       if (!(conn->possible_displays() & HWC_DISPLAY_PRIMARY_BIT))
         continue;
       found_primary = true;
-      SetPrimaryDisplay(conn.get());
+      if(NULL == GetConnectorFromType(HWC_DISPLAY_PRIMARY)){
+        SetPrimaryDisplay(conn.get());
+      }else{
+        if(conn.get()->priority() <
+           GetConnectorFromType(HWC_DISPLAY_PRIMARY)->priority())
+          SetPrimaryDisplay(conn.get());
+      }
     }
   }
 
@@ -493,7 +515,13 @@ int DrmResources::Init() {
         continue;
       if (conn->state() != DRM_MODE_CONNECTED)
         continue;
-      SetExtendDisplay(conn.get());
+      if(NULL == GetConnectorFromType(HWC_DISPLAY_EXTERNAL)){
+        SetExtendDisplay(conn.get());
+      }else{
+        if(conn.get()->priority() <
+           GetConnectorFromType(HWC_DISPLAY_EXTERNAL)->priority())
+          SetExtendDisplay(conn.get());
+      }
   }
 
   ALOGD_IF(log_level(DBG_VERBOSE),"%s",out.str().c_str());
@@ -935,7 +963,6 @@ int DrmResources::UpdateDisplayRoute(void)
     struct drm_mode_modeinfo drm_mode;
     memset(&drm_mode, 0, sizeof(drm_mode));
     conn->current_mode().ToDrmModeModeInfo(&drm_mode);
-
     ret = CreatePropertyBlob(&drm_mode, sizeof(drm_mode), &blob_id[i]);
     if (ret)
       continue;
