@@ -1974,13 +1974,22 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
           last_mainType = connector->get_type();
         }
         property_get("persist." PROPERTY_TYPE ".color.main", prop_format, "use_baseparameter");
-        if(!strcmp(prop_format,"use_baseparameter"))
+        if(!strcmp(prop_format,"use_baseparameter")){
           hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
-        ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
-        if(ret != 2){
-          ALOGE("BP: get color fail! to use default ");
-          color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
-          color_depth = ROCKCHIP_DEPTH_DEFAULT;
+          ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
+          if(ret != 2){
+            ALOGE("BP: get color fail! to use default ");
+            color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+            color_depth = ROCKCHIP_DEPTH_DEFAULT;
+          }
+        }else{
+          /* Can get the persist." PROPERTY_TYPE ".color.main, to use it. */
+          ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
+          if (ret == false) {
+            ALOGE("Get color fail! to use default ");
+            color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+            color_depth = ROCKCHIP_DEPTH_DEFAULT;
+          }
         }
       }else{
         /* if resolution is null,set to "Auto" */
@@ -2000,13 +2009,22 @@ static bool update_hdmi_output_format(struct hwc_context_t *ctx, DrmConnector *c
           last_auxType = connector->get_type();
         }
         property_get("persist." PROPERTY_TYPE ".color.aux", prop_format, "use_baseparameter");
-        if(!strcmp(prop_format,"use_baseparameter"))
-            hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
-        ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
-        if(ret != 2){
-          ALOGE("BP: get color fail! to use default ");
-          color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
-          color_depth = ROCKCHIP_DEPTH_DEFAULT;
+        if(!strcmp(prop_format,"use_baseparameter")){
+          hwc_get_baseparameter_config(prop_format,display,BP_COLOR,connector->get_type());
+          ret = sscanf(prop_format,"%d-%d",&color_format,&color_depth);
+          if(ret != 2){
+            ALOGE("BP: get color fail! to use default ");
+            color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+            color_depth = ROCKCHIP_DEPTH_DEFAULT;
+          }
+        }else{
+          /* Can get the persist." PROPERTY_TYPE ".color.aux, to use it. */
+          ret = parse_hdmi_output_format_prop(prop_format, &color_format, &color_depth);
+          if (ret == false) {
+            ALOGE("Get color fail! to use default ");
+            color_format = DRM_HDMI_OUTPUT_DEFAULT_RGB;
+            color_depth = ROCKCHIP_DEPTH_DEFAULT;
+          }
         }
       }else{
         /* if resolution is null,set to "Auto" */
