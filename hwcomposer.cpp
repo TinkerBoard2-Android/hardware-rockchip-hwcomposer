@@ -1188,8 +1188,6 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         SkipLine = 2;
       }else if(video_skipline == 3){
         SkipLine = 3;
-      }else{
-        SkipLine = 0;
       }
     }
 #endif
