@@ -1492,6 +1492,8 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     uint64_t internal_format = 0;
     int iFbdcCnt = 0;
 #endif
+    int video_4k_cnt = 0;
+    int large_UI_cnt = 0;
 
     for (int j = 0; j < num_layers-1; j++) {
         hwc_layer_1_t *layer = &display_content->hwLayers[j];
@@ -1504,25 +1506,36 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             format = hwc_get_handle_format(ctx->gralloc,layer->handle);
 #endif
         }
+        int src_l=0,src_t=0,src_r=0,src_b=0,src_w=0,src_h=0;
+        int dst_l=0,dst_t=0,dst_r=0,dst_b=0,dst_w=0,dst_h=0;
+        hwc_rect_t  rect_merge;
+        int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
+        float rga_h_scale=1.0, rga_v_scale=1.0;
+
+        src_l = (int)layer->sourceCropf.left;
+        src_t = (int)layer->sourceCropf.top;
+        src_r = (int)layer->sourceCropf.right;
+        src_b = (int)layer->sourceCropf.bottom;
+        src_w = (int)(layer->sourceCropf.right - layer->sourceCropf.left);
+        src_h = (int)(layer->sourceCropf.bottom - layer->sourceCropf.top);
+
+        dst_w = (int)(layer->displayFrame.right - layer->displayFrame.left);
+        dst_h = (int)(layer->displayFrame.bottom - layer->displayFrame.top);
+
+
+        src_l = ALIGN_DOWN(src_l, 2);
+        dst_l = 0;
+        dst_t = 0;
+
+        if(format == HAL_PIXEL_FORMAT_YCrCb_NV12 || format == HAL_PIXEL_FORMAT_YCrCb_NV12_10){
+            if(src_w >= 3840 && src_h >= 2160 && (src_w != dst_w ||src_h != dst_h))
+                video_4k_cnt++;
+        }else if(src_w * src_h >= 1920 * 1080){
+            large_UI_cnt++;
+        }
 
         if(hd->isVideo && (layer->transform != 0))
         {
-            int src_l=0,src_t=0,src_r=0,src_b=0,src_w=0,src_h=0;
-            int dst_l=0,dst_t=0,dst_r=0,dst_b=0,dst_w=0,dst_h=0;
-            hwc_rect_t  rect_merge;
-            int left_min = 0, top_min = 0, right_max = 0, bottom_max=0;
-            float rga_h_scale=1.0, rga_v_scale=1.0;
-
-            src_l = (int)layer->sourceCropf.left;
-            src_t = (int)layer->sourceCropf.top;
-            src_r = (int)layer->sourceCropf.right;
-            src_b = (int)layer->sourceCropf.bottom;
-            src_w = (int)(layer->sourceCropf.right - layer->sourceCropf.left);
-            src_h = (int)(layer->sourceCropf.bottom - layer->sourceCropf.top);
-
-            src_l = ALIGN_DOWN(src_l, 2);
-            dst_l = 0;
-            dst_t = 0;
 
 #if !RK_RGA_SCALE_AND_ROTATE
             if((layer->transform == HWC_TRANSFORM_ROT_90) || (layer->transform == HWC_TRANSFORM_ROT_270))
@@ -1813,6 +1826,13 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
     if(hd->transform_nv12 > 1 || hd->transform_normal > 0)
     {
         ALOGD_IF(log_level(DBG_DEBUG), "too many rotate layers,go to GPU GLES at line=%d", __LINE__);
+        return true;
+    }
+
+    if(video_4k_cnt >= 1 && large_UI_cnt >= 2)
+    {
+        ALOGD_IF(log_level(DBG_DEBUG), "4k video(%d) and too much large UI(%d),go to GPU GLES at line=%d",video_4k_cnt,
+                 large_UI_cnt, __LINE__);
         return true;
     }
 
