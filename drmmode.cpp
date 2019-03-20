@@ -139,8 +139,8 @@ bool DrmMode::equal(uint32_t width, uint32_t height, float vrefresh,
   if (v_scan_ > 1)
     v_refresh /= v_scan_ ;
 
-  vrefresh_temp = vrefresh * 100;
-  v_refresh_temp = v_refresh * 100;
+  vrefresh_temp = round(vrefresh * 100);
+  v_refresh_temp = round(v_refresh * 100);
 
   /* vrefresh within 1 HZ */
   if (fabs(v_refresh - vrefresh) > 1.0f)
