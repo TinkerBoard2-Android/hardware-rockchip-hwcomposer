@@ -104,6 +104,10 @@ static bool g_bSkipExtern = false;
 
 #ifdef USE_HWC2
 static bool g_hasHotplug = false;
+// Must to wait hwc-set to send Hotplug event
+// If you don't do this, there will be problems with the hot-plugging device registration and destruction timing. 
+// In severe cases, the fence fd will leak or the system will not respond.
+static bool g_waitHwcSetHotplug = false;
 #endif
 
 static bool g_bSkipCurFrame = false;
@@ -190,11 +194,6 @@ class DrmHotplugHandler : public DrmEventHandler {
   void HandleEvent(uint64_t timestamp_us) {
     DrmConnector *extend = NULL;
     DrmConnector *primary = NULL;
-
-#ifdef USE_HWC2
-    if(!g_hasHotplug)
-       g_hasHotplug = true;
-#endif
 
     for (auto &conn : drm_->connectors()) {
       //In sleep mode,we need get raw connector state,otherwise,we will miss the chance
@@ -312,6 +311,11 @@ class DrmHotplugHandler : public DrmEventHandler {
     drm_->SetExtendDisplay(extend);
 
     if (!extend) {
+      g_waitHwcSetHotplug = false;
+      procs_->invalidate(procs_);
+      while(!g_waitHwcSetHotplug && g_hasHotplug){
+          usleep(2000);
+      }
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
 
       /**********************long-running operations should move back of hotplug**************************/
@@ -360,6 +364,11 @@ class DrmHotplugHandler : public DrmEventHandler {
     if( extend != old_extend || (get_frame() == 1 && extend != NULL)){
       g_bSkipExtern = true;
       g_extern_gles_cnt = 0;
+      g_waitHwcSetHotplug = false;
+      procs_->invalidate(procs_);
+      while(!g_waitHwcSetHotplug && g_hasHotplug){
+          usleep(2000);
+      }
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
       hd->active = true;
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
@@ -382,6 +391,11 @@ class DrmHotplugHandler : public DrmEventHandler {
 
     //Update LUT from baseparameter when Hot_plug devices conneted
     hwc_SetGamma(drm_);
+
+#ifdef USE_HWC2
+    if(!g_hasHotplug)
+        g_hasHotplug = true;
+#endif
 
     //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
     usleep(HOTPLUG_MSLEEP*1000);
@@ -3158,6 +3172,7 @@ void signal_all_fence(DrmHwcDisplayContents &display_contents,hwc_display_conten
 static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
                    hwc_display_contents_1_t **sf_display_contents) {
   ATRACE_CALL();
+  g_waitHwcSetHotplug = true;
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   int ret = 0;
 
