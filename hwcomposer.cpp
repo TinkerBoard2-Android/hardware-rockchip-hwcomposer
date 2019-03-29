@@ -3383,6 +3383,14 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
     if(bFindDisplay)
         continue;
 
+    size_t num_dc_layers = dc->numHwLayers;
+    DrmConnector *c = ctx->drm.GetConnectorFromType(i);
+    if (!c || c->state() != DRM_MODE_CONNECTED || num_dc_layers==1) {
+        ALOGD_IF(log_level(DBG_VERBOSE),
+        "%s,display %zu Connector is NULL or disconnect ,layer_list is NULL",__FUNCTION__,i);
+        continue;
+    }
+
     /*
      * DUAL_VIEW_MODE
      * Primary layers   ->    Primary Device
