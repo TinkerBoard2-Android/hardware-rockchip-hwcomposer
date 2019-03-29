@@ -441,6 +441,7 @@ int DrmDisplayCompositor::QueueComposition(
     ALOGE("Failed to acquire compositor lock %d", ret);
     return ret;
   }
+  clearDisplay_ = false;
 
   while(composite_queue_.size() >= DRM_DISPLAY_COMPOSITOR_MAX_QUEUE_DEPTH)
   {
@@ -1720,6 +1721,7 @@ void DrmDisplayCompositor::ClearDisplay() {
     composite_queue_.pop();
     pthread_cond_signal(&composite_queue_cond_);
   }
+  clearDisplay_ = true;
 }
 
 void DrmDisplayCompositor::ApplyFrame(
@@ -1746,7 +1748,10 @@ void DrmDisplayCompositor::ApplyFrame(
     ALOGE("Failed to acquire lock for active_composition swap");
 
   active_composition_.swap(composition);
-
+  if(clearDisplay_){
+       usleep(16 * 1000);
+       active_composition_->SignalCompositionDone();
+  }
   if (!ret)
     ret = pthread_mutex_unlock(&lock_);
   if (ret)
