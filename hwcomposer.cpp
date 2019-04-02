@@ -311,11 +311,13 @@ class DrmHotplugHandler : public DrmEventHandler {
     drm_->SetExtendDisplay(extend);
 
     if (!extend) {
+#ifdef USE_HWC2
       g_waitHwcSetHotplug = false;
       procs_->invalidate(procs_);
       while(!g_waitHwcSetHotplug && g_hasHotplug){
           usleep(2000);
       }
+#endif
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
 
       /**********************long-running operations should move back of hotplug**************************/
@@ -364,11 +366,13 @@ class DrmHotplugHandler : public DrmEventHandler {
     if( extend != old_extend || (get_frame() == 1 && extend != NULL)){
       g_bSkipExtern = true;
       g_extern_gles_cnt = 0;
+#ifdef USE_HWC2
       g_waitHwcSetHotplug = false;
       procs_->invalidate(procs_);
       while(!g_waitHwcSetHotplug && g_hasHotplug){
           usleep(2000);
       }
+#endif
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
       hd->active = true;
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
@@ -3172,7 +3176,9 @@ void signal_all_fence(DrmHwcDisplayContents &display_contents,hwc_display_conten
 static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
                    hwc_display_contents_1_t **sf_display_contents) {
   ATRACE_CALL();
+#ifdef USE_HWC2
   g_waitHwcSetHotplug = true;
+#endif
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   int ret = 0;
 
