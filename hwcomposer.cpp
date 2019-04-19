@@ -1367,6 +1367,8 @@ int DrmHwcLayer::ImportBuffer(struct hwc_context_t *ctx, hwc_layer_1_t *sf_layer
     */
    if(is_scale)
      importer->SetFlag(DrmGenericImporterFlag::VOP_NOT_SUPPORT_ALPHA_SCALE);
+   else
+     importer->SetFlag(DrmGenericImporterFlag::NO_FLAG);
 #endif
 
    int ret = buffer.ImportBuffer(sf_layer->handle, importer
