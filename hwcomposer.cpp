@@ -3899,6 +3899,25 @@ static int hwc_get_display_configs(struct hwc_composer_device_1 *dev,
   hd->rel_yres = mode.v_display();
   hd->v_total = mode.v_total();
 
+  // AFBDC limit
+  bool disable_afbdc = false;
+  if(display == HWC_DISPLAY_PRIMARY){
+#ifdef TARGET_BOARD_PLATFORM_RK3399
+    if(hd->framebuffer_width > 2560 || hd->framebuffer_width % 16 != 0 || hd->framebuffer_height % 8 != 0)
+       disable_afbdc = true;
+#elif TARGET_BOARD_PLATFORM_RK3368
+    if(hd->framebuffer_width > 2048 || hd->framebuffer_width % 16 != 0 || hd->framebuffer_height % 4 != 0)
+       disable_afbdc = true;
+#elif TARGET_BOARD_PLATFORM_RK3326
+    if(hd->framebuffer_width > 1920 || hd->framebuffer_width % 16 != 0 || hd->framebuffer_height % 8 != 0)
+       disable_afbdc = true;
+#endif
+    if(disable_afbdc){
+      property_set( PROPERTY_TYPE ".gralloc.disable_afbc", "1");
+      ALOGI("%s:line=%d primary framebuffer size %dx%d not support AFBDC, to disable AFBDC\n",
+               __FUNCTION__, __LINE__, hd->framebuffer_width,hd->framebuffer_height);
+    }
+  }
   *num_configs = 1;
   configs[0] = connector->display();
 

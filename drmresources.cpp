@@ -903,11 +903,7 @@ int DrmResources::UpdateDisplayRoute(void)
   if(primary && primary->encoder() && primary->encoder()->crtc())
   {
     DrmCrtc *crtc = primary->encoder()->crtc();
-    if(crtc->get_afbc()){
-      property_set( PROPERTY_TYPE ".gralloc.disable_afbc", "0");
-      ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d primary conn[%d] crtc=%d support AFBC(%d), to use AFBC\n",
-               __FUNCTION__, __LINE__, primary->id(), crtc->id(),crtc->get_afbc());
-    }else{
+    if(!crtc->get_afbc()){
       property_set( PROPERTY_TYPE ".gralloc.disable_afbc", "1");
       ALOGD_IF(log_level(DBG_VERBOSE), "%s:line=%d primary conn[%d] crtc=%d support AFBC(%d), to disable AFBC\n",
                __FUNCTION__, __LINE__, primary->id(), crtc->id(),crtc->get_afbc());
