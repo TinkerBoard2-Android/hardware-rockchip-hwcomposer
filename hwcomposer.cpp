@@ -3688,7 +3688,7 @@ err:
     ALOGE("%s: not normal frame happen",__FUNCTION__);
     for (size_t i = 0; i < num_displays; ++i) {
         hwc_display_contents_1_t *dc = sf_display_contents[i];
-        if (!dc)
+        if (!dc || i == HWC_DISPLAY_VIRTUAL)
           continue;
 
         int num_layers = dc->numHwLayers;
