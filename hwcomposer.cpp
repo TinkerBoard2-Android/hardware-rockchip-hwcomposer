@@ -1802,7 +1802,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             }
 #endif
 #if 1
-            if(!vop_support_scale(layer))
+            if(!vop_support_scale(layer,hd))
             {
                 ALOGD_IF(log_level(DBG_DEBUG),"layer's scale is not support,go to GPU GLES at line=%d", __LINE__);
                 return true;

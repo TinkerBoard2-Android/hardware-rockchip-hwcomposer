@@ -982,7 +982,7 @@ bool vop_support_format(uint32_t hal_format) {
   }
 }
 
-bool vop_support_scale(hwc_layer_1_t *layer) {
+bool vop_support_scale(hwc_layer_1_t *layer,hwc_drm_display_t *hd) {
     float hfactor;
     float vfactor;
     DrmHwcRect<float> source_crop;
@@ -992,8 +992,8 @@ bool vop_support_scale(hwc_layer_1_t *layer) {
       layer->sourceCropf.left, layer->sourceCropf.top,
       layer->sourceCropf.right, layer->sourceCropf.bottom);
     display_frame = DrmHwcRect<int>(
-      layer->displayFrame.left, layer->displayFrame.top,
-      layer->displayFrame.right, layer->displayFrame.bottom);
+      hd->w_scale * layer->displayFrame.left, hd->h_scale * layer->displayFrame.top,
+      hd->w_scale * layer->displayFrame.right, hd->h_scale * layer->displayFrame.bottom);
 
     if((layer->transform == HWC_TRANSFORM_ROT_90)
        ||(layer->transform == HWC_TRANSFORM_ROT_270)){

@@ -444,7 +444,7 @@ uint32_t hwc_get_handle_phy_addr(const gralloc_module_t *gralloc, buffer_handle_
 uint32_t hwc_get_layer_colorspace(hwc_layer_1_t *layer);
 uint32_t colorspace_convert_to_linux(uint32_t colorspace);
 bool vop_support_format(uint32_t hal_format);
-bool vop_support_scale(hwc_layer_1_t *layer);
+bool vop_support_scale(hwc_layer_1_t *layer,hwc_drm_display_t *hd);
 bool GetCrtcSupported(const DrmCrtc &crtc, uint32_t possible_crtc_mask);
 bool match_process(DrmResources* drm, DrmCrtc *crtc, bool is_interlaced,
                         std::vector<DrmHwcLayer>& layers, int iPlaneSize, int fbSize,
