@@ -177,7 +177,7 @@ int DrmGenericImporter::ImportBuffer(buffer_handle_t handle, hwc_drm_bo_t *bo
   if(SkipLine)
   {
     bo->pitches[0] = byte_stride * SkipLine;
-    bo->height = height / SkipLine;
+    bo->height = (height / SkipLine) + ((height / SkipLine) % 2);
   }
   else
 #endif
