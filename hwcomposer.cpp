@@ -3406,12 +3406,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
      *                  ->    Extend Device
      */
 #if DUAL_VIEW_MODE
-    size_t num_dc_layers = dc->numHwLayers;
-    DrmConnector *c = ctx->drm.GetConnectorFromType(i);
-    if (!c || c->state() != DRM_MODE_CONNECTED || num_dc_layers==1) {
-        ALOGE("DUAL:display %zu Connector is NULL or disconnect ,layer_list is NULL",i);
-        continue;
-    }
+    static int primaryAcquirFenceDup = -1;
     hwc_drm_display_t *hd = &ctx->displays[c->display()];
     if(hd->bDualViewMode){
       DrmHwcDisplayContents &display_contents_pri = ctx->layer_contents[0];
@@ -3424,6 +3419,21 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       for (size_t j=0; j< display_contents.layers.size(); j++) {
         DrmHwcLayer &layer = display_contents.layers[j];
         DrmHwcLayer &layer_pri = display_contents_pri.layers[j];
+        //Dup primary acquireFence to extend, should wait acquireFence before commmit.
+        if( i == HWC_DISPLAY_PRIMARY ){
+            if( primaryAcquirFenceDup > 0){
+                close(primaryAcquirFenceDup);
+                primaryAcquirFenceDup = -1;
+            }
+            if(layer_pri.acquire_fence.get() > 0){
+                primaryAcquirFenceDup = dup(layer_pri.acquire_fence.get());
+            }
+        }else if( i == HWC_DISPLAY_EXTERNAL ){
+            if(primaryAcquirFenceDup > 0){
+                layer.acquire_fence.Set(primaryAcquirFenceDup);
+                primaryAcquirFenceDup = -1;
+            }
+        }
         if(!layer_pri.sf_handle && layer_pri.raw_sf_layer->handle)
         {
           layer_pri.sf_handle = layer_pri.raw_sf_layer->handle;

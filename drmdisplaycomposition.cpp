@@ -369,23 +369,6 @@ int DrmDisplayComposition::CreateAndAssignReleaseFences() {
       continue;
     }
 
-#if DUAL_VIEW_MODE
-    if(!layer)
-    {
-      continue;
-    }
-    if (layer->acquire_fence.get() >= 0) {
-      int acquire_fence = layer->acquire_fence.get();
-      int total_fence_timeout = 0;
-      int ret = sync_wait(acquire_fence, 1500);
-      if (ret) {
-        ALOGE("Failed to wait for acquire %d/%d 1500ms", acquire_fence, ret);
-        break;
-      }
-      layer->acquire_fence.Close();
-    }
-#endif
-
 #if RK_VR
     if(layer->release_fence.get() > -1 && (layer->gralloc_buffer_usage & 0x08000000))
     {
