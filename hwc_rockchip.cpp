@@ -2140,7 +2140,19 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
         if(bAllMatch)
             goto AllMatch;
         else
-            resore_tmp_layers_except_fb(layers, tmp_layers);
+       {
+          resore_tmp_layers_except_fb(layers, tmp_layers);
+          if(hd->isVideo)
+          for(-- layer_indices.first;layer_indices.first>0 ; -- layer_indices.first)
+           {
+                 ALOGD_IF(log_level(DBG_DEBUG), "%s:mix up for video (%d,%d)",__FUNCTION__,layer_indices.first, layer_indices.second);
+                 bAllMatch = try_mix_policy(drm, crtc,hd->is_interlaced,  layers, tmp_layers, iPlaneSize, composition_planes,
+                 layer_indices.first, layer_indices.second, fbSize);
+                 if(bAllMatch)
+                 goto AllMatch;
+                 resore_tmp_layers_except_fb(layers, tmp_layers);
+           }
+       }
     }
 
     /*************************mix down*************************
