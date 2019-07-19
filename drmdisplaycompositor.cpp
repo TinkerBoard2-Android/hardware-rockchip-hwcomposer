@@ -1388,7 +1388,9 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 #if RK_VIDEO_SKIP_LINE
     if(SkipLine)
     {
-        src_h = (int)(source_crop.bottom - source_crop.top)/SkipLine;
+        src_h = (int)(source_crop.bottom - source_crop.top) / SkipLine + \
+                ((int)(source_crop.bottom - source_crop.top) / SkipLine) % 2;
+        src_t = (int)source_crop.top / SkipLine - ((int)source_crop.top / SkipLine) % 2;
     }
     else
 #endif
