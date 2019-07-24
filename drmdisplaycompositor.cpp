@@ -1424,8 +1424,10 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
         dst_h = IS_ALIGN(dst_h, 4)?dst_h:(ALIGN(dst_h, 4)-4);
     }
 #endif
-    if(is_yuv)
+    if(is_yuv){
         src_l = ALIGN_DOWN(src_l, 2);
+        src_t = ALIGN_DOWN(src_t, 2);
+    }
 
     ret = drmModeAtomicAddProperty(pset, plane->id(),
                                    plane->crtc_property().id(), crtc->id()) < 0;
