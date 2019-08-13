@@ -61,7 +61,8 @@ LOCAL_C_INCLUDES := \
 	system/core/include/utils \
 	hardware/rockchip/librga
 
-ifneq (1,$(strip $(shell expr $(PLATFORM_VERSION) \< 9)))
+# API 28 -> Android 9.0
+ifneq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 28)))
 
 LOCAL_CFLAGS += -DANDROID_P
 
@@ -403,7 +404,9 @@ LOCAL_MODULE := hwcomposer.rk3229
 else
 LOCAL_MODULE := hwcomposer.$(TARGET_BOARD_HARDWARE)
 endif
-ifeq (1,$(strip $(shell expr $(PLATFORM_VERSION) \>= 8.0)))
+
+# API 26 -> Android 8.0
+ifeq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \>= 26)))
 LOCAL_PROPRIETARY_MODULE := true
 endif
 LOCAL_MODULE_TAGS := optional
