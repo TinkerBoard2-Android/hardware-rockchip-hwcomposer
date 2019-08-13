@@ -105,7 +105,7 @@ static bool g_bSkipExtern = false;
 #ifdef USE_HWC2
 static bool g_hasHotplug = false;
 // Must to wait hwc-set to send Hotplug event
-// If you don't do this, there will be problems with the hot-plugging device registration and destruction timing. 
+// If you don't do this, there will be problems with the hot-plugging device registration and destruction timing.
 // In severe cases, the fence fd will leak or the system will not respond.
 static bool g_waitHwcSetHotplug = false;
 #endif
@@ -1879,7 +1879,7 @@ static HDMI_STAT DetectStatus(const char* property)
         return HDMI_ON;
 }
 
-/* 
+/*
  * Use property on/off to enable/disable display devices
  *   sys.hdmi_status.aux -> HDMI
  *   sys.dp_status.aux   -> DP
@@ -1905,7 +1905,7 @@ static void DetectAuxStatus(const hwc_context_t *ctx)
       last_hdmi_status = hdmi_status;
       ALOGD_IF(log_level(DBG_VERBOSE),"set hdmi status to %s",acStatus);
   }
-  
+
   HDMI_STAT dp_status = DetectStatus( PROPERTY_TYPE ".dp_status.aux");
   if(ctx->dp_status_fd > 0 && dp_status != last_dp_status)
   {
@@ -3752,13 +3752,14 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
       break;
   };
 
-    int fb_blank = 0;
-    if(dpmsValue == DRM_MODE_DPMS_OFF)
-        fb_blank = FB_BLANK_POWERDOWN;
-    else if(dpmsValue == DRM_MODE_DPMS_ON)
-        fb_blank = FB_BLANK_UNBLANK;
-    else
-        ALOGE("dpmsValue is invalid value= %" PRIu64 "",dpmsValue);
+  int fb_blank = 0;
+  if(dpmsValue == DRM_MODE_DPMS_OFF)
+      fb_blank = FB_BLANK_POWERDOWN;
+  else if(dpmsValue == DRM_MODE_DPMS_ON)
+      fb_blank = FB_BLANK_UNBLANK;
+  else
+      ALOGE("dpmsValue is invalid value= %" PRIu64 "",dpmsValue);
+  if(get_frame() > 10){
     int err = ioctl(ctx->fb_fd, FBIOBLANK, fb_blank);
     ALOGD_IF(log_level(DBG_DEBUG),"%s Notice fb_blank to fb=%d", __FUNCTION__, fb_blank);
     if (err < 0) {
@@ -3774,6 +3775,7 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
     {
         ctx->fb_blanked = fb_blank;
     }
+  }
 
   DrmConnector *connector = ctx->drm.GetConnectorFromType(display);
   if (!connector) {
