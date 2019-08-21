@@ -3799,6 +3799,20 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
   }
 
   connector->force_disconnect(dpmsValue == DRM_MODE_DPMS_OFF);
+
+  //If process of device boot have two connector's status is connected,
+  //the first setPowerMode will to set drmMode-id for every connector
+  //in order to avoid some initialization problems.
+  for (int i = 0; i < HWC_NUM_PHYSICAL_DISPLAY_TYPES; i++) {
+    DrmConnector *conn = ctx->drm.GetConnectorFromType(i);
+    if (!conn || conn->state() != DRM_MODE_CONNECTED)
+      continue;
+    hwc_drm_display_t *hd = &ctx->displays[conn->display()];
+    update_display_bestmode(hd, i, conn);
+    DrmMode drmmode = conn->best_mode();
+    conn->set_current_mode(drmmode);
+  }
+
   ctx->drm.DisplayChanged();
   ctx->drm.UpdateDisplayRoute();
   ctx->drm.ClearDisplay();
