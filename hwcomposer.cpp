@@ -3759,7 +3759,7 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
       fb_blank = FB_BLANK_UNBLANK;
   else
       ALOGE("dpmsValue is invalid value= %" PRIu64 "",dpmsValue);
-  if(get_frame() > 10){
+  if(fb_blank != ctx->fb_blanked){
     int err = ioctl(ctx->fb_fd, FBIOBLANK, fb_blank);
     ALOGD_IF(log_level(DBG_DEBUG),"%s Notice fb_blank to fb=%d", __FUNCTION__, fb_blank);
     if (err < 0) {
