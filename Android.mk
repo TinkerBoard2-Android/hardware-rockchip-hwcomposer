@@ -54,12 +54,35 @@ LOCAL_STATIC_LIBRARIES := \
 	libtinyxml2
 
 LOCAL_C_INCLUDES := \
-        hardware/rockchip/libgralloc \
 	external/tinyxml2 \
 	external/libdrm \
 	external/libdrm/include/drm \
 	system/core/include/utils \
 	hardware/rockchip/librga
+
+# API 29 -> Android 10.0
+ifneq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 29)))
+
+ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)), mali-tDVx)
+LOCAL_C_INCLUDES += \
+       hardware/rockchip/libgralloc/bifrost
+endif
+
+ifneq (,$(filter mali-t860 mali-t760, $(TARGET_BOARD_PLATFORM_GPU)))
+LOCAL_C_INCLUDES += \
+       hardware/rockchip/libgralloc/midgard
+endif
+
+ifneq (,$(filter mali400 mali450, $(TARGET_BOARD_PLATFORM_GPU)))
+LOCAL_C_INCLUDES += \
+       hardware/rockchip/libgralloc/utgard
+
+endif
+else
+LOCAL_C_INCLUDES += \
+       hardware/rockchip/libgralloc
+
+endif
 
 # API 28 -> Android 9.0
 ifneq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 28)))
