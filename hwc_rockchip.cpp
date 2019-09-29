@@ -1065,6 +1065,10 @@ static bool is_layer_combine(DrmHwcLayer * layer_one,DrmHwcLayer * layer_two)
     //multi region only support RGBA888 RGBX8888 RGB888 565 BGRA888
     if(layer_one->format >= HAL_PIXEL_FORMAT_YCrCb_NV12
         || layer_two->format >= HAL_PIXEL_FORMAT_YCrCb_NV12
+    //RK3288 Rk3326 multi region format must be the same
+#if RK_MULTI_AREAS_FORMAT_LIMIT
+        || (layer_one->format != layer_two->format)
+#endif
         || layer_one->alpha!= layer_two->alpha
         || layer_one->is_scale || layer_two->is_scale
         || is_rec1_intersect_rec2(&layer_one->display_frame,&layer_two->display_frame)
@@ -2297,7 +2301,7 @@ AllMatch:
             {
                 ALOGD_IF(log_level(DBG_DEBUG), "%s:line=%d vop band with is too big,fail match layers.size=%zu",__FUNCTION__,__LINE__,layers.size());
                 goto FailMatch;
-            } 
+            }
         }
     }
 #endif
