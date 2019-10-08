@@ -1058,6 +1058,11 @@ int is_x_intersect(DrmHwcRect<int>* rec,DrmHwcRect<int>* rec2)
 
 static bool is_layer_combine(DrmHwcLayer * layer_one,DrmHwcLayer * layer_two)
 {
+#if USE_MULTI_AREAS==0
+     ALOGD_IF(log_level(DBG_SILENT),"USE_MULTI_AREAS disable, can't support multi region");
+     return false;
+#endif
+
  #ifdef TARGET_BOARD_PLATFORM_RK3328
      ALOGD_IF(log_level(DBG_SILENT),"rk3328 can't support multi region");
      return false;
