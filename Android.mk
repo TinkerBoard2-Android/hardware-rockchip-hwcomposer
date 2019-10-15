@@ -63,6 +63,9 @@ LOCAL_C_INCLUDES := \
 # API 29 -> Android 10.0
 ifneq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 29)))
 
+#DRM driver version is 2.0,kernel version is 4.19
+LOCAL_CFLAGS += -DDRM_DRIVER_VERSION=2
+
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)), mali-tDVx)
 LOCAL_C_INCLUDES += \
        hardware/rockchip/libgralloc/bifrost

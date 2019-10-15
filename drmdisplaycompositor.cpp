@@ -1326,7 +1326,11 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 #if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
       is_rotate_by_rga = layer.is_rotate_by_rga;
 #endif
+#if DRM_DRIVER_VERSION==2
+      rotation = kRotate0;
+#else
       rotation = 0;
+#endif
       if (layer.transform & DrmHwcTransform::kFlipH)
         rotation |= 1 << DRM_REFLECT_X;
       if (layer.transform & DrmHwcTransform::kFlipV)
@@ -1363,12 +1367,16 @@ int DrmDisplayCompositor::CommitFrame(DrmDisplayComposition *display_comp,
 #if (RK_RGA_COMPSITE_SYNC | RK_RGA_PREPARE_ASYNC)
     !is_rotate_by_rga &&
 #endif
+#if DRM_DRIVER_VERSION==2
+    rotation != kRotate0) {
+#else
     rotation && !(rotation & plane->get_rotate())) {
+#endif
+
       ALOGE("Rotation is not supported on plane %d", plane->id());
       ret = -EINVAL;
       break;
     }
-
     // TODO: Once we have atomic test, this should fall back to GL
     if (alpha != 0xFF && plane->alpha_property().id() == 0) {
       ALOGE("Alpha is not supported on plane %d", plane->id());

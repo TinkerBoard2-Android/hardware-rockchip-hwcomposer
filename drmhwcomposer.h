@@ -199,15 +199,29 @@ class DrmHwcNativeHandle {
 template <typename T>
 using DrmHwcRect = separate_rects::Rect<T>;
 
+#if DRM_DRIVER_VERSION==2
+//Drm driver version is 2.0.0 use these.
 enum DrmHwcTransform {
-  kIdentity = 0,
-  kFlipH = 1 << 0,
-  kFlipV = 1 << 1,
-  kRotate90 = 1 << 2,
-  kRotate180 = 1 << 3,
-  kRotate270 = 1 << 4,
-  kRotate0 = 1 << 5
+    kIdentity = 0,
+    kRotate0 = 1 << 0,
+    kRotate90 = 1 << 1,
+    kRotate180 = 1 << 2,
+    kRotate270 = 1 << 3,
+    kFlipH = 1 << 4,
+    kFlipV = 1 << 5,
 };
+#else
+//Drm driver version is 1.0.0 use these.
+enum DrmHwcTransform {
+    kIdentity = 0,
+    kFlipH = 1 << 0,
+    kFlipV = 1 << 1,
+    kRotate90 = 1 << 2,
+    kRotate180 = 1 << 3,
+    kRotate270 = 1 << 4,
+    kRotate0 = 1 << 5
+};
+#endif
 
 enum class DrmHwcBlending : int32_t {
   kNone = HWC_BLENDING_NONE,

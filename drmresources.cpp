@@ -67,9 +67,12 @@
 
 #include "hwc_rockchip.h"
 
-
 //you can define it in external/libdrm/include/drm/drm.h
+#if DRM_DRIVER_VERSION==2
+#define DRM_CLIENT_CAP_SHARE_PLANES     6
+#else
 #define DRM_CLIENT_CAP_SHARE_PLANES     4
+#endif
 
 #define DRM_ATOMIC_ADD_PROP(object_id, prop_id, value) \
   if (prop_id) { \
