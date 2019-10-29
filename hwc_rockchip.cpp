@@ -3512,14 +3512,20 @@ int hwc_SetGamma(DrmResources *drm)
                     blue[i] = base_parameter.main.mlutdata.lblue[i];
                 }
                 if (hwc_isGammaSetEnable(primary->get_type())) {
-                    int mCurCrtcId = drm->GetCrtcFromConnector(primary)->id();
-                    ret = hwc_setGamma(drm->fd(), mCurCrtcId, (int)size, (uint16_t*)red, (uint16_t*)green, (uint16_t*)blue);
-                    if (ret<0){
-                        ALOGW("BP: nativeSetGamma failed: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
-                                red[0],red[1],size, size, size ,red[0], red[1]);
+                    DrmCrtc *crtc = drm->GetCrtcFromConnector(primary);
+                    if(crtc != NULL){
+                        int mCurCrtcId = crtc->id();
+                        ret = hwc_setGamma(drm->fd(), mCurCrtcId, (int)size, (uint16_t*)red, (uint16_t*)green, (uint16_t*)blue);
+                        if (ret<0){
+                            ALOGW("BP: nativeSetGamma failed: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                                    red[0],red[1],size, size, size ,red[0], red[1]);
+                        }else{
+                            ALOGI_IF(log_level(DBG_INFO),"BP: nativeSetGamma success: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                                    red[0],red[1],size, size, size ,red[0], red[1]);
+                        }
                     }else{
-                        ALOGI_IF(log_level(DBG_INFO),"BP: nativeSetGamma success: Primary size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
-                                red[0],red[1],size, size, size ,red[0], red[1]);
+
+                        ALOGW("BP: nativeSetGamma failed: Primary crtc is NULL");
                     }
                 }else{
                     ALOGW("BP: Device type %d is not supprot Gamma",primary->get_type());
@@ -3552,14 +3558,19 @@ int hwc_SetGamma(DrmResources *drm)
                      blue[i] = base_parameter.aux.mlutdata.lblue[i];
                  }
                  if (hwc_isGammaSetEnable(extend->get_type())) {
-                     int mCurCrtcId = drm->GetCrtcFromConnector(extend)->id();
-                     ret = hwc_setGamma(drm->fd(), mCurCrtcId, (int)size, (uint16_t*)red, (uint16_t*)green, (uint16_t*)blue);
-                     if (ret<0){
-                         ALOGW("BP: nativeSetGamma failed: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]",size,
-                                 red[0],red[1],size, size, size ,red[0], red[1]);
-                     }else{
-                        ALOGI_IF(log_level(DBG_INFO),"BP: nativeSetGamma success: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
-                                red[0],red[1],size, size, size ,red[0], red[1]);
+                     DrmCrtc *crtc = drm->GetCrtcFromConnector(extend);
+                     if(crtc != NULL){
+                       int mCurCrtcId = crtc->id();
+                       ret = hwc_setGamma(drm->fd(), mCurCrtcId, (int)size, (uint16_t*)red, (uint16_t*)green, (uint16_t*)blue);
+                       if (ret<0){
+                           ALOGW("BP: nativeSetGamma failed: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]",size,
+                                   red[0],red[1],size, size, size ,red[0], red[1]);
+                       }else{
+                          ALOGI_IF(log_level(DBG_INFO),"BP: nativeSetGamma success: Extend size=%d r[%d %d] rgb_size= %d %d %d red[%d %d]", size,
+                                  red[0],red[1],size, size, size ,red[0], red[1]);
+                      }
+                    }else{
+                      ALOGW("BP: nativeSetGamma failed: Extend crtc is NULL");
                     }
                  }else{
                     ALOGW("BP: Device type %d is not supprot Gamma",extend->get_type());
