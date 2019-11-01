@@ -81,6 +81,12 @@ LOCAL_C_INCLUDES += \
        hardware/rockchip/libgralloc/utgard
 
 endif
+
+ifeq ($(strip $(TARGET_BOARD_PLATFORM)),rk3368)
+LOCAL_C_INCLUDES += \
+    system/core/libion/original-kernel-headers
+endif
+
 else
 LOCAL_C_INCLUDES += \
        hardware/rockchip/libgralloc
