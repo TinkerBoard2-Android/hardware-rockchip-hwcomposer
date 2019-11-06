@@ -362,8 +362,14 @@ class DrmHotplugHandler : public DrmEventHandler {
     hd->rel_yres = mode.v_display();
     hd->v_total = mode.v_total();
     hd->active = false;
+
     //if extend is connected at boot time, to upload this hotplug event.
-    if( extend != old_extend || (get_frame() == 1 && extend != NULL)){
+#ifdef USE_HWC2
+    if( extend != old_extend || (!g_hasHotplug && extend != NULL)){
+#else
+    if( extend != old_extend){
+#endif
+
       g_bSkipExtern = true;
       g_extern_gles_cnt = 0;
 #ifdef USE_HWC2
@@ -412,6 +418,7 @@ class DrmHotplugHandler : public DrmEventHandler {
   DisplayMap* displays_ = NULL;
 };
 
+
 struct hwc_context_t {
   // map of display:hwc_drm_display_t
   typedef std::map<int, hwc_drm_display_t> DisplayMap;
@@ -455,6 +462,13 @@ struct hwc_context_t {
     std::vector<DrmCompositionDisplayPlane> comp_plane_group;
     std::vector<DrmHwcDisplayContents> layer_contents;
 };
+
+static void  *hotplug_event_thread(void *arg){
+  hwc_context_t* ctx = (hwc_context_t*)arg;
+  ctx->hotplug_handler.HandleEvent(0);
+  pthread_exit(NULL);
+  return NULL;
+}
 
 /**
  * sys.3d_resolution.main 1920x1080p60-114693:148500
@@ -2418,6 +2432,7 @@ static void freeRgaBuffers(hwc_drm_display_t *hd) {
     }
 }
 #endif
+
 static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                        hwc_display_contents_1_t **display_contents) {
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
@@ -2433,7 +2448,11 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     //Fake handle event if the hotplug happen earlyer than hwc thread.
     if(get_frame() == 1 && !g_hasHotplug  && extend && (extend->raw_state() == DRM_MODE_CONNECTED))
     {
-      ctx->hotplug_handler.HandleEvent(0);
+      pthread_t hotplug_event;
+      if (pthread_create(&hotplug_event, NULL, hotplug_event_thread, ctx))
+      {
+          ALOGE("Create hotplug_event thread error .");
+      }
     }
 #endif
     //Update LUT from baseparameter at boot time
