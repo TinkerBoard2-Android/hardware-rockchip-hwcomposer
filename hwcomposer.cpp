@@ -345,30 +345,57 @@ class DrmHotplugHandler : public DrmEventHandler {
       return;
     }
 
-    hwc_drm_display_t *hd = &(*displays_)[extend->display()];
-    update_display_bestmode(hd, HWC_DISPLAY_EXTERNAL, extend);
-    DrmMode mode = extend->best_mode();
-    extend->set_current_mode(mode);
-
-
-    if (mode.h_display() > mode.v_display() && mode.v_display() >= 2160) {
-      hd->framebuffer_width = mode.h_display() * (1080.0 / mode.v_display());
-      hd->framebuffer_height = 1080;
-    } else {
-      hd->framebuffer_width = mode.h_display();
-      hd->framebuffer_height = mode.v_display();
-    }
-    hd->rel_xres = mode.h_display();
-    hd->rel_yres = mode.v_display();
-    hd->v_total = mode.v_total();
-    hd->active = false;
-
     //if extend is connected at boot time, to upload this hotplug event.
 #ifdef USE_HWC2
     if( extend != old_extend || (!g_hasHotplug && extend != NULL)){
 #else
     if( extend != old_extend){
 #endif
+      hwc_drm_display_t *hd = &(*displays_)[extend->display()];
+      update_display_bestmode(hd, HWC_DISPLAY_EXTERNAL, extend);
+      DrmMode mode = extend->best_mode();
+      extend->set_current_mode(mode);
+
+      char framebuffer_size[PROPERTY_VALUE_MAX];
+      uint32_t width = 0, height = 0 , vrefresh = 0 ;
+      property_get("persist." PROPERTY_TYPE ".framebuffer.aux", framebuffer_size, "use_baseparameter");
+      /*
+       * if unset framebuffer_size, get it from baseparameter , by libin
+       */
+      if(hwc_have_baseparameter() && !strcmp(framebuffer_size,"use_baseparameter")){
+        int res = 0;
+        res = hwc_get_baseparameter_config(framebuffer_size,HWC_DISPLAY_EXTERNAL,BP_FB_SIZE,0);
+        if(res)
+            ALOGW("BP: hwc get baseparameter config err ,res = %d",res);
+      }
+
+      sscanf(framebuffer_size, "%dx%d@%d", &width, &height, &vrefresh);
+      if (width && height) {
+        hd->framebuffer_width = width;
+        hd->framebuffer_height = height;
+        hd->vrefresh = vrefresh ? vrefresh : 60;
+      } else if (mode.h_display() && mode.v_display() && mode.v_refresh()) {
+        hd->framebuffer_width = mode.h_display();
+        hd->framebuffer_height = mode.v_display();
+        hd->vrefresh = mode.v_refresh();
+        /*
+         * Limit to 1080p if large than 2160p
+         */
+        if (hd->framebuffer_height >= 2160 && hd->framebuffer_width >= hd->framebuffer_height) {
+          hd->framebuffer_width = hd->framebuffer_width * (1080.0 / hd->framebuffer_height);
+          hd->framebuffer_height = 1080;
+        }
+      } else {
+        hd->framebuffer_width = 1920;
+        hd->framebuffer_height = 1080;
+        hd->vrefresh = 60;
+        ALOGE("Failed to find available display mode for display %d\n", HWC_DISPLAY_EXTERNAL);
+      }
+
+      hd->rel_xres = mode.h_display();
+      hd->rel_yres = mode.v_display();
+      hd->v_total = mode.v_total();
+      hd->active = false;
 
       g_bSkipExtern = true;
       g_extern_gles_cnt = 0;
@@ -383,6 +410,7 @@ class DrmHotplugHandler : public DrmEventHandler {
       hd->active = true;
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
     }
+
     /**********************long-running operations should move back of hotplug**************************/
     /*
      * If Connector changed ,update baseparameter , resolution , color.
