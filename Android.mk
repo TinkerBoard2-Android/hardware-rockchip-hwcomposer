@@ -64,7 +64,7 @@ LOCAL_C_INCLUDES := \
 ifneq (1,$(strip $(shell expr $(PLATFORM_SDK_VERSION) \< 29)))
 
 #DRM driver version is 2.0,kernel version is 4.19
-LOCAL_CFLAGS += -DDRM_DRIVER_VERSION=2
+LOCAL_CFLAGS += -DDRM_DRIVER_VERSION=2 -DUSE_NO_ASPECT_RATIO=1
 
 ifeq ($(strip $(TARGET_BOARD_PLATFORM_GPU)), mali-tDVx)
 LOCAL_C_INCLUDES += \

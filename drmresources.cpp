@@ -70,6 +70,7 @@
 //you can define it in external/libdrm/include/drm/drm.h
 #if DRM_DRIVER_VERSION==2
 #define DRM_CLIENT_CAP_SHARE_PLANES     6
+#define DRM_CLIENT_CAP_ASPECT_RATIO     4
 #else
 #define DRM_CLIENT_CAP_SHARE_PLANES     4
 #endif
@@ -304,6 +305,15 @@ int DrmResources::Init() {
   ret = drmSetClientCap(fd(), DRM_CLIENT_CAP_SHARE_PLANES, 1);
   if (ret) {
     ALOGE("Failed to set share planes %d", ret);
+    return ret;
+  }
+#endif
+
+#if USE_NO_ASPECT_RATIO
+  //Disable Aspect Ratio
+  ret = drmSetClientCap(fd(), DRM_CLIENT_CAP_ASPECT_RATIO, 0);
+  if (ret) {
+    ALOGE("Failed to disable Aspect Ratio %d", ret);
     return ret;
   }
 #endif
