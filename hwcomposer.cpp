@@ -407,6 +407,7 @@ class DrmHotplugHandler : public DrmEventHandler {
       }
 #endif
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 0);
+      usleep(64 * 1000);
       hd->active = true;
       procs_->hotplug(procs_, HWC_DISPLAY_EXTERNAL, 1);
     }
