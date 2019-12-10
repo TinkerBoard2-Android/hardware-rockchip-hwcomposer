@@ -110,7 +110,6 @@ static bool g_hasHotplug = false;
 static bool g_waitHwcSetHotplug = false;
 #endif
 
-static bool g_bSkipCurFrame = false;
 //#if RK_INVALID_REFRESH
 hwc_context_t* g_ctx = NULL;
 //#endif
@@ -2616,33 +2615,6 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
     }
 
-    char layername[100];
-    g_bSkipCurFrame = false;
-
-    for(int j = 0; j < (num_layers - 1); j++){
-        hwc_layer_1_t  *layer = &display_contents[i]->hwLayers[j];
-#ifdef USE_HWC2
-            hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
-#else
-            strcpy(layername, layer->LayerName);
-#endif
-        if(strstr(layername, "ScreenshotSurface")){
-            int value = hwc_get_layer_colorspace(layer);
-            value = value & 0xAA;
-            if(value)
-                g_bSkipCurFrame = true;
-            ALOGD_IF(log_level(DBG_DEBUG),"Layer colorSpace=0X%X, name: %s",
-						hwc_get_layer_colorspace(layer), layername);
-            break;
-        }
-    }
-
-    ALOGD_IF(log_level(DBG_DEBUG), "Skip frame: %s.", g_bSkipCurFrame ? "True" :"False");
-    if(g_bSkipCurFrame){
-        hwc_list_nodraw(display_contents[i]);
-        return 0;
-    }
-
 #if SKIP_BOOT
     if(g_boot_cnt < BOOT_COUNT)
     {
@@ -3238,12 +3210,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 
     if (!sf_display_contents[i])
       continue;
-
-    if(g_bSkipCurFrame){
-        hwc_sync_release(sf_display_contents[i]);
-        return 0;
-    }
-
 #if SKIP_BOOT
     if(g_boot_cnt < BOOT_COUNT) {
         hwc_sync_release(sf_display_contents[i]);
