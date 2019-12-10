@@ -2648,24 +2648,46 @@ int hwc_get_baseparameter_config(char *parameter, int display, int flag, int typ
                     ALOGW("BP: FB_SIZE baseparameter is not ready,can't use it !");
                     return -1;
                 }
-                w = base_parameter.main.hwc_info.framebuffer_width;
-                h = base_parameter.main.hwc_info.framebuffer_height;
-                vfresh = base_parameter.main.hwc_info.fps;
+                if(display == HWC_DISPLAY_PRIMARY){
+                    w = base_parameter.main.hwc_info.framebuffer_width;
+                    h = base_parameter.main.hwc_info.framebuffer_height;
+                    vfresh = base_parameter.main.hwc_info.fps;
 
-                if( w * h > 0 && w * h <= 4096 * 2160 && vfresh > 0 &&
-                        vfresh <= 120){
-                    sprintf(parameter,"%dx%d@%f", w, h, vfresh);
-                    property_set("persist." PROPERTY_TYPE ".framebuffer.main",parameter);
-                    ALOGI_IF(log_level(DBG_INFO),"BP: %s \n",parameter);
-                }else{
+                    if( w * h > 0 && w * h <= 4096 * 2160 && vfresh > 0 &&
+                            vfresh <= 120){
+                        sprintf(parameter,"%dx%d@%f", w, h, vfresh);
+                        property_set("persist." PROPERTY_TYPE ".framebuffer.main",parameter);
+                        ALOGI_IF(log_level(DBG_INFO),"BP:main %s \n",parameter);
+                    }else{
 #ifdef RK_BOX
-                    strcpy(parameter,"1920x1080@60");
-                    ALOGI_IF(log_level(DBG_INFO),"BP: fb_size default %s \n",parameter);
-                    property_set("persist." PROPERTY_TYPE ".framebuffer.main",parameter);
+                        strcpy(parameter,"1920x1080@60");
+                        ALOGI_IF(log_level(DBG_INFO),"BP:main fb_size default %s \n",parameter);
+                        property_set("persist." PROPERTY_TYPE ".framebuffer.main",parameter);
 #else
-                    ALOGI_IF(log_level(DBG_INFO),"BP: fb_size=%dx%d@%f err,set 0x0@60",w,h,vfresh);
-                    property_set("persist." PROPERTY_TYPE ".framebuffer.main","0x0@60");
+                        ALOGI_IF(log_level(DBG_INFO),"BP:main fb_size=%dx%d@%f err,set 0x0@60",w,h,vfresh);
+                        property_set("persist." PROPERTY_TYPE ".framebuffer.main","0x0@60");
 #endif
+                    }
+                }else{
+                    w = base_parameter.aux.hwc_info.framebuffer_width;
+                    h = base_parameter.aux.hwc_info.framebuffer_height;
+                    vfresh = base_parameter.aux.hwc_info.fps;
+
+                    if( w * h > 0 && w * h <= 4096 * 2160 && vfresh > 0 &&
+                            vfresh <= 120){
+                        sprintf(parameter,"%dx%d@%f", w, h, vfresh);
+                        property_set("persist." PROPERTY_TYPE ".framebuffer.aux",parameter);
+                        ALOGI_IF(log_level(DBG_INFO),"BP:aux %s \n",parameter);
+                    }else{
+#ifdef RK_BOX
+                        strcpy(parameter,"1920x1080@60");
+                        ALOGI_IF(log_level(DBG_INFO),"BP:aux fb_size default %s \n",parameter);
+                        property_set("persist." PROPERTY_TYPE ".framebuffer.aux",parameter);
+#else
+                        ALOGI_IF(log_level(DBG_INFO),"BP:aux fb_size=%dx%d@%f err,set 0x0@60",w,h,vfresh);
+                        property_set("persist." PROPERTY_TYPE ".framebuffer.aux","0x0@60");
+#endif
+                    }
                 }
                 break;
             }
