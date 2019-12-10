@@ -2615,47 +2615,34 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
             }
         }
     }
-    /*
-     * Mali DDK r18 causing problems:
-     *    Exist two logic display devices, when the system need to rotate,
-     *    may cause the first ScreenshotSurface render error, so HWC should skip this frame.
-     * This is a workround method:
-     *    SurfaceFlinger detect rotate activity will to set colorspace 0xAA, HWC skip
-     *    this frame.
-     */
-    {
-      char layername[100];
-      g_bSkipCurFrame = false;
 
-      for(int j = 0; j < (num_layers - 1); j++){
-          hwc_layer_1_t  *layer = &display_contents[i]->hwLayers[j];
+    char layername[100];
+    g_bSkipCurFrame = false;
+
+    for(int j = 0; j < (num_layers - 1); j++){
+        hwc_layer_1_t  *layer = &display_contents[i]->hwLayers[j];
 #ifdef USE_HWC2
-              hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
+            hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
 #else
-              strcpy(layername, layer->LayerName);
+            strcpy(layername, layer->LayerName);
 #endif
-          if(i == HWC_DISPLAY_EXTERNAL && strstr(layername, "ScreenshotSurface")){
-              int value = hwc_get_layer_colorspace(layer);
-              value = value & 0xAA;
-              if(value == 0xAA)
-                  g_bSkipCurFrame = true;
-              ALOGD_IF(log_level(DBG_DEBUG),"Layer colorSpace=0X%X, name: %s",
-  						hwc_get_layer_colorspace(layer), layername);
-              break;
-          }
-      }
-
-      ALOGD_IF(log_level(DBG_DEBUG), "Skip frame: %s.", g_bSkipCurFrame ? "True" :"False");
-      if(g_bSkipCurFrame){
-        for (int i = 0; i < (int)num_displays; ++i) {
-          if (!display_contents[i])
-            continue;
-          if(i == HWC_DISPLAY_PRIMARY)
-              hwc_list_nodraw(display_contents[i]);
+        if(strstr(layername, "ScreenshotSurface")){
+            int value = hwc_get_layer_colorspace(layer);
+            value = value & 0xAA;
+            if(value)
+                g_bSkipCurFrame = true;
+            ALOGD_IF(log_level(DBG_DEBUG),"Layer colorSpace=0X%X, name: %s",
+						hwc_get_layer_colorspace(layer), layername);
+            break;
         }
-          return 0;
-      }
     }
+
+    ALOGD_IF(log_level(DBG_DEBUG), "Skip frame: %s.", g_bSkipCurFrame ? "True" :"False");
+    if(g_bSkipCurFrame){
+        hwc_list_nodraw(display_contents[i]);
+        return 0;
+    }
+
 #if SKIP_BOOT
     if(g_boot_cnt < BOOT_COUNT)
     {
@@ -3230,7 +3217,7 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   struct hwc_context_t *ctx = (struct hwc_context_t *)&dev->common;
   int ret = 0;
 
-  inc_frame();
+ inc_frame();
 
   std::vector<CheckedOutputFd> checked_output_fences;
   std::vector<DrmHwcDisplayContents> displays_contents;
@@ -3238,27 +3225,6 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
   std::vector<std::vector<size_t>> layers_indices;
   std::vector<uint32_t> fail_displays;
   DrmComposition* composition = NULL;
-
-  /*
-   * Mali DDK r18 causing problems:
-   *    Exist two logic display devices, when the system need to rotate,
-   *    may cause the first ScreenshotSurface render error, so HWC should skip this frame.
-   * This is a workround method:
-   *    SurfaceFlinger detect rotate activity will to set colorspace 0xAA, HWC skip
-   *    this frame.
-   */
-  {
-    if(g_bSkipCurFrame){
-        for (size_t i = 0; i < num_displays; ++i) {
-          hwc_display_contents_1_t *dc = sf_display_contents[i];
-          if (!sf_display_contents[i])
-            continue;
-          hwc_sync_release(sf_display_contents[i]);
-        }
-        return -1;
-    }
-  }
-
 
   // layers_map.reserve(num_displays);
   layers_indices.reserve(num_displays);
@@ -3273,7 +3239,10 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
     if (!sf_display_contents[i])
       continue;
 
-
+    if(g_bSkipCurFrame){
+        hwc_sync_release(sf_display_contents[i]);
+        return 0;
+    }
 
 #if SKIP_BOOT
     if(g_boot_cnt < BOOT_COUNT) {
