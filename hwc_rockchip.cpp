@@ -2427,20 +2427,6 @@ void hwc_list_nodraw(hwc_display_contents_1_t  *list)
     return;
 }
 
-void hwc_list_gpu_draw(hwc_display_contents_1_t  *list)
-{
-    if (list == NULL)
-    {
-        return;
-    }
-    for (unsigned int i = 0; i < list->numHwLayers - 1; i++)
-    {
-        list->hwLayers[i].compositionType = HWC_FRAMEBUFFER;
-    }
-    return;
-}
-
-
 void hwc_sync_release(hwc_display_contents_1_t  *list)
 {
 	for (int i=0; i< (int)list->numHwLayers; i++){

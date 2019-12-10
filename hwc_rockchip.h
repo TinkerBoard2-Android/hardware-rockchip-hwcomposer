@@ -458,7 +458,6 @@ bool mix_policy(DrmResources* drm, DrmCrtc *crtc, hwc_drm_display_t *hd,
 void video_ui_optimize(const gralloc_module_t *gralloc, hwc_display_contents_1_t *display_content, hwc_drm_display_t *hd);
 #endif
 void hwc_list_nodraw(hwc_display_contents_1_t  *list);
-void hwc_list_gpu_draw(hwc_display_contents_1_t  *list);
 void hwc_sync_release(hwc_display_contents_1_t  *list);
 
 

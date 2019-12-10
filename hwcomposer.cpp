@@ -2634,26 +2634,24 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 #else
               strcpy(layername, layer->LayerName);
 #endif
-          if(i == HWC_DISPLAY_PRIMARY){
+          if(i == HWC_DISPLAY_EXTERNAL && strstr(layername, "ScreenshotSurface")){
               int value = hwc_get_layer_colorspace(layer);
               value = value & 0xAA;
               if(value == 0xAA)
                   g_bSkipCurFrame = true;
-              ALOGD_IF(log_level(DBG_DEBUG),"MALI-R18-WORKROUND:Layer colorSpace=0X%X, name: %s",
-                       hwc_get_layer_colorspace(layer), layername);
+              ALOGD_IF(log_level(DBG_DEBUG),"Layer colorSpace=0X%X, name: %s",
+  						hwc_get_layer_colorspace(layer), layername);
               break;
           }
       }
 
-      ALOGD_IF(log_level(DBG_DEBUG), "MALI-R18-WORKROUND:Skip frame: %s.", g_bSkipCurFrame ? "True" :"False");
+      ALOGD_IF(log_level(DBG_DEBUG), "Skip frame: %s.", g_bSkipCurFrame ? "True" :"False");
       if(g_bSkipCurFrame){
         for (int i = 0; i < (int)num_displays; ++i) {
           if (!display_contents[i])
             continue;
           if(i == HWC_DISPLAY_PRIMARY)
               hwc_list_nodraw(display_contents[i]);
-          if(i == HWC_DISPLAY_EXTERNAL)
-              hwc_list_gpu_draw(display_contents[i]);
         }
           return 0;
       }
