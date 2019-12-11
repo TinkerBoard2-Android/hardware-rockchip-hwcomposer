@@ -50,6 +50,12 @@
 
 #include <xf86drmMode.h>
 
+#if DRM_DRIVER_VERSION==2
+#define HDR_METADATA_PROPERTY "HDR_OUTPUT_METADATA"
+#else
+#define HDR_METADATA_PROPERTY "HDR_SOURCE_METADATA"
+#endif
+
 namespace android {
 
 DrmConnector::DrmConnector(DrmResources *drm, drmModeConnectorPtr c,
@@ -99,7 +105,7 @@ int DrmConnector::Init() {
   if (ret)
     ALOGW("Could not get hue property\n");
 
-  ret = drm_->GetConnectorProperty(*this, "HDR_SOURCE_METADATA", &hdr_metadata_property_);
+  ret = drm_->GetConnectorProperty(*this, HDR_METADATA_PROPERTY, &hdr_metadata_property_);
   if (ret)
     ALOGW("Could not get hdr source metadata property\n");
 
