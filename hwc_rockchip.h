@@ -61,11 +61,11 @@
 #endif
 
 #if DRM_DRIVER_VERSION == 2
-typedef struct hdr_static_metadata_2 hdr_static_metadata;
+typedef struct hdr_output_metadata hdr_metadata_s;
 #define HDR_METADATA_EOTF_T(hdr_metadata) hdr_metadata.hdmi_metadata_type.eotf
 #define HDR_METADATA_EOTF_P(hdr_metadata) hdr_metadata->hdmi_metadata_type.eotf
 #else
-typedef struct hdr_static_metadata_1 hdr_static_metadata;
+typedef struct hdr_static_metadata hdr_metadata_s;
 #define HDR_METADATA_EOTF_T(hdr_metadata) hdr_metadata.eotf
 #define HDR_METADATA_EOTF_P(hdr_metadata) hdr_metadata->eotf
 #endif
@@ -213,7 +213,7 @@ typedef struct hwc_drm_display {
   bool isVideo;
   bool isHdr;
   bool hasEotfPlane;
-  hdr_static_metadata last_hdr_metadata;
+  hdr_metadata_s last_hdr_metadata;
   int colorimetry;
   int color_format;
   int color_depth;

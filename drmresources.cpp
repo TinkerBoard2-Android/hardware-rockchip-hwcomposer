@@ -1359,7 +1359,7 @@ void DrmResources::dump_blob(uint32_t blob_id, std::ostringstream *out) {
 }
 
 bool DrmResources::is_hdr_panel_support_st2084(DrmConnector *conn) const {
-	struct hdr_static_metadata_1* blob_data;
+	struct hdr_static_metadata* blob_data;
 	drmModePropertyBlobPtr blob;
 	bool bSupport = false;
   drmModeObjectPropertiesPtr props;
@@ -1396,7 +1396,7 @@ bool DrmResources::is_hdr_panel_support_st2084(DrmConnector *conn) const {
         return false;
       }
 
-      blob_data = (struct hdr_static_metadata_1*)blob->data;
+      blob_data = (struct hdr_static_metadata*)blob->data;
 
       bSupport = blob_data->eotf & (1 << SMPTE_ST2084);
 
@@ -1413,7 +1413,7 @@ bool DrmResources::is_hdr_panel_support_st2084(DrmConnector *conn) const {
 }
 
 bool DrmResources::is_hdr_panel_support_HLG(DrmConnector *conn) const {
-  struct hdr_static_metadata_1* blob_data;
+  struct hdr_static_metadata* blob_data;
   drmModePropertyBlobPtr blob;
   bool bSupport = false;
   drmModeObjectPropertiesPtr props;
@@ -1450,7 +1450,7 @@ bool DrmResources::is_hdr_panel_support_HLG(DrmConnector *conn) const {
         return false;
       }
 
-      blob_data = (struct hdr_static_metadata_1*)blob->data;
+      blob_data = (struct hdr_static_metadata*)blob->data;
 
       bSupport = blob_data->eotf & (1 << HLG);
 
