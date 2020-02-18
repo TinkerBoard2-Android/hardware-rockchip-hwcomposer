@@ -2526,6 +2526,13 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     DrmCompositionDisplayPlane &comp_plane = ctx->comp_plane_group.back();
     comp_plane.display = i;
 
+    if(ctx->fb_blanked == FB_BLANK_POWERDOWN){
+      ALOGD_IF(log_level(DBG_DEBUG),"%s: display=%d fb_blanked = %s,line = %d",__FUNCTION__,i,
+        ctx->fb_blanked == FB_BLANK_POWERDOWN ? "POWERDOWN" : "ACTIVE",__LINE__);
+      hwc_list_nodraw(display_contents[i]);
+      continue;
+    }
+
     DrmConnector *connector = ctx->drm.GetConnectorFromType(i);
     if (!connector) {
       ALOGE("%s:Failed to get connector for display %d line=%d",__FUNCTION__, i,__LINE__);
@@ -2556,7 +2563,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     }
 #endif
 
-	update_hdmi_output_format(ctx, connector, i, hd);
+	  update_hdmi_output_format(ctx, connector, i, hd);
     update_display_bestmode(hd, i, connector);
     DrmMode mode = connector->best_mode();
     connector->set_current_mode(mode);
@@ -3226,6 +3233,14 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
 
     if (i == HWC_DISPLAY_VIRTUAL) {
       ctx->virtual_compositor_worker.QueueComposite(dc);
+      continue;
+    }
+
+    if(ctx->fb_blanked == FB_BLANK_POWERDOWN){
+      ALOGD_IF(log_level(DBG_DEBUG),"%s: display=%zu fb_blanked = %s,line = %d",__FUNCTION__,i,
+        ctx->fb_blanked == FB_BLANK_POWERDOWN ? "POWERDOWN" : "ACTIVE",__LINE__);
+      hwc_sync_release(sf_display_contents[i]);
+      ctx->drm.ClearDisplay(i);
       continue;
     }
 
