@@ -428,6 +428,8 @@ int hwc_get_handle_displayStereo(const gralloc_module_t *gralloc, buffer_handle_
     int op = GRALLOC_MODULE_PERFORM_GET_RK_ASHMEM;
     struct rk_ashmem_t rk_ashmem;
 
+    memset(&rk_ashmem,0x00,sizeof(struct rk_ashmem_t));
+
     if(gralloc && gralloc->perform)
         ret = gralloc->perform(gralloc, op, hnd, &rk_ashmem);
     else
@@ -446,6 +448,8 @@ int hwc_set_handle_displayStereo(const gralloc_module_t *gralloc, buffer_handle_
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_RK_ASHMEM;
     struct rk_ashmem_t rk_ashmem;
+
+    memset(&rk_ashmem,0x00,sizeof(struct rk_ashmem_t));
 
     if(gralloc && gralloc->perform)
         ret = gralloc->perform(gralloc, op, hnd, &rk_ashmem);
@@ -484,6 +488,8 @@ int hwc_get_handle_alreadyStereo(const gralloc_module_t *gralloc, buffer_handle_
     int op = GRALLOC_MODULE_PERFORM_GET_RK_ASHMEM;
     struct rk_ashmem_t rk_ashmem;
 
+    memset(&rk_ashmem,0x00,sizeof(struct rk_ashmem_t));
+
     if(gralloc && gralloc->perform)
         ret = gralloc->perform(gralloc, op, hnd, &rk_ashmem);
     else
@@ -502,6 +508,8 @@ int hwc_set_handle_alreadyStereo(const gralloc_module_t *gralloc, buffer_handle_
     int ret = 0;
     int op = GRALLOC_MODULE_PERFORM_GET_RK_ASHMEM;
     struct rk_ashmem_t rk_ashmem;
+
+    memset(&rk_ashmem,0x00,sizeof(struct rk_ashmem_t));
 
     if(gralloc && gralloc->perform)
         ret = gralloc->perform(gralloc, op, hnd, &rk_ashmem);
@@ -544,6 +552,8 @@ int hwc_get_handle_layername(const gralloc_module_t *gralloc, buffer_handle_t hn
     if(!layername)
         return -EINVAL;
 
+    memset(&rk_ashmem,0x00,sizeof(struct rk_ashmem_t));
+
     if(gralloc && gralloc->perform)
         ret = gralloc->perform(gralloc, op, hnd, &rk_ashmem);
     else
@@ -572,6 +582,8 @@ int hwc_set_handle_layername(const gralloc_module_t *gralloc, buffer_handle_t hn
 
     if(!layername)
         return -EINVAL;
+
+    memset(&rk_ashmem,0x00,sizeof(struct rk_ashmem_t));
 
     if(gralloc && gralloc->perform)
         ret = gralloc->perform(gralloc, op, hnd, &rk_ashmem);
