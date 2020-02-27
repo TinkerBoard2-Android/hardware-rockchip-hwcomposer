@@ -2756,6 +2756,19 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
                        "%s:line=%d layer size[%d,%d] too small ,set HWC_NODRAW",
                        __FUNCTION__,__LINE__,src_w,src_h);
             }
+            /*
+             *  VOP can't scale layer width or height < 4 pixel , so set layer HWC_SKIP_LAYER to
+             *  compose by GPU.
+             */
+            if( src_w < 4 || src_h < 4 )
+            {
+               layer->compositionType = HWC_FRAMEBUFFER;
+               layer->flags |= HWC_SKIP_LAYER;
+               ALOGD_IF(log_level(DBG_DEBUG),
+                       "%s:line=%d layer size[%d,%d] too small ,set HWC_SKIP_LAYER",
+                       __FUNCTION__,__LINE__,src_w,src_h);
+            }
+
 
 #if RK_PRINT_LAYER_NAME
             if(strstr(layername,"drawpath"))
