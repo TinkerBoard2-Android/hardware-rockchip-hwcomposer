@@ -1288,7 +1288,8 @@ static bool rkHasPlanesWithSize(DrmCrtc *crtc, int layer_size) {
     //loop plane groups.
     for (std::vector<PlaneGroup *> ::const_iterator iter = plane_groups.begin();
        iter != plane_groups.end(); ++iter) {
-            if(!(*iter)->bUse && (*iter)->planes.size() == (size_t)layer_size)
+            if(GetCrtcSupported(*crtc, (*iter)->possible_crtcs) && !(*iter)->bUse &&
+                (*iter)->planes.size() == (size_t)layer_size)
                 return true;
   }
   return false;
