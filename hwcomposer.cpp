@@ -3035,8 +3035,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         for (size_t j = 0; j < layer_content.layers.size(); j++) {
             DrmHwcLayer& layer = layer_content.layers[j];
 
-            if((layer.is_yuv && layer.transform!=DrmHwcTransform::kRotate0) ||
-                (layer.h_scale_mul > 1.0 &&  (int)(layer.display_frame.right - layer.display_frame.left) > 2560))
+            if((layer.is_yuv && layer.transform!=DrmHwcTransform::kRotate0))
             {
                 ret = ApplyPreRotate(hd,layer);
                 if (ret)
