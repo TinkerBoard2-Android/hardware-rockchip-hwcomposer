@@ -103,6 +103,7 @@ static unsigned int g_extern_gles_cnt = 0;
 static bool g_bSkipExtern = false;
 
 #ifdef USE_HWC2
+static bool g_hasHotplug = false;
 // Must to wait hwc-set to send Hotplug event
 // If you don't do this, there will be problems with the hot-plugging device registration and destruction timing.
 // In severe cases, the fence fd will leak or the system will not respond.
@@ -312,7 +313,7 @@ class DrmHotplugHandler : public DrmEventHandler {
 #ifdef USE_HWC2
       g_waitHwcSetHotplug = false;
       procs_->invalidate(procs_);
-      while(!g_waitHwcSetHotplug){
+      while(!g_waitHwcSetHotplug && g_hasHotplug){
           usleep(2000);
       }
 #endif
@@ -344,10 +345,11 @@ class DrmHotplugHandler : public DrmEventHandler {
     }
 
     //if extend is connected at boot time, to upload this hotplug event.
-
-      ALOGD("rk-debug 11 hotplug frame_cnt = %d",get_frame());
+#ifdef USE_HWC2
+    if( extend != old_extend || (!g_hasHotplug && extend != NULL)){
+#else
     if( extend != old_extend){
-      ALOGD("rk-debug 22 hotplug frame_cnt = %d",get_frame());
+#endif
       hwc_drm_display_t *hd = &(*displays_)[extend->display()];
       update_display_bestmode(hd, HWC_DISPLAY_EXTERNAL, extend);
       DrmMode mode = extend->best_mode();
@@ -399,7 +401,7 @@ class DrmHotplugHandler : public DrmEventHandler {
 #ifdef USE_HWC2
       g_waitHwcSetHotplug = false;
       procs_->invalidate(procs_);
-      while(!g_waitHwcSetHotplug){
+      while(!g_waitHwcSetHotplug && g_hasHotplug){
           usleep(2000);
       }
 #endif
@@ -427,6 +429,11 @@ class DrmHotplugHandler : public DrmEventHandler {
 
     //Update LUT from baseparameter when Hot_plug devices conneted
     hwc_SetGamma(drm_);
+
+#ifdef USE_HWC2
+    if(!g_hasHotplug)
+        g_hasHotplug = true;
+#endif
 
     //rk: Avoid fb handle is null which lead HDMI display nothing with GLES.
     usleep(HOTPLUG_MSLEEP*1000);
@@ -2463,6 +2470,19 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
   int win1_reserved = hwc_get_int_property( PROPERTY_TYPE ".hwc.win1.reserved", "0");
 #endif
 
+#ifdef USE_HWC2
+  DrmConnector *extend = ctx->drm.GetConnectorFromType(HWC_DISPLAY_EXTERNAL);
+
+    //Fake handle event if the hotplug happen earlyer than hwc thread.
+    if(get_frame() == 1 && !g_hasHotplug  && extend && (extend->raw_state() == DRM_MODE_CONNECTED))
+    {
+      pthread_t hotplug_event;
+      if (pthread_create(&hotplug_event, NULL, hotplug_event_thread, ctx))
+      {
+          ALOGE("Create hotplug_event thread error .");
+      }
+    }
+#endif
     //Update LUT from baseparameter at boot time
     if(get_frame() == 1){
          hwc_SetGamma(&ctx->drm);
