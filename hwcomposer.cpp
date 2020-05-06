@@ -1164,6 +1164,11 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         if(is_yuv)
         {
             uint32_t android_colorspace = hwc_get_layer_colorspace(sf_layer);
+            colorspace = colorspace_convert_to_linux(android_colorspace);
+            if(colorspace == 0)
+            {
+                colorspace = V4L2_COLORSPACE_DEFAULT;
+            }
             if((android_colorspace & HAL_DATASPACE_TRANSFER_MASK) == HAL_DATASPACE_TRANSFER_ST2084)
             {
                 ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d has st2084",__FUNCTION__,__LINE__);
