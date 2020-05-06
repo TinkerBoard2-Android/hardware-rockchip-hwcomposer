@@ -1164,12 +1164,6 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
         if(is_yuv)
         {
             uint32_t android_colorspace = hwc_get_layer_colorspace(sf_layer);
-            colorspace = colorspace_convert_to_linux(android_colorspace);
-            if(colorspace == 0)
-            {
-                colorspace = V4L2_COLORSPACE_DEFAULT;
-            }
-
             if((android_colorspace & HAL_DATASPACE_TRANSFER_MASK) == HAL_DATASPACE_TRANSFER_ST2084)
             {
                 ALOGD_IF(log_level(DBG_VERBOSE),"%s:line=%d has st2084",__FUNCTION__,__LINE__);
@@ -1198,8 +1192,19 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
     }
     else
     {
-        colorspace = V4L2_COLORSPACE_DEFAULT;
-        eotf = TRADITIONAL_GAMMA_SDR;
+        if(is_yuv)
+        {
+            uint32_t android_colorspace = hwc_get_layer_colorspace(sf_layer);
+            colorspace = colorspace_convert_to_linux(android_colorspace);
+            if(colorspace == 0)
+            {
+                colorspace = V4L2_COLORSPACE_DEFAULT;
+            }
+            eotf = TRADITIONAL_GAMMA_SDR;
+        }else{
+            colorspace = V4L2_COLORSPACE_DEFAULT;
+            eotf = TRADITIONAL_GAMMA_SDR;
+        }
     }
 
 #if RK_BOX
@@ -2786,6 +2791,10 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
     {
        ALOGD_IF(log_level(DBG_DEBUG),"disable static timer");
        ctx->mOneWinOpt = false;
+    }
+    if(hd->isHdr){
+           ALOGD_IF(log_level(DBG_DEBUG),"HDR video mode,disable static timer");
+           ctx->mOneWinOpt = false;
     }
 #endif
 
