@@ -41,6 +41,7 @@
 #include "drmplane.h"
 #include "drmresources.h"
 #include "platform.h"
+#include "hwc_rockchip.h"
 
 #include <stdlib.h>
 
@@ -361,35 +362,37 @@ int DrmDisplayComposition::CreateAndAssignReleaseFences() {
   }
   timeline_pre_comp_done_ = timeline_;
 
-#if ENABLE_RELEASE_FENCE
-  char acBuf[50];
-  for (DrmHwcLayer *layer : comp_layers) {
-    if (!layer->release_fence)
-    {
-      continue;
-    }
+  char value[PROPERTY_VALUE_MAX];
+  property_get( PROPERTY_TYPE ".hwc.disable_releaseFence", value, "0");
+  if(atoi(value) == 0){
+      char acBuf[50];
+      for (DrmHwcLayer *layer : comp_layers) {
+        if (!layer->release_fence)
+        {
+          continue;
+        }
 
 #if RK_VR
-    if(layer->release_fence.get() > -1 && (layer->gralloc_buffer_usage & 0x08000000))
-    {
-        ALOGD_IF(log_level(DBG_DEBUG),">>>close releaseFenceFd:%d,layername=%s",
-                    layer->release_fence.get(),layer->name.c_str());
-        close(layer->release_fence.get());
-        layer->release_fence.Set(-1);
-    }
-    else
-#endif
-    {
-        sprintf(acBuf,"frame-%d",layer->frame_no);
-        int ret = layer->release_fence.Set(CreateNextTimelineFence(acBuf));
-        if (ret < 0)
+        if(layer->release_fence.get() > -1 && (layer->gralloc_buffer_usage & 0x08000000))
         {
-            ALOGE("creat release fence failed ret=%d,%s",ret,strerror(errno));
-          return ret;
+            ALOGD_IF(log_level(DBG_DEBUG),">>>close releaseFenceFd:%d,layername=%s",
+                        layer->release_fence.get(),layer->name.c_str());
+            close(layer->release_fence.get());
+            layer->release_fence.Set(-1);
         }
-    }
-  }
+        else
 #endif
+        {
+            sprintf(acBuf,"frame-%d",layer->frame_no);
+            int ret = layer->release_fence.Set(CreateNextTimelineFence(acBuf));
+            if (ret < 0)
+            {
+                ALOGE("creat release fence failed ret=%d,%s",ret,strerror(errno));
+              return ret;
+            }
+        }
+      }
+    }
 
   return 0;
 }
