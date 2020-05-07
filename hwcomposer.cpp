@@ -3334,15 +3334,17 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
         continue;
       }
 
-#if FORCE_WAIT_ACQUIRE_FENCE
-        // rk: wait acquireFenceFd at hwc_set.
-        if(sf_layer->acquireFenceFd > 0)
-        {
-            sync_wait(sf_layer->acquireFenceFd, -1);
-            close(sf_layer->acquireFenceFd);
-            sf_layer->acquireFenceFd = -1;
-        }
-#endif
+      char value[PROPERTY_VALUE_MAX];
+      property_get( PROPERTY_TYPE ".hwc.force_wait_acquireFence", value, "0");
+      if(atoi(value) != 0){
+          // rk: wait acquireFenceFd at hwc_set.
+          if(sf_layer->acquireFenceFd > 0)
+          {
+              sync_wait(sf_layer->acquireFenceFd, -1);
+              close(sf_layer->acquireFenceFd);
+              sf_layer->acquireFenceFd = -1;
+          }
+      }
       for (k = 0; k < display_contents.layers.size(); ++k)
       {
          DrmHwcLayer &layer = display_contents.layers[k];
