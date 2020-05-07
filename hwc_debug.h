@@ -107,6 +107,7 @@ int init_log_level();
 bool log_level(LOG_LEVEL log_level);
 void init_rk_debug();
 int DumpLayer(const char* layer_name,buffer_handle_t handle);
+int DumpLayerList(hwc_display_contents_1_t *dc, const gralloc_module_t *gralloc);
 void hwc_dump_fps(void);
 void dump_layer(const gralloc_module_t *gralloc, bool bDump, hwc_layer_1_t *layer, int index);
 }

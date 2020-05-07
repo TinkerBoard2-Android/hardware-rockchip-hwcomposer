@@ -1821,7 +1821,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             strcpy(layername, layer->LayerName);
 #endif
 #endif
-            DumpLayer(layername,layer->handle);
+            //DumpLayer(layername,layer->handle);
 
             if(!vop_support_format(format))
             {
@@ -3282,6 +3282,9 @@ static int hwc_set(hwc_composer_device_1_t *dev, size_t num_displays,
       ctx->drm.ClearDisplay(i);
       continue;
     }
+
+    DumpLayerList(dc,ctx->gralloc);
+
     std::ostringstream display_index_formatter;
     display_index_formatter << "retire fence for display " << i;
     std::string display_fence_description(display_index_formatter.str());
