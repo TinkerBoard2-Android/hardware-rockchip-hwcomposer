@@ -1281,7 +1281,7 @@ int DrmHwcLayer::InitFromHwcLayer(struct hwc_context_t *ctx, int display, hwc_la
 #ifdef USE_HWC2
     if(sf_handle)
     {
-            hwc_get_handle_layername(gralloc, sf_handle, layername, 100);
+            HWC_GET_HANDLE_LAYERNAME(gralloc,sf_layer,sf_handle, layername, 100);
     }
 #else
     strcpy(layername, sf_layer->LayerName);
@@ -1816,7 +1816,7 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
             char layername[100];
 #if RK_PRINT_LAYER_NAME
 #ifdef USE_HWC2
-            hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
+            HWC_GET_HANDLE_LAYERNAME(ctx->gralloc,layer,layer->handle, layername, 100);
 #else
             strcpy(layername, layer->LayerName);
 #endif
@@ -2738,7 +2738,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
 #if RK_PRINT_LAYER_NAME
             char layername[100];
 #ifdef USE_HWC2
-            hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
+            HWC_GET_HANDLE_LAYERNAME(ctx->gralloc,layer,layer->handle, layername, 100);
 #else
             strcpy(layername, layer->LayerName);
 #endif
@@ -3154,7 +3154,7 @@ static int hwc_prepare(hwc_composer_device_1_t *dev, size_t num_displays,
         }
         else
         {
-            hwc_get_handle_layername(ctx->gralloc, layer->handle, layername, 100);
+            HWC_GET_HANDLE_LAYERNAME(ctx->gralloc,layer,layer->handle, layername, 100);
         }
 #else
         strcpy(layername, layer->LayerName);

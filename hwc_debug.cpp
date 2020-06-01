@@ -245,7 +245,7 @@ void dump_layer(const gralloc_module_t *gralloc, bool bDump, hwc_layer_1_t *laye
 
 #if RK_PRINT_LAYER_NAME
 #ifdef USE_HWC2
-                hwc_get_handle_layername(gralloc, layer->handle, layername, 100);
+                HWC_GET_HANDLE_LAYERNAME(gralloc,layer, layer->handle, layername, 100);
                 out << "layer[" << index << "]=" << layername
 #else
                 out << "layer[" << index << "]=" << layer->LayerName
@@ -282,7 +282,7 @@ void dump_layer(const gralloc_module_t *gralloc, bool bDump, hwc_layer_1_t *laye
         {
 #if RK_PRINT_LAYER_NAME
 #ifdef USE_HWC2
-                hwc_get_handle_layername(gralloc, layer->handle, layername, 100);
+                HWC_GET_HANDLE_LAYERNAME(gralloc,layer, layer->handle, layername, 100);
                 out << "layer[" << index << "]=" << layername
 #else
                 out << "layer[" << index << "]=" << layer->LayerName

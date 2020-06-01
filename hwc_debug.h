@@ -52,6 +52,11 @@
 #endif
 #include <utils/CallStack.h>
 
+#define HWC_GET_HANDLE_LAYERNAME(gralloc, sf_layer, sf_handle, layername, size) \
+    if(sf_layer && sf_layer->compositionType != HWC_FRAMEBUFFER_TARGET && ((sf_layer->flags & HWC_SKIP_LAYER) == 0)) \
+        hwc_get_handle_layername(gralloc,sf_handle,layername,size)\
+
+
 //Print call statck when you call ALOGD_CALLSTACK.
 #define ALOGD_CALLSTACK(...)                             \
     do {                                                 \
