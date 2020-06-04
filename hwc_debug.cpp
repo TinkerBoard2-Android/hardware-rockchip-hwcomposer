@@ -179,6 +179,7 @@ int DumpLayerList(hwc_display_contents_1_t *dc, const gralloc_module_t *gralloc)
                 hwc_get_handle_layername(gralloc, sf_layer->handle, layername, 100);
             }
 #else
+            UN_USED(gralloc);
             strcpy(layername, sf_layer->LayerName);
 #endif
 #endif
