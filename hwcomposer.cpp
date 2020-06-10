@@ -486,6 +486,7 @@ struct hwc_context_t {
     //int fd_3d;
     //threadPamaters mControlStereo;
 #endif
+    bool hdr_video_compose_by_gles = false;
 
     std::vector<DrmCompositionDisplayPlane> comp_plane_group;
     std::vector<DrmHwcDisplayContents> layer_contents;
@@ -1828,10 +1829,9 @@ static bool is_use_gles_comp(struct hwc_context_t *ctx, DrmConnector *connector,
                 ALOGD_IF(log_level(DBG_DEBUG),"layer's format=0x%x is not support,go to GPU GLES at line=%d", format, __LINE__);
                 return true;
             }
-//From System Product 1 Fang XingWen: Give priority to frame rate stability, regardless of the HDR effect
-#if 0
+#if 1 // vendor.hwc.hdr_video_compose_by_gles property to enable/disable hdr_video_compose_by_gles
 #if  (defined TARGET_BOARD_PLATFORM_RK3399) || (defined TARGET_BOARD_PLATFORM_RK3288)
-            if(hd->isHdr)
+            if(hd->isHdr && ctx->hdr_video_compose_by_gles)
             {
                 if(connector && !connector->is_hdmi_support_hdr()
                     && crtc && !ctx->drm.is_plane_support_hdr2sdr(crtc))
@@ -4385,6 +4385,8 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
 
   hwc_init_version();
 
+    ctx->hdr_video_compose_by_gles = hwc_get_bool_property( PROPERTY_TYPE ".hwc.hdr_video_by_gles","false");
+    ALOGI("HWC property : hdr_video_by_gles = %s",ctx->hdr_video_compose_by_gles ? "True" : "False");
 
 #if RK_INVALID_REFRESH
     ctx->mOneWinOpt = false;

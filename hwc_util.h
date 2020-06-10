@@ -105,6 +105,7 @@ typedef enum
 #define ALIGN_DOWN( value, base)	(value & (~(base-1)) )
 
 int hwc_get_int_property(const char* pcProperty,const char* default_value);
+bool hwc_get_bool_property(const char* pcProperty,const char* default_value);
 int hwc_get_string_property(const char* pcProperty,const char* default_value,char* retult);
 int DetectValidData(int *data,int w,int h);
 void ctl_gpu_performance(int on);
