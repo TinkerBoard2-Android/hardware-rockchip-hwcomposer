@@ -163,14 +163,15 @@ int DumpLayerList(hwc_display_contents_1_t *dc, const gralloc_module_t *gralloc)
     property_get( PROPERTY_TYPE ".dump",pro_value,0);
     if(strcmp(pro_value,"true"))
         return 0;
+
+    bool dumpFrame = false;
+    bool dumpTargetOnly = false;
+    size_t targetNameIndex = 1000;
+    static int DumpSurfaceCount = 0;
+
     size_t num_dc_layers = dc->numHwLayers;
     for (size_t j = 0; j < num_dc_layers; ++j) {
         hwc_layer_1_t *sf_layer = &dc->hwLayers[j];
-        if(sf_layer->acquireFenceFd > 0){
-            sync_wait(sf_layer->acquireFenceFd, -1);
-            close(sf_layer->acquireFenceFd);
-            sf_layer->acquireFenceFd = -1;
-        }
         char layername[100];
         if(sf_layer->compositionType != HWC_FRAMEBUFFER_TARGET){
 #if RK_PRINT_LAYER_NAME
@@ -186,7 +187,95 @@ int DumpLayerList(hwc_display_contents_1_t *dc, const gralloc_module_t *gralloc)
         }else{
             strcpy(layername,"FB-target");
         }
-        DumpLayer(layername,sf_layer->handle);
+
+        char targetName[PROPERTY_VALUE_MAX] = {0};
+        char targetOnly[PROPERTY_VALUE_MAX] = {0};
+        char dumpFrameCnt[PROPERTY_VALUE_MAX] = {0};
+
+        property_get( PROPERTY_TYPE ".dump.target_name",targetName,"");
+        property_get( PROPERTY_TYPE ".dump.only_target",targetOnly,"false");
+        property_get( PROPERTY_TYPE ".dump.frame_cnt",dumpFrameCnt,"10");
+
+        size_t num_dc_layers = dc->numHwLayers;
+        if(DumpSurfaceCount < atoi(dumpFrameCnt)){
+            if(!strcmp(targetName,"")){
+                dumpFrame = true;
+                DumpSurfaceCount++;
+            } else {
+                if(strstr(layername,targetName)){
+                    dumpFrame = true;
+                    targetNameIndex = j;
+                    if(!strcmp(targetOnly,"true"))
+                        dumpTargetOnly = true;
+                    DumpSurfaceCount++;
+                }
+            }
+        } else {
+            property_set( PROPERTY_TYPE ".dump","false");
+            DumpSurfaceCount = 0;
+            return 0;
+        }
+    }
+
+    if(dumpFrame){
+        for(size_t i = 0; i < num_dc_layers; i++){
+            hwc_layer_1_t *sf_layer = &dc->hwLayers[i];
+            if(!sf_layer->handle)
+                continue;
+
+            if(dumpTargetOnly && targetNameIndex != i)
+                continue;
+
+            if(sf_layer->acquireFenceFd > 0){
+                sync_wait(sf_layer->acquireFenceFd, -1);
+                close(sf_layer->acquireFenceFd);
+                sf_layer->acquireFenceFd = -1;
+            }
+
+            FILE * pfile = NULL;
+            char data_name[100];
+            void* cpu_addr;
+            int width,height,stride,byte_stride,format,size;
+#if RK_DRM_GRALLOC
+            width = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_WIDTH);
+            height = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_HEIGHT);
+            stride = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_STRIDE);
+            byte_stride = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_BYTE_STRIDE);
+            format = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_FORMAT);
+            size = hwc_get_handle_attibute(gralloc,sf_layer->handle,ATT_SIZE);
+#else
+            width = hwc_get_handle_width(gralloc,sf_layer->handle);
+            height = hwc_get_handle_height(gralloc,sf_layer->handle);
+            stride = hwc_get_handle_stride(gralloc,sf_layer->handle);
+            byte_stride = hwc_get_handle_byte_stride(gralloc,sf_layer->handle);
+            format = hwc_get_handle_format(gralloc,sf_layer->handle);
+            size = hwc_get_handle_size(gralloc,sf_layer->handle);
+#endif
+
+            system("mkdir /data/dump/ && chmod /data/dump/ 777 ");
+            if( targetNameIndex == i )
+                sprintf(data_name,"/data/dump/layer-%d-%dx%d-%zu-target.yuv",DumpSurfaceCount, stride,height,i);
+            else if(sf_layer->compositionType == HWC_FRAMEBUFFER_TARGET)
+                sprintf(data_name,"/data/dump/layer-%d-%dx%d-%zu-fb.yuv",DumpSurfaceCount, stride,height,i);
+            else
+                sprintf(data_name,"/data/dump/layer-%d-%dx%d-%zu.yuv",DumpSurfaceCount, stride,height,i);
+
+            gralloc->lock(gralloc, sf_layer->handle, GRALLOC_USAGE_SW_READ_MASK | GRALLOC_USAGE_SW_WRITE_MASK, //gr_handle->usage,
+                            0, 0, width, height, (void **)&cpu_addr);
+            pfile = fopen(data_name,"wb");
+            if(pfile) {
+                fwrite((const void *)cpu_addr,(size_t)(size),1,pfile);
+                fflush(pfile);
+                fclose(pfile);
+                ALOGD("dump surface layer_name: %s,data_name %s,w:%d,h:%d,stride :%d,size=%d,cpu_addr=%p",
+                    sf_layer->LayerName,data_name,width,height,byte_stride,size,cpu_addr);
+            } else {
+                ALOGE("Open %s fail", data_name);
+                ALOGD("dump surface layer_name: %s,data_name %s,w:%d,h:%d,stride :%d,size=%d,cpu_addr=%p",
+                    sf_layer->LayerName,data_name,width,height,byte_stride,size,cpu_addr);
+            }
+            gralloc->unlock(gralloc, sf_layer->handle);
+        }
     }
     return 0;
 }
