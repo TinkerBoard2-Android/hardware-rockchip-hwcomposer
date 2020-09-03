@@ -3790,7 +3790,7 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
       fb_blank = FB_BLANK_UNBLANK;
   else
       ALOGE("dpmsValue is invalid value= %" PRIu64 "",dpmsValue);
-  if(fb_blank != ctx->fb_blanked){
+  if(fb_blank != ctx->fb_blanked && ctx->fb_fd > 0){
     int err = ioctl(ctx->fb_fd, FBIOBLANK, fb_blank);
     ALOGD_IF(log_level(DBG_DEBUG),"%s Notice fb_blank to fb=%d", __FUNCTION__, fb_blank);
     if (err < 0) {
@@ -3802,12 +3802,8 @@ static int hwc_set_power_mode(struct hwc_composer_device_1 *dev, int display,
                     strerror(errno),display,fb_blank,dpmsValue);
         return -errno;
     }
-    else
-    {
-        ctx->fb_blanked = fb_blank;
-    }
   }
-
+  ctx->fb_blanked = fb_blank;
   DrmConnector *connector = ctx->drm.GetConnectorFromType(display);
   if (!connector) {
     ALOGE("%s:Failed to get connector for display %d line=%d", __FUNCTION__,display,__LINE__);
@@ -4359,7 +4355,6 @@ static int hwc_device_open(const struct hw_module_t *module, const char *name,
     if(ctx->fb_fd < 0)
     {
          ALOGE("Open fb0 fail in %s",__FUNCTION__);
-         return -1;
     }
 
     ctx->hdmi_status_fd = open(HDMI_STATUS_PATH, O_RDWR, 0);
