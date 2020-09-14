@@ -460,7 +460,7 @@ int DrmResources::Init() {
   for (auto &conn : connectors_) {
     if (!(conn->possible_displays() & HWC_DISPLAY_PRIMARY_BIT))
       continue;
-    if (conn->built_in())
+    if (!(conn->built_in()))
       continue;
     if (conn->state() != DRM_MODE_CONNECTED)
       continue;
